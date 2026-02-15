@@ -328,10 +328,12 @@ class EarningsMixin:
                     if 'Net Income' in financials.index:
                         net_income = financials.loc['Net Income', col]
 
-                    # Calculate debt-to-equity from balance sheet
+                    # Calculate debt-to-equity and extract equity from balance sheet
                     debt_to_equity = None
+                    shareholder_equity = None
                     if balance_sheet is not None and not balance_sheet.empty and col in balance_sheet.columns:
                         debt_to_equity, _ = self._calculate_debt_to_equity(balance_sheet, col)
+                        shareholder_equity = self._extract_shareholder_equity(balance_sheet, col)
 
                     dividend = dividends_by_year.get(year)
 
@@ -372,6 +374,7 @@ class EarningsMixin:
                         self.db.save_earnings_history(symbol, year, float(eps), float(revenue),
                                                      debt_to_equity=debt_to_equity, period='annual',
                                                      net_income=float(net_income) if pd.notna(net_income) else None,
+                                                     shareholder_equity=shareholder_equity,
                                                      dividend_amount=float(dividend) if dividend is not None else None,
                                                      operating_cash_flow=float(operating_cash_flow) if operating_cash_flow is not None else None,
                                                      capital_expenditures=float(capital_expenditures) if capital_expenditures is not None else None,
@@ -405,10 +408,12 @@ class EarningsMixin:
                     if 'Net Income' in quarterly_financials.index:
                         net_income = quarterly_financials.loc['Net Income', col]
 
-                    # Calculate debt-to-equity from quarterly balance sheet
+                    # Calculate debt-to-equity and extract equity from quarterly balance sheet
                     debt_to_equity = None
+                    shareholder_equity = None
                     if quarterly_balance_sheet is not None and not quarterly_balance_sheet.empty and col in quarterly_balance_sheet.columns:
                         debt_to_equity, _ = self._calculate_debt_to_equity(quarterly_balance_sheet, col)
+                        shareholder_equity = self._extract_shareholder_equity(quarterly_balance_sheet, col)
 
                     # Map dividends to (year, quarter)
                     # Note: We need to calculate dividends_by_quarter here or reuse from above if we move it up
@@ -431,6 +436,7 @@ class EarningsMixin:
                         self.db.save_earnings_history(symbol, year, float(eps), float(revenue),
                                                      debt_to_equity=debt_to_equity, period=period,
                                                      net_income=float(net_income) if pd.notna(net_income) else None,
+                                                     shareholder_equity=shareholder_equity,
                                                      dividend_amount=float(dividend) if dividend is not None else None)
 
         except Exception as e:
@@ -484,10 +490,12 @@ class EarningsMixin:
                     if 'Net Income' in quarterly_financials.index:
                         net_income = quarterly_financials.loc['Net Income', col]
 
-                    # Calculate debt-to-equity from quarterly balance sheet
+                    # Calculate debt-to-equity and extract equity from quarterly balance sheet
                     debt_to_equity = None
+                    shareholder_equity = None
                     if quarterly_balance_sheet is not None and not quarterly_balance_sheet.empty and col in quarterly_balance_sheet.columns:
                         debt_to_equity, _ = self._calculate_debt_to_equity(quarterly_balance_sheet, col)
+                        shareholder_equity = self._extract_shareholder_equity(quarterly_balance_sheet, col)
 
                     dividend = dividends_by_quarter.get((year, quarter))
 
@@ -496,6 +504,7 @@ class EarningsMixin:
                         self.db.save_earnings_history(symbol, year, float(eps), float(revenue),
                                                      debt_to_equity=debt_to_equity, period=period,
                                                      net_income=float(net_income) if pd.notna(net_income) else None,
+                                                     shareholder_equity=shareholder_equity,
                                                      dividend_amount=float(dividend) if dividend is not None else None)
             else:
                 logger.warning(f"[{symbol}] No quarterly financial data available from yfinance")

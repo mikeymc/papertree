@@ -55,6 +55,30 @@ class FinancialsMixin:
         except Exception as e:
             logger.error(f"[{symbol}] Error backfilling D/E data: {type(e).__name__}: {e}")
 
+    def _extract_shareholder_equity(self, balance_sheet, col) -> Optional[float]:
+        """Extract shareholders equity from a balance sheet column.
+
+        Returns the equity value as a float, or None if unavailable/NaN.
+        Negative equity is returned as-is (valid data for companies with buybacks).
+        """
+        if balance_sheet is None or balance_sheet.empty:
+            return None
+
+        equity_keys = [
+            'Stockholders Equity',
+            'Total Stockholder Equity',
+            'Total Equity Gross Minority Interest',
+            'Common Stock Equity',
+        ]
+
+        for key in equity_keys:
+            if key in balance_sheet.index:
+                value = balance_sheet.loc[key, col]
+                if pd.notna(value):
+                    return float(value)
+
+        return None
+
     def _calculate_debt_to_equity(self, balance_sheet, col) -> tuple[Optional[float], Optional[float]]:
         """
         Calculate debt-to-equity ratio from balance sheet data
