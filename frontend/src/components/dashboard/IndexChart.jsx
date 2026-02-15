@@ -272,13 +272,13 @@ export default function IndexChart() {
                     </div>
                 )}
 
-                <div className="mt-3 sm:mt-4 flex flex-col gap-1">
+                <div className="mt-2 sm:mt-4 flex flex-col gap-0 sm:gap-1">
                     {INDICES.map(idx => {
                         const isSelected = selectedSymbols.includes(idx.symbol)
                         const symbolData = data && !loading && !data.error ? data[idx.symbol] : null
 
                         return (
-                            <div key={idx.symbol} className="flex items-center justify-between h-auto py-1 sm:h-6 px-1 rounded-md hover:bg-accent/50 transition-colors gap-2">
+                            <div key={idx.symbol} className="flex items-center justify-between h-5 sm:h-6 py-0 px-1 rounded-md hover:bg-accent/50 transition-colors gap-2 leading-none">
                                 <button
                                     onClick={() => toggleSymbol(idx.symbol)}
                                     className={`flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-medium transition-colors hover:text-foreground text-left ${isSelected ? 'text-foreground' : 'text-muted-foreground'} min-w-0`}
