@@ -609,9 +609,9 @@ function AppShellContent({
             {/* Main Content */}
             <SidebarInset className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
                 {/* Top bar with triggers */}
-                <header className="flex h-12 items-center justify-between border-b px-4 shrink-0">
+                <header className="flex h-12 items-center justify-between border-b px-2 sm:px-4 shrink-0">
                     {/* Left side - Sidebar trigger, Search, and Filter */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
                         <SidebarTrigger className="h-10 w-10 [&_svg]:size-[18px]" />
                         <SearchPopover onSelect={(sym) => navigate(`/stock/${sym}`)} />
                         <Button
@@ -625,7 +625,7 @@ function AppShellContent({
                     </div>
 
                     {/* Right side - Alerts and Avatar */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
                         {alertsEnabled && (
                             <Button
                                 variant="ghost"
@@ -639,30 +639,26 @@ function AppShellContent({
                                 )}
                             </Button>
                         )}
-
-                        {/* Chat toggle - only show on small screens */}
-                        {!isLargeScreen && (
-                            <Sheet open={chatOpen} onOpenChange={setChatOpen}>
-                                <SheetTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <MessageSquare className="h-5 w-5" />
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0">
-                                    <SheetHeader className="px-4 py-3 border-b">
-                                        <SheetTitle>{chatTitle}</SheetTitle>
-                                    </SheetHeader>
-                                    <div className="flex flex-col h-[calc(100%-60px)]">
-                                        <AnalysisChat
-                                            symbol={chatSymbol}
-                                            chatOnly={true}
-                                            contextType={chatContext}
-                                            activeCharacter={activeCharacter}
-                                        />
-                                    </div>
-                                </SheetContent>
-                            </Sheet>
-                        )}
+                        <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+                            <SheetTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5">
+                                    <MessageSquare />
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0">
+                                <SheetHeader className="px-4 py-3 border-b">
+                                    <SheetTitle>{chatTitle}</SheetTitle>
+                                </SheetHeader>
+                                <div className="flex flex-col h-[calc(100%-60px)]">
+                                    <AnalysisChat
+                                        symbol={chatSymbol}
+                                        chatOnly={true}
+                                        contextType={chatContext}
+                                        activeCharacter={activeCharacter}
+                                    />
+                                </div>
+                            </SheetContent>
+                        </Sheet>
                         <UserAvatar />
                     </div>
                 </header>

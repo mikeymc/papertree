@@ -150,7 +150,7 @@ export default function SearchPopover({ onSelect }) {
         <Input
           ref={inputRef}
           type="text"
-          className="w-[200px] pr-8"
+          className="w-28 sm:w-[200px] pr-8"
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
