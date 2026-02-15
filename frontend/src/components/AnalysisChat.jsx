@@ -73,7 +73,8 @@ const TOOL_DESCRIPTIONS = {
   sell_stock: "Selling shares",
   // Strategy management tools
   get_strategy_templates: "Browsing strategy templates",
-  create_strategy: "Creating investment strategy"
+  create_strategy: "Creating investment strategy",
+  get_stock_thesis: "Checking for investment thesis"
 }
 
 // Custom markdown components

@@ -494,3 +494,32 @@ class ResearchToolsMixin:
             "median_pe": median_pe,
             "pe_data": pe_data,
         }
+
+    def _get_stock_thesis(self, ticker: str, character: str = None, user_id: int = None) -> Dict[str, Any]:
+        """Get the cached investment thesis for a stock if available."""
+        ticker = ticker.upper()
+        
+        try:
+            # Get cached analysis directly from the database
+            cached = self.db.get_lynch_analysis(user_id, ticker, character_id=character, allow_fallback=True)
+            
+            if not cached:
+                return {
+                    "ticker": ticker,
+                    "character": character or "default",
+                    "thesis": None,
+                    "message": f"No cached investment thesis found for {ticker}. The user needs to generate one in the Research tab first."
+                }
+            
+            return {
+                "ticker": ticker,
+                "character": cached.get('character_id') or character or "default",
+                "thesis": cached['analysis_text'],
+                "generated_at": cached['generated_at'].isoformat() if cached.get('generated_at') else None
+            }
+        except Exception as e:
+            import traceback
+            return {
+                "error": f"Failed to retrieve thesis for {ticker}: {str(e)}",
+                "details": traceback.format_exc()
+            }

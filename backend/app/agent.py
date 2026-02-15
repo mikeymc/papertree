@@ -20,7 +20,7 @@ def get_smart_chat_agent():
     global _smart_chat_agent
     if _smart_chat_agent is None:
         from smart_chat_agent import SmartChatAgent
-        _smart_chat_agent = SmartChatAgent(deps.db)
+        _smart_chat_agent = SmartChatAgent(deps.db, stock_analyst=deps.stock_analyst)
     return _smart_chat_agent
 
 

@@ -753,6 +753,23 @@ get_average_pe_ratio_decl = FunctionDeclaration(
     ),
 )
 
+get_stock_thesis_decl = FunctionDeclaration(
+    name="get_stock_thesis",
+    description="Retrieve a previously generated investment thesis for a stock. This tool only returns cached results and does not generate new ones. If no thesis is found, the user may need to generate it in the Research tab.",
+    parameters=Schema(
+        type=Type.OBJECT,
+        properties={
+            "ticker": Schema(type=Type.STRING, description="Stock ticker symbol"),
+            "character": Schema(
+                type=Type.STRING, 
+                description="The investment character to check for (e.g. 'lynch', 'buffett'). Defaults to user's active character.",
+                enum=["lynch", "buffett"]
+            ),
+        },
+        required=["ticker"],
+    ),
+)
+
 
 # =============================================================================
 # Tool Registry: Maps tool names to their declarations
@@ -793,6 +810,7 @@ TOOL_DECLARATIONS = [
     get_economic_indicators_decl,
     get_analyst_sentiment_decl,
     get_average_pe_ratio_decl,
+    get_stock_thesis_decl,
     # Portfolio management tools
     create_portfolio_decl,
     get_my_portfolios_decl,

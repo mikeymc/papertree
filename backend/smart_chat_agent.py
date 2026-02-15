@@ -31,17 +31,18 @@ class SmartChatAgent:
     4. Continue reasoning or provide a final answer
     """
     
-    def __init__(self, db, gemini_api_key: Optional[str] = None):
+    def __init__(self, db, gemini_api_key: Optional[str] = None, stock_analyst=None):
         """
         Initialize the Smart Chat Agent.
         
         Args:
             db: Database instance for data access
             gemini_api_key: Optional API key (defaults to GEMINI_API_KEY env var)
+            stock_analyst: Optional StockAnalyst instance for generating theses
         """
         self.db = db
         self.stock_context = StockContext(db)
-        self.tool_executor = ToolExecutor(db, stock_context=self.stock_context)
+        self.tool_executor = ToolExecutor(db, stock_context=self.stock_context, stock_analyst=stock_analyst)
         
         # Lazy client initialization
         import os
@@ -339,7 +340,7 @@ class SmartChatAgent:
                             "get_portfolio_strategy", "update_portfolio_strategy",
                             "get_portfolio_strategy_activity", "get_portfolio_strategy_decisions",
                         ]
-                        if (tool_name == "manage_alerts" or tool_name in portfolio_tools) and user_id:
+                        if (tool_name == "manage_alerts" or tool_name == "get_stock_thesis" or tool_name in portfolio_tools) and user_id:
                             tool_args["user_id"] = user_id
 
                         logger.info(f"[Agent] Calling tool: {tool_name}({tool_args})")
@@ -520,7 +521,7 @@ class SmartChatAgent:
                             "get_portfolio_strategy", "update_portfolio_strategy",
                             "get_portfolio_strategy_activity", "get_portfolio_strategy_decisions",
                         ]
-                        if (tool_name == "manage_alerts" or tool_name in portfolio_tools) and user_id:
+                        if (tool_name == "manage_alerts" or tool_name == "get_stock_thesis" or tool_name in portfolio_tools) and user_id:
                             tool_args["user_id"] = user_id
 
                         yield {"type": "thinking", "data": f"Calling {tool_name}..."}

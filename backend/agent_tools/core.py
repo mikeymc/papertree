@@ -7,16 +7,18 @@ from typing import Dict, Any
 class ToolExecutorCore:
     """Executes tool calls against the database and other data sources."""
 
-    def __init__(self, db, stock_context=None):
+    def __init__(self, db, stock_context=None, stock_analyst=None):
         """
         Initialize the tool executor.
 
         Args:
             db: Database instance
             stock_context: Optional StockContext instance for filing sections and news
+            stock_analyst: Optional StockAnalyst instance for generating theses
         """
         self.db = db
         self.stock_context = stock_context
+        self.stock_analyst = stock_analyst
 
     def execute(self, tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -60,6 +62,7 @@ class ToolExecutorCore:
             "get_sector_comparison": self._get_sector_comparison,
             "get_earnings_history": self._get_earnings_history,
             "manage_alerts": self._manage_alerts,
+            "get_stock_thesis": self._get_stock_thesis,
             # FRED macroeconomic tools
             "get_fred_series": self._get_fred_series,
             "get_economic_indicators": self._get_economic_indicators,
