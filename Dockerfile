@@ -59,6 +59,9 @@ RUN playwright install chromium
 # Copy backend code (includes worker.py for background job processing)
 COPY backend/ ./
 
+# Copy github workflows for schedule info
+COPY .github/ ./.github/
+
 # Copy frontend build from stage 1
 COPY --from=frontend-builder /frontend/dist ./app/static
 

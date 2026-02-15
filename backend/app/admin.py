@@ -27,6 +27,15 @@ def require_admin(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@admin_bp.route('/api/admin/ping', methods=['GET'])
+def admin_ping():
+    """Simple diagnostic endpoint to verify backend update"""
+    return jsonify({
+        'status': 'ok',
+        'version': 'v1.1-schedule-refined',
+        'has_yaml': 'yaml' in globals() or 'yaml' in locals()
+    })
+
 
 @admin_bp.route('/api/admin/conversations', methods=['GET'])
 @require_admin
@@ -175,12 +184,26 @@ def get_job_schedule():
     """Parse .github/workflows/scheduled-jobs.yml to return the job schedule"""
     try:
         # Resolve path to the workflow file
+        # In local dev: it's root/.github/... and we are in root/backend/app/admin.py
+        # In Docker: it's /app/.github/... and we are in /app/app/admin.py
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        root_dir = os.path.dirname(base_dir)
-        yaml_path = os.path.join(root_dir, '.github/workflows/scheduled-jobs.yml')
         
-        if not os.path.exists(yaml_path):
-            return jsonify({'error': f'Schedule file not found at {yaml_path}'}), 404
+        # Try both locations
+        paths_to_try = [
+            os.path.join(os.path.dirname(base_dir), '.github/workflows/scheduled-jobs.yml'), # Local: root/.github
+            os.path.join(base_dir, '.github/workflows/scheduled-jobs.yml'),               # Docker: /app/.github
+            '.github/workflows/scheduled-jobs.yml'                                         # Fallback
+        ]
+        
+        yaml_path = None
+        for path in paths_to_try:
+            if os.path.exists(path):
+                yaml_path = path
+                break
+        
+        if not yaml_path:
+            logger.error(f"Schedule file not found in any of: {paths_to_try}")
+            return jsonify({'error': 'Schedule file not found'}), 404
             
         with open(yaml_path, 'r') as f:
             content = f.read()
