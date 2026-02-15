@@ -6,7 +6,7 @@ from app import deps
 from app.helpers import clean_nan_values
 from auth import require_user_auth
 from stock_rescorer import StockRescorer
-from stock_vectors import DEFAULT_ALGORITHM_CONFIG
+from scoring.vectors import DEFAULT_ALGORITHM_CONFIG
 import json
 import logging
 import time

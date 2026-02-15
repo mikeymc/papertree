@@ -14,7 +14,7 @@ from strategy_executor.position_sizing import PositionSizer
 from strategy_executor.exit_conditions import ExitConditionChecker
 from benchmark_tracker import BenchmarkTracker
 from strategy_executor.utils import log_event, get_spy_price
-from stock_vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
+from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
 from characters.buffett import BUFFETT
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class StrategyExecutorCore:
     def lynch_criteria(self):
         """Lazy initialization of LynchCriteria."""
         if self._lynch_criteria is None:
-            from lynch_criteria import LynchCriteria
+            from scoring import LynchCriteria
             from earnings_analyzer import EarningsAnalyzer
             analyzer = EarningsAnalyzer(self.db)
             self._lynch_criteria = LynchCriteria(self.db, analyzer)

@@ -9,8 +9,8 @@ from app.scoring import resolve_scoring_config
 from fred_service import get_fred_service, SUPPORTED_SERIES, CATEGORIES
 from fly_machines import get_fly_manager
 from characters import get_character
-from character_scoring import apply_character_scoring
-from stock_vectors import DEFAULT_ALGORITHM_CONFIG
+from scoring.character import apply_character_scoring
+from scoring.vectors import DEFAULT_ALGORITHM_CONFIG
 import json
 import logging
 import os
@@ -375,7 +375,7 @@ def get_market_index(symbols):
         return jsonify({'error': str(e)}), 500
 
 
-from stock_vectors import DEFAULT_ALGORITHM_CONFIG
+from scoring.vectors import DEFAULT_ALGORITHM_CONFIG
 
 @dashboard_bp.route('/api/market/movers', methods=['GET'])
 def get_market_movers():

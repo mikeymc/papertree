@@ -3,7 +3,7 @@
 
 from database import Database
 from data_fetcher import DataFetcher
-from lynch_criteria import LynchCriteria
+from scoring import LynchCriteria
 from earnings_analyzer import EarningsAnalyzer
 import os
 

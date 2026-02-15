@@ -128,7 +128,7 @@ configure_edgartools_rate_limit()
 from database import Database
 from data_fetcher import DataFetcher
 from earnings_analyzer import EarningsAnalyzer
-from lynch_criteria import LynchCriteria
+from scoring import LynchCriteria
 from yfinance_price_client import YFinancePriceClient
 from stock_analyst import StockAnalyst
 from backtester import Backtester
@@ -136,7 +136,7 @@ from algorithm_validator import AlgorithmValidator
 from correlation_analyzer import CorrelationAnalyzer
 from algorithm_optimizer import AlgorithmOptimizer
 from finnhub_news import FinnhubNewsClient
-from stock_vectors import StockVectors
+from scoring.vectors import StockVectors
 from sec_8k_client import SEC8KClient
 from material_event_summarizer import MaterialEventSummarizer
 

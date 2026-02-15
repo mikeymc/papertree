@@ -3,7 +3,7 @@
 
 import logging
 from app import deps
-from stock_vectors import DEFAULT_ALGORITHM_CONFIG
+from scoring.vectors import DEFAULT_ALGORITHM_CONFIG
 
 logger = logging.getLogger(__name__)
 

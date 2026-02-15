@@ -6,7 +6,7 @@ import os
 import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
-from lynch_criteria.batch import BatchScoringMixin
+from scoring.batch import BatchScoringMixin
 
 
 LYNCH_CONFIG = {

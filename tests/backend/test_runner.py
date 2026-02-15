@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(__file__))
 
-from lynch_criteria import LynchCriteria
+from scoring import LynchCriteria
 from database import Database
 from earnings_analyzer import EarningsAnalyzer
 

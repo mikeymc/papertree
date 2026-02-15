@@ -154,7 +154,7 @@ def preview_strategy(user_id):
 
         # Import here to avoid circular dependencies
         from strategy_executor import UniverseFilter
-        from lynch_criteria import LynchCriteria
+        from scoring import LynchCriteria
         from earnings_analyzer import EarningsAnalyzer
 
         # Initialize evaluator and scorer
@@ -175,7 +175,7 @@ def preview_strategy(user_id):
 
         # Use vectorized scoring (same as strategy executor) for consistency
         try:
-            from stock_vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
+            from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
             from characters.buffett import BUFFETT
 
             # Load stock data with vectorized approach

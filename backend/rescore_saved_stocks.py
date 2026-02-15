@@ -6,7 +6,7 @@ import sys
 import logging
 from database import Database
 from earnings_analyzer import EarningsAnalyzer
-from lynch_criteria import LynchCriteria
+from scoring import LynchCriteria
 from stock_rescorer import StockRescorer
 
 logging.basicConfig(

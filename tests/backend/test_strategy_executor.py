@@ -667,15 +667,16 @@ class TestStrategyExecutorIntegration:
                 mock_yf = sys.modules['yfinance']
                 mock_yf.Ticker.return_value.fast_info = {'lastPrice': 500.0}
 
-                # Patch StockVectors for vectorized scoring
-                with patch('stock_vectors.StockVectors', self._make_stock_vectors_mock()):
-                    executor = StrategyExecutor(
-                        db=mock_db,
-                        analyst=mock_analyst,
-                        lynch_criteria=mock_lynch_criteria
-                    )
+                # Patch StockVectors for vectorized scoring (both import sites)
+                with patch('strategy_executor.core.StockVectors', self._make_stock_vectors_mock()):
+                    with patch('scoring.vectors.StockVectors', self._make_stock_vectors_mock()):
+                        executor = StrategyExecutor(
+                            db=mock_db,
+                            analyst=mock_analyst,
+                            lynch_criteria=mock_lynch_criteria
+                        )
 
-                    result = executor.execute_strategy(strategy_id=1)
+                        result = executor.execute_strategy(strategy_id=1)
 
         # Verify pipeline completed
         assert result['status'] == 'completed'
@@ -710,15 +711,16 @@ class TestStrategyExecutorIntegration:
                 mock_yf = sys.modules['yfinance']
                 mock_yf.Ticker.return_value.fast_info = {'lastPrice': 500.0}
 
-                # Patch StockVectors for vectorized scoring
-                with patch('stock_vectors.StockVectors', self._make_stock_vectors_mock()):
-                    executor = StrategyExecutor(
-                        db=mock_db,
-                        analyst=mock_analyst,
-                        lynch_criteria=mock_lynch_criteria
-                    )
+                # Patch StockVectors for vectorized scoring (both import sites)
+                with patch('strategy_executor.core.StockVectors', self._make_stock_vectors_mock()):
+                    with patch('scoring.vectors.StockVectors', self._make_stock_vectors_mock()):
+                        executor = StrategyExecutor(
+                            db=mock_db,
+                            analyst=mock_analyst,
+                            lynch_criteria=mock_lynch_criteria
+                        )
 
-                    result = executor.execute_strategy(strategy_id=1)
+                        result = executor.execute_strategy(strategy_id=1)
 
         # No trades should be executed because thesis verdict is AVOID, not BUY
         assert result['trades_executed'] == 0

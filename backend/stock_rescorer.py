@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import logging
 
-from stock_vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
+from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
 
 logger = logging.getLogger(__name__)
 

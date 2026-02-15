@@ -14,8 +14,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from database import Database
 from earnings_analyzer import EarningsAnalyzer
-from lynch_criteria import LynchCriteria
-from stock_vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
+from scoring import LynchCriteria
+from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
 from characters.buffett import BUFFETT
 
 SCORE_TOLERANCE = 0.5   # float rounding tolerance for scores

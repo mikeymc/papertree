@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Quick test script to verify weighted algorithm works correctly."""
 
-from lynch_criteria import LynchCriteria, ALGORITHM_METADATA
+from scoring import LynchCriteria
 
 # Print algorithm metadata
 print("=" * 80)

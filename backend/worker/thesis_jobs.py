@@ -127,7 +127,7 @@ class ThesisJobsMixin:
                 logger.info("Aggregating Quality Signal...")
                 # Note: We assume 'overall_status' is in a table we can join, but stock_vectors is separate.
                 # We'll use a python-side fetch for vectors since it might be complex JSON or separate logic
-                from stock_vectors import StockVectors
+                from scoring.vectors import StockVectors
                 vectors = StockVectors(self.db)
                 # Load vectors but strictly limit to avoid memory bloat
                 try:
@@ -146,8 +146,8 @@ class ThesisJobsMixin:
                         logger.info(f"Filtered Quality Universe: {original_len} -> {len(df_vectors)} stocks (Price >= $10, Cap >= $500M)")
 
                     if df_vectors is not None and not df_vectors.empty:
-                        from lynch_criteria import LynchCriteria
-                        from stock_vectors import DEFAULT_ALGORITHM_CONFIG
+                        from scoring import LynchCriteria
+                        from scoring.vectors import DEFAULT_ALGORITHM_CONFIG
                         from characters.buffett import BUFFETT
 
                         criteria = LynchCriteria(self.db, None)

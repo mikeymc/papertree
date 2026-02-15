@@ -32,8 +32,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
-from lynch_criteria.batch import BatchScoringMixin
-from stock_evaluator import StockEvaluator
+from scoring.batch import BatchScoringMixin
+from scoring.evaluator import StockEvaluator
 from characters.config import Threshold
 
 EXCELLENT = 20.0

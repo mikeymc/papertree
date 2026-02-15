@@ -170,7 +170,7 @@ class LynchCriteriaCore:
     def _evaluate_with_character(self, symbol: str, character_id: str, overrides: Dict[str, Any] = None, custom_metrics: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
         """Evaluate a stock using a non-Lynch character via StockEvaluator."""
         try:
-            from stock_evaluator import StockEvaluator
+            from scoring.evaluator import StockEvaluator
             from characters import get_character
 
             character = get_character(character_id)

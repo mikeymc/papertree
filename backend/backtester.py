@@ -4,7 +4,7 @@ import pandas as pd
 from typing import List, Dict, Any, Optional
 import logging
 from database import Database
-from lynch_criteria import LynchCriteria
+from scoring import LynchCriteria
 from earnings_analyzer import EarningsAnalyzer
 
 logger = logging.getLogger(__name__)

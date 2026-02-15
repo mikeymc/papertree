@@ -66,7 +66,7 @@ class ScoringMixin:
 
     def _get_scoring_thresholds(self, conditions: Dict[str, Any], is_addition: bool) -> tuple[int, int]:
         """Determine Lynch and Buffett score thresholds based on conditions."""
-        from lynch_criteria import SCORE_THRESHOLDS
+        from scoring.core import SCORE_THRESHOLDS
 
         scoring_reqs = conditions.get('scoring_requirements', [])
         default_min = SCORE_THRESHOLDS.get('BUY', 60)
@@ -104,7 +104,7 @@ class ScoringMixin:
     def _load_candidate_data(self, candidates: List[str], run_id: int):
         """Load vectorized stock data for candidates."""
         import pandas as pd
-        from stock_vectors import StockVectors
+        from scoring.vectors import StockVectors
 
         print(f"  Loading stock data for {len(candidates)} candidates...")
 
@@ -127,7 +127,7 @@ class ScoringMixin:
 
     def _calculate_batch_scores(self, df):
         """Calculate Lynch and Buffett scores for the dataframe."""
-        from stock_vectors import DEFAULT_ALGORITHM_CONFIG
+        from scoring.vectors import DEFAULT_ALGORITHM_CONFIG
         from characters.buffett import BUFFETT
 
         # Score with Lynch

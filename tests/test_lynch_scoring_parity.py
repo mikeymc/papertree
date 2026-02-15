@@ -34,8 +34,8 @@ def db_and_criteria():
     try:
         from database import Database
         from earnings_analyzer import EarningsAnalyzer
-        from lynch_criteria import LynchCriteria
-        from stock_vectors import StockVectors
+        from scoring import LynchCriteria
+        from scoring.vectors import StockVectors
 
         db = Database()
         # Quick connectivity check

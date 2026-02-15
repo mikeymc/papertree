@@ -6,7 +6,7 @@ different stock scenarios.
 
 import pytest
 from unittest.mock import Mock, MagicMock
-from lynch_criteria import LynchCriteria, ALGORITHM_METADATA
+from scoring import LynchCriteria
 
 
 class TestAlgorithmMetadata:
