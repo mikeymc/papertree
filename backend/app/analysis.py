@@ -314,12 +314,9 @@ def get_stock_thesis(symbol, user_id):
             return jsonify({'error': f'No historical data for {symbol}'}), 404
 
         # Prepare stock data for analysis
-        if character_id == 'lynch':
-            _df = deps.stock_vectors.load_vectors()
-            _row = _df[_df['symbol'] == symbol]
-            evaluation = deps.criteria.evaluate_batch(_row, config).iloc[0].to_dict() if not _row.empty else None
-        else:
-            evaluation = deps.criteria.evaluate_stock(symbol, overrides=config, character_id=character_id)
+        _df = deps.stock_vectors.load_vectors()
+        _row = _df[_df['symbol'] == symbol]
+        evaluation = deps.criteria.evaluate_batch(_row, config).iloc[0].to_dict() if not _row.empty else None
         stock_data = {
             **stock_metrics,
             'peg_ratio': evaluation.get('peg_ratio') if evaluation else None,
@@ -435,12 +432,9 @@ def refresh_stock_thesis(symbol, user_id):
         return jsonify({'error': f'No historical data for {symbol}'}), 404
 
     # Prepare stock data for analysis
-    if character_id == 'lynch':
-        _df = deps.stock_vectors.load_vectors()
-        _row = _df[_df['symbol'] == symbol]
-        evaluation = deps.criteria.evaluate_batch(_row, scoring_config).iloc[0].to_dict() if not _row.empty else None
-    else:
-        evaluation = deps.criteria.evaluate_stock(symbol, overrides=scoring_config, character_id=character_id)
+    _df = deps.stock_vectors.load_vectors()
+    _row = _df[_df['symbol'] == symbol]
+    evaluation = deps.criteria.evaluate_batch(_row, scoring_config).iloc[0].to_dict() if not _row.empty else None
     stock_data = {
         **stock_metrics,
         'peg_ratio': evaluation.get('peg_ratio') if evaluation else None,
@@ -543,12 +537,9 @@ def get_unified_chart_analysis(symbol, user_id):
     character_id, scoring_config = resolve_scoring_config(user_id, character_id)
 
     # Prepare stock data for analysis
-    if character_id == 'lynch':
-        _df = deps.stock_vectors.load_vectors()
-        _row = _df[_df['symbol'] == symbol]
-        evaluation = deps.criteria.evaluate_batch(_row, scoring_config).iloc[0].to_dict() if not _row.empty else None
-    else:
-        evaluation = deps.criteria.evaluate_stock(symbol, overrides=scoring_config, character_id=character_id)
+    _df = deps.stock_vectors.load_vectors()
+    _row = _df[_df['symbol'] == symbol]
+    evaluation = deps.criteria.evaluate_batch(_row, scoring_config).iloc[0].to_dict() if not _row.empty else None
     stock_data = {
         **stock_metrics,
         'peg_ratio': evaluation.get('peg_ratio') if evaluation else None,
@@ -672,12 +663,9 @@ def get_dcf_recommendations(symbol, user_id):
     # Resolve character and scoring configuration using the shared helper
     character_id, scoring_config = resolve_scoring_config(user_id)
     # Prepare stock data for analysis
-    if character_id == 'lynch':
-        _df = deps.stock_vectors.load_vectors()
-        _row = _df[_df['symbol'] == symbol]
-        evaluation = deps.criteria.evaluate_batch(_row, scoring_config).iloc[0].to_dict() if not _row.empty else None
-    else:
-        evaluation = deps.criteria.evaluate_stock(symbol, overrides=scoring_config, character_id=character_id)
+    _df = deps.stock_vectors.load_vectors()
+    _row = _df[_df['symbol'] == symbol]
+    evaluation = deps.criteria.evaluate_batch(_row, scoring_config).iloc[0].to_dict() if not _row.empty else None
     stock_data = {
         **stock_metrics,
         'peg_ratio': evaluation.get('peg_ratio') if evaluation else None,

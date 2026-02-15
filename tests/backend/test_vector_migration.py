@@ -203,3 +203,63 @@ class TestGetCurrentScoresUsesVectorPath:
 
         assert scores == {}
         mock_criteria.evaluate_batch.assert_not_called()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# API endpoints — no scalar evaluate_stock for any character
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestApiEndpointsUseVectorPath:
+    """API stock/batch/analysis endpoints must use evaluate_batch for all characters."""
+
+    @pytest.fixture(autouse=True)
+    def setup_mocks(self):
+        """Patch deps for each test."""
+        import app as app_module
+
+        self.mock_criteria = MagicMock()
+        self.mock_sv = MagicMock()
+        scored_row = pd.DataFrame([{
+            'symbol': 'AAPL',
+            'overall_score': 70.0,
+            'overall_status': 'BUY',
+            'company_name': 'Apple Inc',
+        }])
+        self.mock_criteria.evaluate_batch.return_value = scored_row
+        self.mock_criteria.evaluate_stock.return_value = {'overall_score': 70.0, 'overall_status': 'BUY'}
+        self.mock_sv.load_vectors.return_value = scored_row.copy()
+
+        mock_fetcher = MagicMock()
+        mock_fetcher.fetch_stock_data.return_value = {'symbol': 'AAPL', 'price': 150.0}
+
+        app_module.deps.criteria = self.mock_criteria
+        app_module.deps.stock_vectors = self.mock_sv
+        app_module.deps.fetcher = mock_fetcher
+        app_module.deps.db = MagicMock()
+
+    def test_get_stock_buffett_uses_evaluate_batch(self):
+        """GET /api/stock/<symbol>?character=buffett must call evaluate_batch, not evaluate_stock."""
+        from app import app as flask_app
+
+        flask_app.config['TESTING'] = True
+        with flask_app.test_client() as client:
+            with patch('app.stocks.resolve_scoring_config', return_value=('buffett', {})):
+                client.get('/api/stock/AAPL?character=buffett')
+
+        self.mock_criteria.evaluate_stock.assert_not_called()
+        self.mock_criteria.evaluate_batch.assert_called()
+
+    def test_batch_stocks_buffett_uses_evaluate_batch(self):
+        """POST /api/stocks/batch with buffett character must call evaluate_batch, not evaluate_stock."""
+        from app import app as flask_app
+
+        flask_app.config['TESTING'] = True
+        with flask_app.test_client() as client:
+            with patch('app.stocks.resolve_scoring_config', return_value=('buffett', {})):
+                client.post(
+                    '/api/stocks/batch',
+                    json={'symbols': ['AAPL']},
+                    content_type='application/json'
+                )
+
+        self.mock_criteria.evaluate_stock.assert_not_called()

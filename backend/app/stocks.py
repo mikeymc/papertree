@@ -6,7 +6,6 @@ from app import deps
 from app.helpers import clean_nan_values
 from app.scoring import resolve_scoring_config
 from auth import require_user_auth
-from characters import get_character
 from data_fetcher import DataFetcher
 from wacc_calculator import calculate_wacc
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -38,24 +37,18 @@ def get_stock(symbol):
     user_id = session.get('user_id')
     active_character, config = resolve_scoring_config(user_id, request.args.get('character'))
 
-    if active_character == 'lynch':
-        # Lynch: use vector engine (proven identical to scalar, faster via caching)
+    df = deps.stock_vectors.load_vectors()
+    row_df = df[df['symbol'] == symbol.upper()]
+    if row_df.empty:
+        # Stock was just fetched and written to DB — reload vectors
+        deps.stock_vectors.invalidate_cache()
         df = deps.stock_vectors.load_vectors()
         row_df = df[df['symbol'] == symbol.upper()]
-        if row_df.empty:
-            # Stock was just fetched and written to DB — reload vectors
-            deps.stock_vectors.invalidate_cache()
-            df = deps.stock_vectors.load_vectors()
-            row_df = df[df['symbol'] == symbol.upper()]
-        if not row_df.empty:
-            scored = deps.criteria.evaluate_batch(row_df, config)
-            evaluation = clean_nan_values(scored.iloc[0].to_dict())
-        else:
-            evaluation = None
+    if not row_df.empty:
+        scored = deps.criteria.evaluate_batch(row_df, config)
+        evaluation = clean_nan_values(scored.iloc[0].to_dict())
     else:
-        evaluation = deps.criteria.evaluate_stock(
-            symbol.upper(), algorithm=algorithm, overrides=config, character_id=active_character
-        )
+        evaluation = None
 
     return jsonify({
         'stock_data': clean_nan_values(stock_data),
@@ -82,15 +75,14 @@ def batch_get_stocks():
         active_character, config = resolve_scoring_config(user_id, None)
         symbols_upper = [s.upper() for s in symbols]
 
-        # Pre-score all requested symbols using vector engine (Lynch only)
+        # Pre-score all requested symbols using vector engine
         evaluations = {}
-        if active_character == 'lynch':
-            df = deps.stock_vectors.load_vectors()
-            filtered_df = df[df['symbol'].isin(symbols_upper)]
-            if not filtered_df.empty:
-                scored_df = deps.criteria.evaluate_batch(filtered_df, config)
-                for _, row in scored_df.iterrows():
-                    evaluations[row['symbol']] = clean_nan_values(row.to_dict())
+        df = deps.stock_vectors.load_vectors()
+        filtered_df = df[df['symbol'].isin(symbols_upper)]
+        if not filtered_df.empty:
+            scored_df = deps.criteria.evaluate_batch(filtered_df, config)
+            for _, row in scored_df.iterrows():
+                evaluations[row['symbol']] = clean_nan_values(row.to_dict())
 
         results = []
 
@@ -102,11 +94,7 @@ def batch_get_stocks():
                 if not stock_data:
                     return None
 
-                if active_character == 'lynch':
-                    evaluation = evaluations.get(symbol.upper())
-                else:
-                    evaluation = deps.criteria.evaluate_stock(symbol.upper(), algorithm=algorithm,
-                                                              character_id=active_character)
+                evaluation = evaluations.get(symbol.upper())
 
                 if evaluation:
                     # Prefer evaluation data but fallback to stock_data
@@ -225,11 +213,7 @@ def search_stocks_endpoint():
 @stocks_bp.route('/api/sessions/latest', methods=['GET'])
 @require_user_auth
 def get_latest_session(user_id):
-    """Get the most recent screening session with paginated, sorted results.
-
-    Uses vectorized scoring for Lynch (performance), falls back to database-based
-    character scoring for Buffett and other characters.
-    """
+    """Get the most recent screening session with paginated, sorted results."""
     # Get optional query parameters
     search = request.args.get('search', None)
     page = request.args.get('page', 1, type=int)
@@ -239,192 +223,82 @@ def get_latest_session(user_id):
     status_filter = request.args.get('status', None)
     # Resolve character and scoring configuration using the shared helper
     character_id, config = resolve_scoring_config(user_id, request.args.get('character'))
-    character = get_character(character_id)
 
     # Check if US-only filter is enabled (default: True for production)
     us_stocks_only = deps.db.get_setting('us_stocks_only', True)
     country_filter = 'US' if us_stocks_only else None
 
-    # HYBRID APPROACH: Use vectorized for Lynch/Buffett, database for other characters
-    if character_id in ['lynch', 'buffett']:
-        try:
-            # Load and score using vectorized engine
-            df = deps.stock_vectors.load_vectors(country_filter)
-            scored_df = deps.criteria.evaluate_batch(df, config)
+    try:
+        # Load and score using vectorized engine
+        df = deps.stock_vectors.load_vectors(country_filter)
+        scored_df = deps.criteria.evaluate_batch(df, config)
 
-            # Apply Status Filter
-            if status_filter and status_filter.upper() != 'ALL':
-                scored_df = scored_df[scored_df['overall_status'] == status_filter.upper()]
+        # Apply Status Filter
+        if status_filter and status_filter.upper() != 'ALL':
+            scored_df = scored_df[scored_df['overall_status'] == status_filter.upper()]
 
-            # Apply search filter
-            if search:
-                search_lower = search.lower()
-                mask = (
-                    scored_df['symbol'].str.lower().str.contains(search_lower) |
-                    scored_df['company_name'].fillna('').str.lower().str.contains(search_lower)
-                )
-                scored_df = scored_df[mask]
+        # Apply search filter
+        if search:
+            search_lower = search.lower()
+            mask = (
+                scored_df['symbol'].str.lower().str.contains(search_lower) |
+                scored_df['company_name'].fillna('').str.lower().str.contains(search_lower)
+            )
+            scored_df = scored_df[mask]
 
-            # Apply Sorting
-            if sort_by in scored_df.columns:
-                ascending = sort_dir.lower() == 'asc'
-                scored_df = scored_df.sort_values(sort_by, ascending=ascending, na_position='last')
+        # Apply Sorting
+        if sort_by in scored_df.columns:
+            ascending = sort_dir.lower() == 'asc'
+            scored_df = scored_df.sort_values(sort_by, ascending=ascending, na_position='last')
 
-            # Pagination
-            total_count = len(scored_df)
-            offset = (page - 1) * limit
-            paginated_df = scored_df.iloc[offset:offset + limit]
+        # Pagination
+        total_count = len(scored_df)
+        offset = (page - 1) * limit
+        paginated_df = scored_df.iloc[offset:offset + limit]
 
-            # Convert to records
-            results = paginated_df.to_dict(orient='records')
+        # Convert to records
+        results = paginated_df.to_dict(orient='records')
 
-            # Clean NaNs
-            cleaned_results = []
-            for result in results:
-                cleaned = {}
-                for key, value in result.items():
-                    if pd.isna(value):
-                        cleaned[key] = None
-                    elif isinstance(value, (np.floating, np.integer)):
-                        cleaned[key] = float(value) if np.isfinite(value) else None
-                    else:
-                        cleaned[key] = value
-                cleaned_results.append(cleaned)
-
-            # Count statuses
-            status_counts = scored_df['overall_status'].value_counts().to_dict()
-            # Ensure all keys exist
-            for status in ['STRONG_BUY', 'BUY', 'HOLD', 'CAUTION', 'AVOID']:
-                if status not in status_counts:
-                    status_counts[status] = 0
-
-            return jsonify({
-                'results': cleaned_results,
-                'total_count': total_count,
-                'total_pages': (total_count + limit - 1) // limit,
-                'current_page': page,
-                'limit': limit,
-                'status_counts': status_counts,
-                'active_character': character_id,
-                'session_id': 0,  # Dummy ID since this is dynamic
-                '_meta': {
-                    'source': 'vectorized_engine',
-                    'timestamp': datetime.now().isoformat()
-                }
-            })
-
-        except Exception as e:
-            logger.error(f"Error in vectorized session: {e}")
-            import traceback
-            traceback.print_exc()
-            return jsonify({'error': str(e)}), 500
-
-    else:
-        # --- DATABASE PATH (for character-aware scoring) ---
-        # IMPORTANT: For character scoring, we need to fetch ALL results, re-score them,
-        # re-sort by the new scores, THEN paginate. Otherwise pagination happens on
-        # Lynch scores and we get wrong ordering after Buffett re-scoring.
-        session_data = deps.db.get_latest_session(
-            search=search,
-            page=1,  # Fetch from page 1
-            limit=10000,  # Fetch all results (large limit)
-            sort_by='overall_score',  # Sort doesn't matter, we'll re-sort after scoring
-            sort_dir='desc',
-            country_filter=country_filter
-        )
-
-        if not session_data:
-            return jsonify({'error': 'No screening sessions found'}), 404
-
-        # Enrich results with on-the-fly computed metrics
-        if 'results' in session_data:
-            # Import character scoring module
-            from character_scoring import apply_character_scoring
-
-            for result in session_data['results']:
-                symbol = result.get('symbol')
-
-                # Compute P/E range position from cached weekly prices
-                pe_range = deps.criteria.metric_calculator.calculate_pe_52_week_range(symbol, result)
-                result['pe_52_week_min'] = pe_range.get('pe_52_week_min')
-                result['pe_52_week_max'] = pe_range.get('pe_52_week_max')
-                result['pe_52_week_position'] = pe_range.get('pe_52_week_position')
-
-                # Compute consistency scores from earnings history
-                growth_data = deps.analyzer.calculate_earnings_growth(symbol)
-                if growth_data:
-                    # Normalize to 0-100 scale (100 = best consistency)
-                    raw_income = growth_data.get('income_consistency_score')
-                    raw_revenue = growth_data.get('revenue_consistency_score')
-                    result['income_consistency_score'] = max(0.0, 100.0 - (raw_income * 2.0)) if raw_income is not None else None
-                    result['revenue_consistency_score'] = max(0.0, 100.0 - (raw_revenue * 2.0)) if raw_revenue is not None else None
+        # Clean NaNs
+        cleaned_results = []
+        for result in results:
+            cleaned = {}
+            for key, value in result.items():
+                if pd.isna(value):
+                    cleaned[key] = None
+                elif isinstance(value, (np.floating, np.integer)):
+                    cleaned[key] = float(value) if np.isfinite(value) else None
                 else:
-                    result['income_consistency_score'] = None
-                    result['revenue_consistency_score'] = None
+                    cleaned[key] = value
+            cleaned_results.append(cleaned)
 
-            # Apply character-specific scoring to all results
-            if character:
-                session_data['results'] = [
-                    apply_character_scoring(result, character)
-                    for result in session_data['results']
-                ]
+        # Count statuses
+        status_counts = scored_df['overall_status'].value_counts().to_dict()
+        # Ensure all keys exist
+        for status in ['STRONG_BUY', 'BUY', 'HOLD', 'CAUTION', 'AVOID']:
+            if status not in status_counts:
+                status_counts[status] = 0
 
-                # CRITICAL: Re-sort after character scoring since scores have changed
-                # The database sorted by Lynch scores, but we just replaced them with character scores
-                reverse = (sort_dir.lower() == 'desc')
-                if sort_by == 'overall_score':
-                    # Sort by numeric score
-                    session_data['results'].sort(
-                        key=lambda x: x.get('overall_score') if x.get('overall_score') is not None else -1,
-                        reverse=reverse
-                    )
-                elif sort_by == 'overall_status':
-                    # Sort by status rank
-                    status_rank = {
-                        'STRONG_BUY': 5, 'BUY': 4, 'HOLD': 3, 'CAUTION': 2, 'AVOID': 1
-                    }
-                    session_data['results'].sort(
-                        key=lambda x: status_rank.get(x.get('overall_status'), 0),
-                        reverse=reverse
-                    )
-                else:
-                    # Sort by other columns (metric scores, etc.)
-                    session_data['results'].sort(
-                        key=lambda x: x.get(sort_by) if x.get(sort_by) is not None else -1,
-                        reverse=reverse
-                    )
+        return jsonify({
+            'results': cleaned_results,
+            'total_count': total_count,
+            'total_pages': (total_count + limit - 1) // limit,
+            'current_page': page,
+            'limit': limit,
+            'status_counts': status_counts,
+            'active_character': character_id,
+            'session_id': 0,  # Dummy ID since this is dynamic
+            '_meta': {
+                'source': 'vectorized_engine',
+                'timestamp': datetime.now().isoformat()
+            }
+        })
 
-            # Clean NaN values in results
-            all_results = [clean_nan_values(result) for result in session_data['results']]
-
-            # Calculate status counts from ALL results (before pagination)
-            status_counts = {}
-            for result in all_results:
-                status = result.get('overall_status')
-                if status:
-                    status_counts[status] = status_counts.get(status, 0) + 1
-
-            # Ensure all status keys exist
-            for status in ['STRONG_BUY', 'BUY', 'HOLD', 'CAUTION', 'AVOID']:
-                if status not in status_counts:
-                    status_counts[status] = 0
-
-            # NOW paginate after re-scoring and re-sorting
-            total_count = len(all_results)
-            offset = (page - 1) * limit
-            paginated_results = all_results[offset:offset + limit]
-
-            session_data['results'] = paginated_results
-            session_data['total_count'] = total_count
-            session_data['total_pages'] = (total_count + limit - 1) // limit
-            session_data['current_page'] = page
-            session_data['limit'] = limit
-            session_data['status_counts'] = status_counts
-
-        # Include character info in response
-        session_data['active_character'] = character_id
-
-        return jsonify(session_data)
+    except Exception as e:
+        logger.error(f"Error in vectorized session: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @stocks_bp.route('/api/stock/<symbol>/history', methods=['GET'])
