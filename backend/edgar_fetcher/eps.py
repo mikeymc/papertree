@@ -72,7 +72,7 @@ class EPSMixin:
 
         # Convert dict to list and sort by year descending
         annual_eps = list(annual_eps_by_year.values())
-        annual_eps.sort(key=lambda x: x['year'], reverse=True)
+        annual_eps.sort(key=lambda x: x['year'] or 0, reverse=True)
         logger.info(f"Successfully parsed {len(annual_eps)} years of EPS data from EDGAR")
         return annual_eps
 
@@ -337,7 +337,7 @@ class EPSMixin:
                     })
 
         # Sort by year descending
-        eps_history.sort(key=lambda x: x['year'], reverse=True)
+        eps_history.sort(key=lambda x: x['year'] or 0, reverse=True)
         logger.info(f"Successfully calculated {len(eps_history)} years of split-adjusted EPS")
         return eps_history
 
@@ -369,7 +369,7 @@ class EPSMixin:
                         'fiscal_end': ni['fiscal_end']
                     })
 
-        eps_history.sort(key=lambda x: (x['year'], x['quarter']), reverse=True)
+        eps_history.sort(key=lambda x: (x['year'] or 0, x['quarter'] or ''), reverse=True)
         return eps_history
 
     def calculate_split_adjusted_quarterly_eps_history(self, company_facts: Dict[str, Any]) -> List[Dict[str, Any]]:

@@ -108,7 +108,7 @@ class SharesMixin:
 
         # Convert dict to list and sort by year descending
         annual_shares = list(annual_shares_by_year.values())
-        annual_shares.sort(key=lambda x: x['year'], reverse=True)
+        annual_shares.sort(key=lambda x: x['year'] or 0, reverse=True)
 
         # Normalize shares units: EDGAR reports shares in inconsistent units
         # Some companies report in millions (e.g., 721.9) vs actual count (e.g., 721,900,000)

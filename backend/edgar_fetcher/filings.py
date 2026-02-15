@@ -400,7 +400,7 @@ class FilingsMixin:
         dividends = list(dividends_dict.values())
 
         # Sort by year descending
-        dividends.sort(key=lambda x: x['year'], reverse=True)
+        dividends.sort(key=lambda x: x['year'] or 0, reverse=True)
 
         logger.info(f"Successfully parsed {len(dividends)} dividend entries from EDGAR")
         return dividends

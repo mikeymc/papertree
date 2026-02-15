@@ -159,7 +159,7 @@ class RevenueMixin:
 
         # Convert dict to list and sort by year descending
         annual_revenue = list(by_year.values())
-        annual_revenue.sort(key=lambda x: x['year'], reverse=True)
+        annual_revenue.sort(key=lambda x: x['year'] or 0, reverse=True)
         logger.info(f"Successfully parsed {len(annual_revenue)} years of revenue data from {len(fields_found)} field(s): {', '.join(fields_found)}")
         return annual_revenue
 

@@ -115,7 +115,7 @@ class IncomeMixin:
 
         # Convert dict to list and sort by year descending
         annual_net_income = list(by_year.values())
-        annual_net_income.sort(key=lambda x: x['year'], reverse=True)
+        annual_net_income.sort(key=lambda x: x['year'] or 0, reverse=True)
         logger.info(f"Successfully parsed {len(annual_net_income)} years of Net Income data from EDGAR")
         return annual_net_income
 

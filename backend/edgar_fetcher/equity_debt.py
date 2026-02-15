@@ -90,7 +90,7 @@ class EquityDebtMixin:
             {'year': year, 'shareholder_equity': data['val'], 'fiscal_end': data['fiscal_end']}
             for year, data in merged_by_year.items()
         ]
-        annual_equity.sort(key=lambda x: x['year'], reverse=True)
+        annual_equity.sort(key=lambda x: x['year'] or 0, reverse=True)
 
         logger.info(f"Successfully parsed {len(annual_equity)} years of Shareholder Equity from EDGAR")
         return annual_equity
@@ -436,7 +436,7 @@ class EquityDebtMixin:
                     })
 
             # Sort by year descending
-            debt_to_equity_history.sort(key=lambda x: x['year'], reverse=True)
+            debt_to_equity_history.sort(key=lambda x: x['year'] or 0, reverse=True)
             logger.info(f"Successfully parsed {len(debt_to_equity_history)} years of D/E ratio data from EDGAR")
             return debt_to_equity_history
 

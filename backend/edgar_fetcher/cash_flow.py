@@ -168,7 +168,7 @@ class CashFlowMixin:
                 'fiscal_end': fiscal_end
             })
 
-        cash_flow_history.sort(key=lambda x: x['year'], reverse=True)
+        cash_flow_history.sort(key=lambda x: x['year'] or 0, reverse=True)
         logger.info(f"Successfully parsed {len(cash_flow_history)} years of Cash Flow data")
         return cash_flow_history
 
@@ -491,7 +491,7 @@ class CashFlowMixin:
                         merged_by_year[year] = data
         
         annual_cash = list(merged_by_year.values())
-        annual_cash.sort(key=lambda x: x['year'], reverse=True)
+        annual_cash.sort(key=lambda x: x['year'] or 0, reverse=True)
 
         # Log which tags contributed data
         if annual_cash and all_cash_data:
