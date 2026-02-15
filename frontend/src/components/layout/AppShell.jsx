@@ -252,7 +252,7 @@ function AppShellContent({
                                             isActive={isStocksPage && filter === 'all'}
                                             className="pl-4 font-normal text-muted-foreground data-[active=true]:font-medium data-[active=true]:text-sidebar-primary"
                                         >
-                                            <span>All Stocks</span>
+                                            <span>Stocks</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                     <SidebarMenuItem>
