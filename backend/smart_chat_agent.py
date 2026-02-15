@@ -219,7 +219,8 @@ class SmartChatAgent:
         user_message: str,
         conversation_history: Optional[List[Dict[str, str]]] = None,
         user_id: Optional[int] = None,
-        character_id: Optional[str] = None
+        character_id: Optional[str] = None,
+        retries_left: int = 1
     ) -> Dict[str, Any]:
         """
         Process a user message and return an agent response.
@@ -230,6 +231,7 @@ class SmartChatAgent:
             conversation_history: Optional list of previous messages
             user_id: Optional user ID for personalized character
             character_id: Optional character ID from request
+            retries_left: Number of retries allowed for iteration limit
 
         Returns:
             Dict with 'response', 'tool_calls', and 'iterations'
@@ -371,6 +373,7 @@ class SmartChatAgent:
                 text_parts = [p for p in parts if hasattr(p, 'text') and p.text]
                 if text_parts:
                     final_response = "".join(p.text for p in text_parts)
+                    logger.info(f"[Agent] Finished after {iterations} iterations.")
                     return {
                         "response": final_response,
                         "tool_calls": tool_calls_log,
@@ -378,7 +381,8 @@ class SmartChatAgent:
                     }
             
             # Fallback: if we get here, something unexpected happened
-            if response.text:
+            if hasattr(response, 'text') and response.text:
+                logger.info(f"[Agent] Finished with fallback text after {iterations} iterations.")
                 return {
                     "response": response.text,
                     "tool_calls": tool_calls_log,
@@ -389,6 +393,11 @@ class SmartChatAgent:
             break
         
         # Max iterations reached or no response
+        if retries_left > 0:
+            logger.warning(f"Max iterations ({MAX_ITERATIONS}) reached in chat. Retrying ({retries_left} left)...")
+            return self.chat(primary_symbol, user_message, conversation_history, user_id, character_id, retries_left=retries_left - 1)
+
+        logger.error(f"Max iterations ({MAX_ITERATIONS}) reached in chat after retries.")
         return {
             "response": "I was unable to fully answer your question after multiple attempts. Please try rephrasing or asking a simpler question.",
             "tool_calls": tool_calls_log,
@@ -401,7 +410,8 @@ class SmartChatAgent:
         user_message: str,
         conversation_history: Optional[List[Dict[str, str]]] = None,
         user_id: Optional[int] = None,
-        character_id: Optional[str] = None
+        character_id: Optional[str] = None,
+        retries_left: int = 1
     ) -> Generator[Dict[str, Any], None, None]:
         """
         Stream a chat response with real-time token yield.
@@ -435,10 +445,12 @@ class SmartChatAgent:
         config = GenerateContentConfig(
             system_instruction=system_prompt,
             tools=[tools],
+            temperature=0.3,
         )
         
         tool_calls_log = []
         iterations = 0
+        retries_left = 1
         
         while iterations < MAX_ITERATIONS:
             iterations += 1
@@ -543,6 +555,7 @@ class SmartChatAgent:
                             yield {"type": "token", "data": text[i:i+chunk_size]}
                             time.sleep(0.015)  # 15ms delay between chunks
                     
+                    logger.info(f"[Agent] Finished streaming after {iterations} iterations.")
                     yield {"type": "done", "data": {"tool_calls": tool_calls_log, "iterations": iterations}}
                     return
             
@@ -553,10 +566,18 @@ class SmartChatAgent:
                 for i in range(0, len(text), chunk_size):
                     yield {"type": "token", "data": text[i:i+chunk_size]}
                     time.sleep(0.015)
+                logger.info(f"[Agent] Finished streaming with fallback text after {iterations} iterations.")
                 yield {"type": "done", "data": {"tool_calls": tool_calls_log, "iterations": iterations}}
                 return
             
             break
         
+        if retries_left > 0:
+            logger.warning(f"Max LLM iterations reached in chat_stream. Retrying ({retries_left} left)...")
+            yield {"type": "thinking", "data": "Max reasoning steps reached. Starting a fresh attempt to find your answer..."}
+            yield from self.chat_stream(primary_symbol, user_message, conversation_history, user_id, character_id, retries_left=retries_left - 1)
+            return
+
+        logger.error(f"Max LLM iterations reached in chat_stream after retries.")
         yield {"type": "error", "data": "Max LLM iterations reached. Please try your request again or ask it in a different way."}
         yield {"type": "done", "data": {"tool_calls": tool_calls_log, "iterations": iterations}}
