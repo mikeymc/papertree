@@ -1069,8 +1069,9 @@ class FundamentalsMixin:
             merged.update(recent_by_key)
 
             # Convert back to list and sort by date (newest first)
+            # Use empty string as fallback so None values sort to the end
             result = list(merged.values())
-            result.sort(key=lambda x: (x['year'], x['quarter']), reverse=True)
+            result.sort(key=lambda x: (x['year'] if x['year'] is not None else 0, x['quarter'] or ''), reverse=True)
             return result
 
         # Merge each metric
@@ -1174,6 +1175,7 @@ class FundamentalsMixin:
         merged.update(recent_by_key)
 
         # Convert back to list and sort by date (newest first)
+        # Use empty string as fallback so None values sort to the end
         result = list(merged.values())
-        result.sort(key=lambda x: (x['year'], x['quarter']), reverse=True)
+        result.sort(key=lambda x: (x['year'] if x['year'] is not None else 0, x['quarter'] or ''), reverse=True)
         return result

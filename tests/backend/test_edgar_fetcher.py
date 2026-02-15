@@ -1110,3 +1110,31 @@ def test_parse_quarterly_net_income_accepts_all_mathematically_valid_data(edgar_
     # Sum should equal annual
     total = sum(quarters_dict.values())
     assert total == 500000000
+
+
+def test_merge_quarterly_data_with_none_quarter(edgar_fetcher):
+    """merge_quarterly_data must not crash when a record has None quarter."""
+    recent = [
+        {'year': 2023, 'quarter': 'Q3', 'net_income': 100},
+        {'year': 2023, 'quarter': None, 'net_income': 50},  # malformed record
+    ]
+    historical = [
+        {'year': 2022, 'quarter': 'Q4', 'net_income': 80},
+    ]
+    # Should not raise TypeError
+    result = edgar_fetcher.merge_quarterly_data(recent, historical)
+    assert isinstance(result, list)
+    assert len(result) == 3
+
+
+def test_merge_quarterly_data_with_none_year(edgar_fetcher):
+    """merge_quarterly_data must not crash when a record has None year."""
+    recent = [
+        {'year': 2023, 'quarter': 'Q1', 'net_income': 100},
+    ]
+    historical = [
+        {'year': None, 'quarter': 'Q2', 'net_income': 60},  # malformed record
+    ]
+    result = edgar_fetcher.merge_quarterly_data(recent, historical)
+    assert isinstance(result, list)
+    assert len(result) == 2
