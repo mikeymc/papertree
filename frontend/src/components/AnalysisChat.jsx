@@ -973,7 +973,7 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
       {/* Messages area wrapper - relative for scroll indicator positioning */}
       <div className="flex-1 relative overflow-hidden">
         <div
-          className="absolute inset-0 overflow-y-auto p-4 space-y-2"
+          className="absolute inset-0 overflow-y-auto p-3 sm:p-4 space-y-2"
           ref={messagesContainerRef}
           onScroll={handleScroll}
         >
@@ -1048,7 +1048,7 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
       </div>
 
       {/* Chat input - always visible at bottom */}
-      <div className="p-4 border-t bg-background">
+      <div className="p-3 sm:p-4 border-t bg-background">
         <div className="flex items-center mb-3">
           <Button
             variant="ghost"

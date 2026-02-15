@@ -35,7 +35,8 @@ import {
 } from "@/components/ui/resizable"
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet'
+import { X } from 'lucide-react'
 
 // Icons
 const ChevronDown = () => <span className="text-xs">▼</span>
@@ -645,9 +646,15 @@ function AppShellContent({
                                     <MessageSquare />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0">
-                                <SheetHeader className="px-4 py-3 border-b">
+                            <SheetContent side="right" className="w-full max-w-full sm:w-[540px] p-0" hideClose>
+                                <SheetHeader className="px-4 py-3 border-b flex-row items-center justify-between space-y-0">
                                     <SheetTitle>{chatTitle}</SheetTitle>
+                                    <SheetClose asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                                            <X className="h-4 w-4" />
+                                            <span className="sr-only">Close</span>
+                                        </Button>
+                                    </SheetClose>
                                 </SheetHeader>
                                 <div className="flex flex-col h-[calc(100%-60px)]">
                                     <AnalysisChat
