@@ -35,11 +35,11 @@ const API_BASE = '/api'
 // Configuration for the 3 distinct sections
 const DASHBOARD_SECTIONS = [
   {
-    id: 'consumer',
-    title: 'Consumer',
+    id: 'rates',
+    title: 'Rates & Inflation',
     description: '',
-    color: 'rgb(236, 72, 153)', // Pink
-    series: ['RSXFS', 'TOTALSA', 'UMCSENT', 'HOUST', 'PSAVERT', 'DRCCLACBS', 'DRSFRMACBS', 'DRCLACBS', 'ICSA']
+    color: 'rgb(20, 184, 166)', // Teal
+    series: ['FEDFUNDS', 'DGS10', 'BAA10Y', 'CPIAUCSL', 'PPIACO', 'T10Y2Y', 'VIXCLS']
   },
   {
     id: 'corporate',
@@ -49,11 +49,11 @@ const DASHBOARD_SECTIONS = [
     series: ['GDP', 'CP', 'TSIFRGHT', 'RETAILIRSA', 'M2SL', 'UNRATE']
   },
   {
-    id: 'rates',
-    title: 'Rates & Inflation',
+    id: 'consumer',
+    title: 'Consumer',
     description: '',
-    color: 'rgb(20, 184, 166)', // Teal
-    series: ['FEDFUNDS', 'DGS10', 'BAA10Y', 'CPIAUCSL', 'PPIACO', 'T10Y2Y', 'VIXCLS']
+    color: 'rgb(236, 72, 153)', // Pink
+    series: ['RSXFS', 'TOTALSA', 'UMCSENT', 'HOUST', 'PSAVERT', 'DRCCLACBS', 'DRSFRMACBS', 'DRCLACBS', 'ICSA']
   }
 ]
 
@@ -347,14 +347,6 @@ export default function Economy() {
 
   return (
     <div className="flex flex-col w-full min-h-full p-6 space-y-12 max-w-[1600px] mx-auto pb-20">
-
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Economic Indicators</h1>
-        <p className="text-muted-foreground mt-2 text-lg">
-          {dashboardData?.fetched_at ? new Date(dashboardData.fetched_at).toLocaleDateString() : ''}
-        </p>
-      </div>
 
       {DASHBOARD_SECTIONS.map(section => (
         <section key={section.id} className="space-y-6">

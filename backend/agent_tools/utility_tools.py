@@ -160,7 +160,7 @@ class UtilityToolsMixin:
 
     def _get_fred_series(self, series_id: str, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
         """Get historical observations for a FRED economic data series."""
-        fred = get_fred_service()
+        fred = get_fred_service(self.db)
         if not fred.is_available():
             return {"error": "FRED API key not configured"}
 
@@ -189,7 +189,7 @@ class UtilityToolsMixin:
 
     def _get_economic_indicators(self) -> Dict[str, Any]:
         """Get current values of key macroeconomic indicators."""
-        fred = get_fred_service()
+        fred = get_fred_service(self.db)
         if not fred.is_available():
             return {"error": "FRED API key not configured"}
 

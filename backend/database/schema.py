@@ -1170,6 +1170,15 @@ class SchemaMixin:
             )
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS fred_data_cache (
+                cache_key TEXT PRIMARY KEY,
+                cache_value JSONB NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP WITH TIME ZONE
+            )
+        """)
+
         # Migration: ensure app_settings.key has primary key (for existing databases)
         cursor.execute("""
             SELECT COUNT(*) FROM information_schema.table_constraints

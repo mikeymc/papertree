@@ -3,6 +3,8 @@
 
 import os
 import logging
+import json
+import requests
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from fredapi import Fred
@@ -188,17 +190,113 @@ CATEGORIES = {
 
 
 class FredService:
-    def __init__(self):
+    def __init__(self, db=None):
         api_key = os.environ.get('FRED_API_KEY')
+        self.db = db
         if not api_key:
             logger.warning("FRED_API_KEY not set - FRED features will not work")
             self.fred = None
         else:
             self.fred = Fred(api_key=api_key)
+            self._api_key = api_key # Store for direct requests
             logger.info("FRED service initialized")
 
     def is_available(self) -> bool:
         return self.fred is not None
+
+    def _get_cached(self, key: str) -> Optional[Dict[str, Any]]:
+        """Retrieve valid cached data from the database."""
+        if not self.db:
+            return None
+        
+        try:
+            conn = self.db.get_connection()
+            try:
+                cursor = conn.cursor()
+                # Check for cached data that hasn't expired
+                cursor.execute("""
+                    SELECT cache_value 
+                    FROM fred_data_cache 
+                    WHERE cache_key = %s AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+                """, (key,))
+                result = cursor.fetchone()
+                if result:
+                    return result[0]
+            finally:
+                self.db.return_connection(conn)
+        except Exception as e:
+            logger.error(f"Error reading FRED cache for {key}: {e}")
+        return None
+
+    def _set_cached(self, key: str, data: Dict[str, Any], expires_at: Optional[datetime] = None):
+        """Store data in the FRED cache."""
+        if not self.db:
+            return
+        
+        try:
+            # We use the background writer for efficiency
+            sql = """
+                INSERT INTO fred_data_cache (cache_key, cache_value, expires_at, updated_at)
+                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (cache_key) DO UPDATE SET
+                    cache_value = EXCLUDED.cache_value,
+                    expires_at = EXCLUDED.expires_at,
+                    updated_at = EXCLUDED.updated_at
+            """
+            from psycopg.types.json import Json
+            self.db.write_queue.put((sql, (key, Json(data), expires_at)))
+        except Exception as e:
+            logger.error(f"Error writing FRED cache for {key}: {e}")
+
+    def _get_next_release_date(self, series_id: str) -> Optional[datetime]:
+        """Fetch the next scheduled release date for a series from FRED API."""
+        if not self._api_key:
+            return None
+            
+        try:
+            # 1. Get release ID for the series
+            release_url = f"https://api.stlouisfed.org/fred/series/release?series_id={series_id}&api_key={self._api_key}&file_type=json"
+            r = requests.get(release_url, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+            
+            releases = data.get('releases', [])
+            if not releases:
+                return None
+                
+            release_id = releases[0].get('id')
+            
+            # 2. Get release dates for that release ID
+            dates_url = f"https://api.stlouisfed.org/fred/release/dates?release_id={release_id}&api_key={self._api_key}&file_type=json&include_release_dates_with_no_data=true"
+            r = requests.get(dates_url, timeout=10)
+            r.raise_for_status()
+            dates_data = r.json()
+            
+            release_dates = dates_data.get('release_dates', [])
+            
+            now = datetime.now()
+            today = now.date()
+            
+            # Find the first release date that is today or later
+            next_release = None
+            for d in release_dates:
+                dt = datetime.strptime(d['date'], '%Y-%m-%d')
+                if dt.date() >= today:
+                    if next_release is None or dt < next_release:
+                        next_release = dt
+            
+            if next_release:
+                if next_release.date() == today:
+                    # If it's today, expire in 1 hour to check back for the actual data
+                    return now + timedelta(hours=1)
+                else:
+                    # If it's in the future, the earliest future date + 1 hour buffer
+                    return next_release + timedelta(hours=1)
+                
+        except Exception as e:
+            logger.warning(f"Could not fetch next release date for {series_id}: {e}")
+            
+        return None
 
     def get_series(self, series_id: str, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
         """
@@ -287,6 +385,11 @@ class FredService:
         if not self.fred:
             return {'error': 'FRED API key not configured'}
 
+        # Check cache first
+        cached = self._get_cached('dashboard_data')
+        if cached:
+            return cached
+
         # Fetch last 10 years of data for charts (covers full business cycles)
         end_date = datetime.now()
         start_date = end_date - timedelta(days=3650)
@@ -294,6 +397,9 @@ class FredService:
 
         indicators = []
         by_category = {}
+        
+        # Track earliest next release date for global cache expiry
+        next_expiry = datetime.now() + timedelta(hours=24)
 
         for series_id, metadata in SUPPORTED_SERIES.items():
             result = self.get_series(series_id, start_date=start_str)
@@ -329,13 +435,25 @@ class FredService:
                 if cat not in by_category:
                     by_category[cat] = []
                 by_category[cat].append(indicator)
+                
+                # Check for release schedule to optimize TTL
+                # We only do this for the "big" dashboard query
+                series_next_release = self._get_next_release_date(series_id)
+                if series_next_release and series_next_release < next_expiry:
+                    next_expiry = series_next_release
 
-        return {
+        result = {
             'indicators': indicators,
             'by_category': by_category,
             'categories': CATEGORIES,
-            'fetched_at': datetime.now().isoformat()
+            'fetched_at': datetime.now().isoformat(),
+            'expires_at': next_expiry.isoformat() if next_expiry else None
         }
+        
+        # Cache the result
+        self._set_cached('dashboard_data', result, expires_at=next_expiry)
+        
+        return result
 
     def get_economic_summary(self) -> Dict[str, Any]:
         """
@@ -345,7 +463,15 @@ class FredService:
         if not self.fred:
             return {'error': 'FRED API key not configured'}
 
+        # Check cache first
+        cached = self._get_cached('economic_summary')
+        if cached:
+            return cached
+
         summary = {}
+        
+        # Track earliest next release date for global cache expiry
+        next_expiry = datetime.now() + timedelta(hours=24)
 
         for series_id, metadata in SUPPORTED_SERIES.items():
             try:
@@ -372,22 +498,34 @@ class FredService:
                             'units': metadata['units'],
                             'category': metadata['category']
                         }
+                        
+                        # Note: we don't fetch release schedule for every series in the summary
+                        # to avoid even more API calls during cache misses. 
+                        # We just use the 24h default or whatever was set by the dashboard call.
             except Exception as e:
                 logger.error(f"Error fetching {series_id} for summary: {e}")
                 continue
 
-        return {
+        result = {
             'indicators': summary,
             'fetched_at': datetime.now().isoformat()
         }
+        
+        # Cache the result (default to 24h if not already set by dashboard)
+        self._set_cached('economic_summary', result, expires_at=next_expiry)
+        
+        return result
 
 
 # Singleton instance
 _fred_service = None
 
 
-def get_fred_service() -> FredService:
+def get_fred_service(db=None) -> FredService:
     global _fred_service
     if _fred_service is None:
-        _fred_service = FredService()
+        _fred_service = FredService(db=db)
+    elif db and _fred_service.db is None:
+        # Update existing singleton if it was initialized without DB
+        _fred_service.db = db
     return _fred_service

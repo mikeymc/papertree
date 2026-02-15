@@ -38,7 +38,7 @@ def get_fred_series(series_id):
     if not fred_enabled:
         return jsonify({'error': 'FRED features are not enabled'}), 403
 
-    fred = get_fred_service()
+    fred = get_fred_service(deps.db)
     if not fred.is_available():
         return jsonify({'error': 'FRED API key not configured'}), 503
 
@@ -60,7 +60,7 @@ def get_fred_series_info(series_id):
     if not fred_enabled:
         return jsonify({'error': 'FRED features are not enabled'}), 403
 
-    fred = get_fred_service()
+    fred = get_fred_service(deps.db)
     if not fred.is_available():
         return jsonify({'error': 'FRED API key not configured'}), 503
 
@@ -79,7 +79,7 @@ def get_fred_dashboard():
     if not fred_enabled:
         return jsonify({'error': 'FRED features are not enabled'}), 403
 
-    fred = get_fred_service()
+    fred = get_fred_service(deps.db)
     if not fred.is_available():
         return jsonify({'error': 'FRED API key not configured'}), 503
 
