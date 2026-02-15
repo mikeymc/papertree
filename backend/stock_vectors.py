@@ -124,9 +124,10 @@ class StockVectors:
         """Bulk load annual earnings history for provided symbols."""
         # We fetch all necessary columns for both growth and buffett metrics
         query = """
-            SELECT 
-                symbol, year, net_income, revenue, 
-                operating_cash_flow, capital_expenditures
+            SELECT
+                symbol, year, net_income, revenue,
+                operating_cash_flow, capital_expenditures,
+                shareholder_equity
             FROM earnings_history
             WHERE period = 'annual'
             ORDER BY symbol, year
@@ -370,33 +371,34 @@ class StockVectors:
 
         merged['owner_earnings'] = merged.apply(calc_owner_earnings, axis=1)
 
-        # 3. Calculate ROE
-        # ROE = Net Income / Equity
-        # Since we don't store equity directly in stock_metrics, we derive it:
-        # Equity = Total Debt / Debt_to_Equity
-        # ROE = Net Income / (Total Debt / Debt_to_Equity) = (Net Income * Debt_to_Equity) / Total Debt
+        # 3. Calculate ROE (most recent year with both net_income and shareholder_equity)
+        # ROE = Net Income / Shareholder Equity * 100
+        # Mirrors MetricCalculator.calculate_roe() → current_roe (most recent valid year)
+        # We compute per-symbol by finding the latest row with both values non-null.
         def calc_roe(row):
             income = row['net_income']
-            debt = row['total_debt']
-            de_ratio = row['debt_to_equity']
-            
-            if pd.isna(income):
-                return None
-            
-            # Case 1: We have valid debt and D/E ratio
-            if pd.notna(debt) and pd.notna(de_ratio) and debt > 0 and de_ratio > 0:
-                equity = debt / de_ratio
-                return (income / equity) * 100
-            
-            # Case 2: Debt is 0. 
-            # If Debt is 0, D/E is 0. We can't derive equity from this.
-            # However, high quality companies often have low debt.
-            # We are stuck without direct Equity data.
-            # For now, return None. 
-            # TODO: Add 'shareholder_equity' to stock_metrics in future migration
-            return None
+            equity = row['shareholder_equity']
 
-        merged['roe'] = merged.apply(calc_roe, axis=1)
+            if pd.isna(income) or pd.isna(equity) or equity <= 0:
+                return None
+            return (income / equity) * 100
+
+        # Use all earnings rows (not just latest) to find most recent year with both values
+        roe_eligible = earnings_df[
+            earnings_df['net_income'].notna() & earnings_df['shareholder_equity'].notna()
+        ].copy()
+        # Require positive equity: matches MetricCalculator.calculate_roe() which filters equity > 0.
+        # Negative equity (e.g. from share buybacks) makes ROE mathematically misleading.
+        roe_eligible = roe_eligible[roe_eligible['shareholder_equity'] > 0]
+
+        if not roe_eligible.empty:
+            # latest() gives the last row per symbol (already sorted by year in SQL)
+            latest_with_equity = roe_eligible.groupby('symbol').last().reset_index()
+            latest_with_equity['roe'] = latest_with_equity.apply(calc_roe, axis=1)
+            roe_map = latest_with_equity.set_index('symbol')['roe']
+            merged['roe'] = merged['symbol'].map(roe_map)
+        else:
+            merged['roe'] = None
 
         # Update columns in original DF
         df['roe'] = merged['roe']

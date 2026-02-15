@@ -201,102 +201,34 @@ class MetricCalculator:
         return result
 
     def calculate_gross_margin(self, symbol: str, years: int = 5) -> Dict[str, Any]:
-        """Calculate gross margin metrics from yfinance income statement.
+        """Return gross margin from the database.
 
-        Gross Margin = Gross Profit / Total Revenue
-
-        Stable or growing gross margins suggest pricing power / moat.
+        Gross margin is stored in stock_metrics.gross_margin as a percentage.
+        The vector path reads this column directly; this method provides the
+        same value for the scalar path so both paths use identical data.
 
         Args:
             symbol: Stock ticker
-            years: Number of years to analyze
+            years: Unused (kept for API compatibility)
 
         Returns:
-            Dict with current, average, trend, and history
+            Dict with 'current' (float or None); 'average', 'trend', 'history' are not computed.
         """
         result = {
             'current': None,
             'average': None,
-            'trend': None,  # 'stable', 'improving', 'declining'
+            'trend': None,
             'history': [],
         }
 
         try:
-            import yfinance as yf
-            import pandas as pd
-            import numpy as np
-
-            ticker = yf.Ticker(symbol)
-            income_stmt = ticker.income_stmt
-
-            if income_stmt is None or income_stmt.empty:
-                return result
-
-            # Look for gross profit and revenue
-            gross_profit_key = None
-            revenue_key = None
-
-            for key in ['Gross Profit', 'GrossProfit']:
-                if key in income_stmt.index:
-                    gross_profit_key = key
-                    break
-
-            for key in ['Total Revenue', 'TotalRevenue', 'Revenue']:
-                if key in income_stmt.index:
-                    revenue_key = key
-                    break
-
-            if not gross_profit_key or not revenue_key:
-                logger.debug(f"{symbol}: Missing gross profit or revenue in income statement")
-                return result
-
-            margins = []
-            for col in income_stmt.columns[:years]:  # Most recent N years
-                year = col.year if hasattr(col, 'year') else pd.Timestamp(col).year
-                gross_profit = income_stmt.loc[gross_profit_key, col]
-                revenue = income_stmt.loc[revenue_key, col]
-
-                if pd.notna(gross_profit) and pd.notna(revenue) and revenue != 0:
-                    margin = (gross_profit / revenue) * 100  # as percentage
-                    margins.append({'year': year, 'margin': round(margin, 2)})
-
-            if not margins:
-                return result
-
-            # Sort by year descending (most recent first)
-            margins.sort(key=lambda x: x['year'], reverse=True)
-            result['history'] = margins
-
-            # Current (most recent year)
-            result['current'] = margins[0]['margin'] if margins else None
-
-            # Average
-            margin_values = [m['margin'] for m in margins]
-            result['average'] = round(sum(margin_values) / len(margin_values), 2)
-
-            # Trend analysis
-            if len(margin_values) >= 3:
-                std_dev = np.std(margin_values)
-                first_half = margin_values[len(margin_values)//2:]  # Older years
-                second_half = margin_values[:len(margin_values)//2]  # Recent years
-
-                avg_first = sum(first_half) / len(first_half) if first_half else 0
-                avg_second = sum(second_half) / len(second_half) if second_half else 0
-
-                if std_dev < 2:
-                    result['trend'] = 'stable'
-                elif avg_second > avg_first + 1:
-                    result['trend'] = 'improving'
-                elif avg_second < avg_first - 1:
-                    result['trend'] = 'declining'
-                else:
-                    result['trend'] = 'stable'
-
-            return result
-
+            metrics = self.db.get_stock_metrics(symbol)
+            if metrics:
+                result['current'] = metrics.get('gross_margin')
         except Exception as e:
-            logger.warning(f"Failed to calculate gross margin for {symbol}: {e}")
-            return result
+            logger.warning(f"Failed to fetch gross margin for {symbol}: {e}")
+
+        return result
 
     def get_buffett_metrics(self, symbol: str) -> Dict[str, Any]:
         """Get all Buffett-relevant metrics for a stock.

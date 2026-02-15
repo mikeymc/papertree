@@ -34,18 +34,22 @@ def run_parity(character: str):
     if character == 'lynch':
         config = DEFAULT_ALGORITHM_CONFIG.copy()
     elif character == 'buffett':
+        # Mirrors the actual BUFFETT CharacterConfig weights and thresholds exactly.
+        # 'weight_consistency' maps to income_consistency_score in evaluate_batch(),
+        # which is the same value StockEvaluator uses as 'earnings_consistency'.
         config = {
-            'weight_roe': 0.35,
-            'weight_consistency': 0.25,
-            'weight_earnings_consistency': 0.25,
+            'weight_roe': 0.40,
+            'weight_consistency': 0.30,
             'weight_debt_to_earnings': 0.20,
-            'weight_gross_margin': 0.20,
+            'weight_gross_margin': 0.10,
             'weight_peg': 0.0,
             'weight_debt': 0.0,
             'weight_ownership': 0.0,
             'roe_excellent': 20.0, 'roe_good': 15.0, 'roe_fair': 10.0,
-            'debt_to_earnings_excellent': 3.0, 'debt_to_earnings_good': 5.0, 'debt_to_earnings_fair': 8.0,
+            'debt_to_earnings_excellent': 2.0, 'debt_to_earnings_good': 4.0, 'debt_to_earnings_fair': 7.0,
             'gross_margin_excellent': 50.0, 'gross_margin_good': 40.0, 'gross_margin_fair': 30.0,
+            # StockEvaluator returns 0 for unknown consistency; match that default here
+            'consistency_null_default': 0.0,
         }
     else:
         raise ValueError(f"Unknown character: {character}")

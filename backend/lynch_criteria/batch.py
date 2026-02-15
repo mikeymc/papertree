@@ -158,9 +158,12 @@ class BatchScoringMixin:
 
         consistency_score = pd.Series(0.0, index=df.index)
         if weight_consistency > 0:
-            # Consistency score is already 0-100 normalized, use directly
-            # Default to 50 (neutral) for missing values
-            consistency_score = df['income_consistency_score'].fillna(50.0)
+            # Consistency score is already 0-100 normalized, use directly.
+            # Lynch defaults missing consistency to 50 (neutral).
+            # Buffett defaults it to 0 (unknown = bad for moat analysis).
+            # The caller controls this via 'consistency_null_default' in config.
+            consistency_null_default = config.get('consistency_null_default', 50.0)
+            consistency_score = df['income_consistency_score'].fillna(consistency_null_default)
             overall_score += consistency_score * weight_consistency
 
         # Assign overall status using np.select
@@ -377,12 +380,14 @@ class BatchScoringMixin:
     def _vectorized_roe_score(self, roe: pd.Series, excellent: float, good: float, fair: float) -> pd.Series:
         """
         Vectorized ROE score (Higher is Better).
+        Mirrors StockEvaluator._score_higher_is_better() exactly.
         excellent (20) -> 100
-        good (15) -> 75
-        fair (10) -> 50
-        poor (0) -> 25
+        good (15)      -> 75
+        fair (10)      -> 25
+        0              -> 0
+        negative/NaN   -> 0
         """
-        result = pd.Series(50.0, index=roe.index) # Default neutral
+        result = pd.Series(0.0, index=roe.index)
 
         # Excellent: 100
         mask_exc = roe >= excellent
@@ -395,37 +400,37 @@ class BatchScoringMixin:
             pos = (roe[mask_good] - good) / rng
             result[mask_good] = 75.0 + (25.0 * pos)
 
-        # Fair: 50-75
+        # Fair: 25-75
         mask_fair = (roe >= fair) & (roe < good)
         if mask_fair.any():
             rng = good - fair
             pos = (roe[mask_fair] - fair) / rng
-            result[mask_fair] = 50.0 + (25.0 * pos)
+            result[mask_fair] = 25.0 + (50.0 * pos)
 
-        # Poor: 25-50
-        mask_poor = (roe >= 0) & (roe < fair)
+        # Poor: 0-25
+        mask_poor = (roe > 0) & (roe < fair)
         if mask_poor.any():
-            rng = fair
-            pos = roe[mask_poor] / rng
-            result[mask_poor] = 25.0 + (25.0 * pos)
+            pos = roe[mask_poor] / fair
+            result[mask_poor] = 25.0 * pos
 
-        # Negative: 0-25
-        mask_neg = roe < 0
-        result[mask_neg] = 0.0
+        # Zero, negative, and NaN → 0 (already set by default)
 
         return result
 
     def _vectorized_debt_earnings_score(self, de: pd.Series, excellent: float, good: float, fair: float) -> pd.Series:
         """
         Vectorized Debt/Earnings score (Lower is Better).
-        excellent (2.0) -> 100
-        good (4.0) -> 75
-        fair (7.0) -> 50
-        poor -> 25
+        Mirrors StockEvaluator._score_lower_is_better() exactly.
+        excellent (2.0)  -> 100
+        good (4.0)       -> 75
+        fair (7.0)       -> 25
+        >= fair*2 (14.0) -> 0
+        NaN              -> 100 (no debt = excellent for Buffett)
         """
-        result = pd.Series(50.0, index=de.index)
+        max_poor = fair * 2
+        result = pd.Series(100.0, index=de.index)  # Default: no debt = excellent
 
-        # Excellent
+        # Excellent: 100
         mask_exc = de <= excellent
         result[mask_exc] = 100.0
 
@@ -436,37 +441,39 @@ class BatchScoringMixin:
             pos = (good - de[mask_good]) / rng
             result[mask_good] = 75.0 + (25.0 * pos)
 
-        # Fair: 50-75
+        # Fair: 25-75
         mask_fair = (de > good) & (de <= fair)
         if mask_fair.any():
             rng = fair - good
             pos = (fair - de[mask_fair]) / rng
-            result[mask_fair] = 50.0 + (25.0 * pos)
+            result[mask_fair] = 25.0 + (50.0 * pos)
 
-        # Poor: 0-50
-        # Matches StockEvaluator._calculate_linear_interpolation
-        max_poor = 10.0
+        # Poor: 0-25 (cap at fair * 2)
         mask_poor = (de > fair) & (de < max_poor)
         if mask_poor.any():
             rng = max_poor - fair
             pos = (max_poor - de[mask_poor]) / rng
-            result[mask_poor] = 50.0 * pos
+            result[mask_poor] = 25.0 * pos
 
+        # Beyond max_poor: 0
         result[de >= max_poor] = 0.0
+
+        # NaN stays at 100.0 (no debt reported = great, set by default)
 
         return result
 
     def _vectorized_gross_margin_score(self, gm: pd.Series, excellent: float, good: float, fair: float) -> pd.Series:
         """
         Vectorized Gross Margin score (Higher is Better).
-        Similar to ROE scoring - higher margins indicate pricing power and competitive advantage.
+        Mirrors StockEvaluator._score_higher_is_better() exactly.
 
         excellent (50%) -> 100
-        good (40%) -> 75
-        fair (30%) -> 50
-        poor (0%) -> 25
+        good (40%)      -> 75
+        fair (30%)      -> 25
+        0               -> 0
+        negative/NaN    -> 0
         """
-        result = pd.Series(50.0, index=gm.index)  # Default neutral
+        result = pd.Series(0.0, index=gm.index)
 
         # Excellent: 100
         mask_exc = gm >= excellent
@@ -479,23 +486,19 @@ class BatchScoringMixin:
             pos = (gm[mask_good] - good) / rng
             result[mask_good] = 75.0 + (25.0 * pos)
 
-        # Fair: 50-75
+        # Fair: 25-75
         mask_fair = (gm >= fair) & (gm < good)
         if mask_fair.any():
             rng = good - fair
             pos = (gm[mask_fair] - fair) / rng
-            result[mask_fair] = 50.0 + (25.0 * pos)
+            result[mask_fair] = 25.0 + (50.0 * pos)
 
-        # Poor: 25-50
-        mask_poor = (gm >= 0) & (gm < fair)
+        # Poor: 0-25
+        mask_poor = (gm > 0) & (gm < fair)
         if mask_poor.any():
             pos = gm[mask_poor] / fair
-            result[mask_poor] = 25.0 + (25.0 * pos)
+            result[mask_poor] = 25.0 * pos
 
-        # Negative margins: 0
-        result[gm < 0] = 0.0
-
-        # None/NaN gets 50 (neutral default)
-        result[gm.isna()] = 50.0
+        # Zero, negative, and NaN → 0 (already set by default)
 
         return result
