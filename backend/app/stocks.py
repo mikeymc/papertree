@@ -264,7 +264,9 @@ def get_latest_session(user_id):
         for result in results:
             cleaned = {}
             for key, value in result.items():
-                if pd.isna(value):
+                if isinstance(value, float) and not np.isfinite(value):
+                    cleaned[key] = None
+                elif pd.isna(value):
                     cleaned[key] = None
                 elif isinstance(value, (np.floating, np.integer)):
                     cleaned[key] = float(value) if np.isfinite(value) else None

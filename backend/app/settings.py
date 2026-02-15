@@ -96,6 +96,7 @@ def get_countries():
         logger.error(f"Error getting countries: {e}")
         return jsonify({'error': str(e)}), 500
 
+@settings_bp.route('/api/characters', methods=['GET'])
 def get_characters():
     """Get list of available investment characters."""
     try:
