@@ -4,6 +4,9 @@ from auth import require_user_auth
 import logging
 from datetime import datetime, timedelta
 import psycopg.rows
+import yaml
+import os
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -97,21 +100,10 @@ def get_all_strategies():
 @admin_bp.route('/api/admin/portfolios', methods=['GET'])
 @require_admin
 def get_all_portfolios():
-    """Get all portfolios across all users"""
+    """Get all portfolios across all users with computed values"""
     try:
-        conn = deps.db.get_connection()
-        try:
-            cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
-            cursor.execute("""
-                SELECT p.*, u.email as user_email 
-                FROM portfolios p
-                JOIN users u ON p.user_id = u.id
-                ORDER BY p.initial_cash DESC
-            """)
-            portfolios = [dict(row) for row in cursor.fetchall()]
-            return jsonify({'portfolios': portfolios})
-        finally:
-            deps.db.return_connection(conn)
+        enriched_portfolios = deps.db.get_enriched_portfolios()
+        return jsonify({'portfolios': enriched_portfolios})
     except Exception as e:
         logger.error(f"Error fetching portfolios: {e}")
         return jsonify({'error': str(e)}), 500
@@ -176,6 +168,134 @@ def get_job_stats():
     except Exception as e:
         logger.error(f"Error fetching job stats: {e}")
         return jsonify({'error': str(e)}), 500
+
+@admin_bp.route('/api/admin/job_schedule', methods=['GET'])
+@require_admin
+def get_job_schedule():
+    """Parse .github/workflows/scheduled-jobs.yml to return the job schedule"""
+    try:
+        # Resolve path to the workflow file
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        root_dir = os.path.dirname(base_dir)
+        yaml_path = os.path.join(root_dir, '.github/workflows/scheduled-jobs.yml')
+        
+        if not os.path.exists(yaml_path):
+            return jsonify({'error': f'Schedule file not found at {yaml_path}'}), 404
+            
+        with open(yaml_path, 'r') as f:
+            content = f.read()
+            data = yaml.safe_load(content)
+            
+        # Extract crons from the 'on' section
+        on_block = data.get('on') or data.get(True)
+        crons = on_block.get('schedule', []) if on_block else []
+        cron_list = [c.get('cron') for c in crons if c.get('cron')]
+        
+        # Extract job type mapping
+        mapping = {}
+        case_block = re.search(r'case "\$SCHEDULE" in(.*?)\sesac', content, re.DOTALL)
+        if case_block:
+            case_content = case_block.group(1)
+            matches = re.finditer(r'"(.*?)"\)\s+echo "type=(.*?)"', case_content)
+            for m in matches:
+                mapping[m.group(1)] = m.group(2)
+        
+        # Group by job type
+        grouped_jobs = {}
+        for cron in cron_list:
+            job_type = mapping.get(cron, 'unknown')
+            if job_type not in grouped_jobs:
+                grouped_jobs[job_type] = {
+                    'job_type': job_type,
+                    'crons': [],
+                    'description': get_job_description(job_type)
+                }
+            grouped_jobs[job_type]['crons'].append(cron)
+        
+        # Build the final schedule objects with EST conversion
+        schedule = []
+        for job_type, job_data in grouped_jobs.items():
+            est_times = []
+            frequencies = set()
+            
+            for cron in job_data['crons']:
+                # Simple human readable frequency
+                freq = "Custom"
+                if cron == '0 * * * *': freq = "Hourly"
+                elif cron.startswith('*/5'): freq = "Every 5 mins"
+                elif cron.endswith('* * *'): freq = "Daily"
+                elif '1-5' in cron or '2-6' in cron: freq = "Weekdays"
+                frequencies.add(freq)
+                
+                # Convert to EST
+                est_times.append(cron_to_est(cron))
+            
+            # Sort EST times (roughly)
+            # This is tricky because they are strings like "6a", "12p"
+            # We'll just keep them in order of appearance for now
+            
+            schedule.append({
+                'job_type': job_type,
+                'est_times': ", ".join(est_times),
+                'frequency': "/".join(sorted(list(frequencies))),
+                'cron': ", ".join(job_data['crons']),
+                'description': job_data['description']
+            })
+            
+        return jsonify({'schedule': schedule})
+    except Exception as e:
+        logger.error(f"Error fetching job schedule: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def cron_to_est(cron):
+    """Simple conversion of UTC cron to EST (UTC-5) human time"""
+    if cron == '*/5 * * * *': return "Every 5m"
+    if cron == '0 * * * *': return "Hourly (:00)"
+    
+    parts = cron.split()
+    if len(parts) < 2: return cron
+    
+    try:
+        minute = int(parts[0])
+        hour_utc = int(parts[1])
+        
+        # Convert UTC to EST (UTC-5)
+        hour_est = (hour_utc - 5) % 24
+        
+        # Format as 6a, 12p, etc.
+        suffix = 'a' if hour_est < 12 else 'p'
+        display_hour = hour_est if hour_est <= 12 else hour_est - 12
+        if display_hour == 0: display_hour = 12
+        
+        time_str = f"{display_hour}"
+        if minute > 0:
+            time_str += f":{minute:02d}"
+        time_str += suffix
+        
+        return time_str
+    except (ValueError, IndexError):
+        return cron
+
+def get_job_description(job_type):
+    """Helper to provide descriptions for job types"""
+    descriptions = {
+        'price_update': 'Fast fetch of latest stock prices from TradingView',
+        'check_alerts': 'Evaluate user alerts against latest price/data changes',
+        'full_screening': 'Daily deep screen of the entire market universe',
+        'news_cache': 'Refresh news items for followed or quality stocks',
+        '8k_cache': 'Fetch latest SEC 8-K filings',
+        '10k_cache': 'Fetch latest SEC 10-K/10-Q filings',
+        'form4_cache': 'Fetch latest Form 4 (insider trading) filings',
+        'price_history_cache': 'Update historical price series for charting',
+        'outlook_cache': 'Fetch analyst outlook and price targets',
+        'transcript_cache': 'Fetch and process earnings call transcripts',
+        'forward_metrics_cache': 'Calculate forward-looking valuation metrics',
+        'thesis_refresher': 'Regenerate AI investment theses for quality stocks',
+        'strategy_execution': 'Execute autonomous trading strategies',
+        'benchmark_snapshot': 'Record daily S&P 500 closing prices',
+        'portfolio_sweep': 'Process dividends and record portfolio snapshots'
+    }
+    return descriptions.get(job_type, 'No description provided')
 
 @admin_bp.route('/api/admin/user_actions', methods=['GET'])
 @require_admin

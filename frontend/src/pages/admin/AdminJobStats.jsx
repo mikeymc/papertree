@@ -37,6 +37,7 @@ export default function AdminJobStats() {
     const [hours, setHours] = useState('24')
     const [jobType, setJobType] = useState('all')
     const [data, setData] = useState({ stats: [], jobs: [], time_range: 24 })
+    const [schedule, setSchedule] = useState([])
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [selectedTrendTypes, setSelectedTrendTypes] = useState(new Set())
@@ -93,8 +94,22 @@ export default function AdminJobStats() {
         }
     }
 
+    const fetchSchedule = async () => {
+        try {
+            const response = await fetch(`${API_BASE}/admin/job_schedule`, {
+                credentials: 'include'
+            })
+            if (!response.ok) throw new Error('Failed to fetch schedule')
+            const result = await response.json()
+            setSchedule(result.schedule)
+        } catch (err) {
+            console.error('Error fetching job schedule:', err)
+        }
+    }
+
     useEffect(() => {
         fetchStats()
+        fetchSchedule()
     }, [hours, jobType])
 
     const summaryStats = useMemo(() => {
@@ -290,8 +305,8 @@ export default function AdminJobStats() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Job Stats</h1>
-                    <p className="text-muted-foreground">Background job performance and execution monitoring</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Background Jobs</h1>
+                    <p className="text-muted-foreground">Background job performance, execution monitoring, and schedule</p>
                 </div>
             </div>
 
@@ -372,6 +387,10 @@ export default function AdminJobStats() {
                         <TabsTrigger value="timeline" className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
                             Timeline
+                        </TabsTrigger>
+                        <TabsTrigger value="schedule" className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            Schedule
                         </TabsTrigger>
                     </TabsList>
 
@@ -698,6 +717,43 @@ export default function AdminJobStats() {
                                                 </tr>
                                             )
                                         })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="schedule" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Clock className="h-5 w-5" />
+                                Automated Job Schedule
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="relative">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b">
+                                        <tr>
+                                            <th className="px-4 py-3">Job Type</th>
+                                            <th className="px-4 py-3">Times (EST)</th>
+                                            <th className="px-4 py-3">Frequency</th>
+                                            <th className="px-4 py-3">Description</th>
+                                            <th className="px-4 py-3">Cron</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {schedule.map((item, idx) => (
+                                            <tr key={idx} className="hover:bg-muted/5">
+                                                <td className="px-4 py-3 font-medium">{item.job_type}</td>
+                                                <td className="px-4 py-3 font-bold text-blue-500">{item.est_times}</td>
+                                                <td className="px-4 py-3 text-xs">{item.frequency}</td>
+                                                <td className="px-4 py-3 text-muted-foreground">{item.description}</td>
+                                                <td className="px-4 py-3 font-mono text-[10px] opacity-50 max-w-[150px] truncate" title={item.cron}>{item.cron}</td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>

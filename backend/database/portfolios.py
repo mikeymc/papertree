@@ -181,16 +181,19 @@ class PortfoliosMixin:
         finally:
             self.return_connection(conn)
 
-    def get_all_user_holdings(self, user_id: int) -> Dict[int, Dict[str, int]]:
-        """Fetch holdings for all portfolios of a user in a single query.
+    def get_all_holdings(self, user_id: Optional[int] = None) -> Dict[int, Dict[str, int]]:
+        """Fetch holdings for portfolios in a single query.
         
+        Args:
+            user_id: Optional user_id filter. If None, fetches for all portfolios.
+            
         Returns:
             Dict mapping portfolio_id -> {symbol: quantity}
         """
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            query = """
                 SELECT pt.portfolio_id, pt.symbol,
                        SUM(CASE
                            WHEN pt.transaction_type = 'BUY' THEN pt.quantity
@@ -199,14 +202,21 @@ class PortfoliosMixin:
                        END) as net_qty
                 FROM portfolio_transactions pt
                 JOIN portfolios p ON pt.portfolio_id = p.id
-                WHERE p.user_id = %s
+            """
+            params = []
+            if user_id is not None:
+                query += " WHERE p.user_id = %s "
+                params.append(user_id)
+                
+            query += """
                 GROUP BY pt.portfolio_id, pt.symbol
                 HAVING SUM(CASE
                            WHEN pt.transaction_type = 'BUY' THEN pt.quantity
                            WHEN pt.transaction_type = 'SELL' THEN -pt.quantity
                            ELSE 0
                        END) > 0
-            """, (user_id,))
+            """
+            cursor.execute(query, params)
             rows = cursor.fetchall()
 
             result = {}
@@ -218,14 +228,14 @@ class PortfoliosMixin:
         finally:
             self.return_connection(conn)
 
-    def get_all_user_portfolio_stats(self, user_id: int) -> Dict[int, Dict[str, Any]]:
-        """Fetch cash-contributing transaction totals and dividend summaries for all user portfolios."""
+    def get_all_portfolio_stats(self, user_id: Optional[int] = None) -> Dict[int, Dict[str, Any]]:
+        """Fetch cash-contributing transaction totals and dividend summaries for portfolios."""
         from datetime import date
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
             ytd_start = date(date.today().year, 1, 1)
-            cursor.execute("""
+            query = """
                 SELECT
                     pt.portfolio_id,
                     COALESCE(SUM(CASE WHEN pt.transaction_type = 'BUY' THEN pt.total_value ELSE 0 END), 0) as buys,
@@ -234,9 +244,15 @@ class PortfoliosMixin:
                     COALESCE(SUM(CASE WHEN pt.transaction_type = 'DIVIDEND' AND pt.executed_at >= %s THEN pt.total_value ELSE 0 END), 0) as ytd_dividends
                 FROM portfolio_transactions pt
                 JOIN portfolios p ON pt.portfolio_id = p.id
-                WHERE p.user_id = %s
-                GROUP BY pt.portfolio_id
-            """, (ytd_start, user_id))
+            """
+            params = [ytd_start]
+            if user_id is not None:
+                query += " WHERE p.user_id = %s "
+                params.append(user_id)
+                
+            query += " GROUP BY pt.portfolio_id "
+            
+            cursor.execute(query, params)
             rows = cursor.fetchall()
 
             result = {}
@@ -779,9 +795,11 @@ class PortfoliosMixin:
             initial_cash=initial_cash
         )
 
+        # Include user info if available in portfolio_obj (mainly for admin views)
         return {
             'id': portfolio['id'],
             'user_id': portfolio['user_id'],
+            'user_email': portfolio.get('user_email'),
             'name': portfolio['name'],
             'initial_cash': initial_cash,
             'created_at': portfolio['created_at'],
@@ -798,11 +816,84 @@ class PortfoliosMixin:
             'total_dividends': dividend_summary.get('total_dividends', 0),
             'ytd_dividends': dividend_summary.get('ytd_dividends', 0),
             'dividend_breakdown': dividend_summary.get('breakdown', []),
-            # Performance attribution
-            'capital_gains': performance_attribution.get('capital_gains', 0) if performance_attribution else 0,
-            'dividend_income': performance_attribution.get('dividend_income', 0) if performance_attribution else 0,
-            'dividend_yield_pct': performance_attribution.get('dividend_yield_pct', 0) if performance_attribution else 0
+            'performance': performance_attribution
         }
+
+    def get_enriched_portfolios(self, user_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        """List portfolios with computed values in a single batch process.
+        
+        Args:
+            user_id: Optional user_id filter. If None, fetches for all users.
+        """
+        try:
+            # 1. Fetch portfolios
+            if user_id is not None:
+                portfolios = self.get_user_portfolios(user_id)
+            else:
+                conn = self.get_connection()
+                try:
+                    cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
+                    cursor.execute("""
+                        SELECT p.*, u.email as user_email, s.id as strategy_id, s.name as strategy_name
+                        FROM portfolios p
+                        JOIN users u ON p.user_id = u.id
+                        LEFT JOIN investment_strategies s ON p.id = s.portfolio_id
+                        ORDER BY p.initial_cash DESC
+                    """)
+                    portfolios = cursor.fetchall()
+                finally:
+                    self.return_connection(conn)
+
+            # 2. Batch fetch all holdings
+            all_holdings = self.get_all_holdings(user_id)
+
+            # 3. Gather all symbols for batch price fetch
+            all_symbols = set()
+            for holdings in all_holdings.values():
+                all_symbols.update(holdings.keys())
+
+            # 4. Batch fetch prices from stock_metrics (cached prices)
+            prices_map = {}
+            if all_symbols:
+                prices_map = self.get_prices_batch(list(all_symbols))
+
+            # 5. Batch fetch cash and dividend stats
+            all_stats = self.get_all_portfolio_stats(user_id)
+
+            # 6. Enrich each portfolio
+            enriched_portfolios = []
+            for portfolio in portfolios:
+                p_id = portfolio['id']
+                p_holdings = all_holdings.get(p_id, {})
+                p_stats = all_stats.get(p_id, {'buys': 0, 'sells': 0, 'total_dividends': 0, 'ytd_dividends': 0})
+
+                # Pre-calculate cash to avoid DB lookup
+                cash = portfolio['initial_cash'] - p_stats['buys'] + p_stats['sells'] + p_stats['total_dividends']
+
+                # Call summary with pre-fetched components
+                summary = self.get_portfolio_summary(
+                    p_id,
+                    use_live_prices=False,
+                    prices_map=prices_map,
+                    portfolio_obj=portfolio,
+                    cash=cash,
+                    holdings=p_holdings,
+                    dividend_summary={
+                        'total_dividends': p_stats['total_dividends'],
+                        'ytd_dividends': p_stats['ytd_dividends'],
+                        'breakdown': []
+                    }
+                )
+
+                if summary:
+                    enriched_portfolios.append(summary)
+                else:
+                    enriched_portfolios.append(portfolio)
+
+            return enriched_portfolios
+        except Exception as e:
+            logger.error(f"Error enriching portfolios: {e}")
+            raise
 
     def get_all_portfolios(self) -> List[Dict[str, Any]]:
         """Get all portfolios (for batch snapshot operations)"""

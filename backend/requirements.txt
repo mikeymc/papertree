@@ -25,3 +25,4 @@ scikit-optimize
 debugpy
 fredapi
 resend
+PyYAML
