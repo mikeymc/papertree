@@ -47,16 +47,25 @@ DEFAULT_ALGORITHM_CONFIG = {
 class StockVectors:
     """
     Service for loading and scoring stocks using vectorized operations.
-    
+
     Maintains a DataFrame with all required metrics for batch scoring.
     Designed for fast screening without per-stock database queries.
     """
-    
+
+    CACHE_TTL_SECONDS = 300  # 5 minutes
+
     def __init__(self, db: Database):
         self.db = db
         self._df: Optional[pd.DataFrame] = None
         self._last_loaded: Optional[datetime] = None
-    
+        self._cached_country_filter: Optional[str] = None
+
+    def invalidate_cache(self):
+        """Force next load_vectors() call to reload from the database."""
+        self._df = None
+        self._last_loaded = None
+        self._cached_country_filter = None
+
     def load_vectors(self, country_filter: str = 'US') -> pd.DataFrame:
         """
         Load all stocks with their raw metrics into a DataFrame.
@@ -70,8 +79,15 @@ class StockVectors:
             sector, company_name, country, earnings_cagr, revenue_cagr,
             income_consistency_score, revenue_consistency_score, peg_ratio
         """
+        # Return cached DataFrame if still fresh and filter matches
+        if (self._df is not None and self._last_loaded is not None
+                and self._cached_country_filter == country_filter):
+            elapsed = (datetime.now() - self._last_loaded).total_seconds()
+            if elapsed < self.CACHE_TTL_SECONDS:
+                return self._df
+
         start_time = datetime.now()
-        
+
         # Step 1: Bulk load from stock_metrics
         df = self._load_stock_metrics(country_filter)
         logger.info(f"[StockVectors] Loaded {len(df)} stocks from stock_metrics")
@@ -101,6 +117,7 @@ class StockVectors:
         
         self._df = df
         self._last_loaded = datetime.now()
+        self._cached_country_filter = country_filter
         return df
 
     def _load_annual_earnings(self, symbols: List[str]) -> pd.DataFrame:

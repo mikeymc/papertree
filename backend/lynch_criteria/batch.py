@@ -4,7 +4,7 @@
 import logging
 import numpy as np
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -213,6 +213,42 @@ class BatchScoringMixin:
         result = result.sort_values('overall_score', ascending=False)
 
         return result
+
+    def evaluate_metrics(self, metrics: Dict[str, Any], config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Score a single stock from a pre-loaded metrics dict using the vector engine.
+
+        Converts the dict to a 1-row DataFrame and calls evaluate_batch().
+        Use this when metrics are already in memory (e.g., rescoring, backtesting).
+        Missing columns are filled with None.
+        """
+        row = dict(metrics)
+
+        # Normalize key name: consistency_score is the alias used by the rescorer
+        if 'consistency_score' in row and 'income_consistency_score' not in row:
+            row['income_consistency_score'] = row['consistency_score']
+
+        # Ensure all columns that evaluate_batch() expects exist
+        required_cols = [
+            'symbol', 'company_name', 'country', 'sector', 'ipo_year',
+            'price', 'price_change_pct', 'market_cap', 'pe_ratio', 'peg_ratio',
+            'debt_to_equity', 'institutional_ownership', 'dividend_yield',
+            'earnings_cagr', 'revenue_cagr',
+            'income_consistency_score', 'revenue_consistency_score',
+            'pe_52_week_min', 'pe_52_week_max', 'pe_52_week_position',
+            'roe', 'debt_to_earnings', 'owner_earnings', 'gross_margin',
+        ]
+        for col in required_cols:
+            if col not in row:
+                row[col] = None
+
+        df = pd.DataFrame([row])
+        scored = self.evaluate_batch(df, config)
+
+        if scored.empty:
+            return None
+
+        return scored.iloc[0].to_dict()
 
     def _vectorized_peg_score(self, peg: pd.Series, excellent: float, good: float, fair: float) -> pd.Series:
         """

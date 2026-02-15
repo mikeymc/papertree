@@ -37,18 +37,29 @@ def get_stock(symbol):
     # Resolve character and scoring configuration using the shared helper
     user_id = session.get('user_id')
     active_character, config = resolve_scoring_config(user_id, request.args.get('character'))
-    
-    # StockEvaluator (evaluate_stock) uses 'overrides' dict for weight/threshold changes
-    evaluation = deps.criteria.evaluate_stock(
-        symbol.upper(), 
-        algorithm=algorithm, 
-        overrides=config, 
-        character_id=active_character
-    )
+
+    if active_character == 'lynch':
+        # Lynch: use vector engine (proven identical to scalar, faster via caching)
+        df = deps.stock_vectors.load_vectors()
+        row_df = df[df['symbol'] == symbol.upper()]
+        if row_df.empty:
+            # Stock was just fetched and written to DB — reload vectors
+            deps.stock_vectors.invalidate_cache()
+            df = deps.stock_vectors.load_vectors()
+            row_df = df[df['symbol'] == symbol.upper()]
+        if not row_df.empty:
+            scored = deps.criteria.evaluate_batch(row_df, config)
+            evaluation = clean_nan_values(scored.iloc[0].to_dict())
+        else:
+            evaluation = None
+    else:
+        evaluation = deps.criteria.evaluate_stock(
+            symbol.upper(), algorithm=algorithm, overrides=config, character_id=active_character
+        )
 
     return jsonify({
         'stock_data': clean_nan_values(stock_data),
-        'evaluation': clean_nan_values(evaluation)
+        'evaluation': evaluation
     })
 
 
@@ -67,9 +78,23 @@ def batch_get_stocks():
         if len(symbols) > 50:
             symbols = symbols[:50]
 
+        user_id = session.get('user_id')
+        active_character, config = resolve_scoring_config(user_id, None)
+        symbols_upper = [s.upper() for s in symbols]
+
+        # Pre-score all requested symbols using vector engine (Lynch only)
+        evaluations = {}
+        if active_character == 'lynch':
+            df = deps.stock_vectors.load_vectors()
+            filtered_df = df[df['symbol'].isin(symbols_upper)]
+            if not filtered_df.empty:
+                scored_df = deps.criteria.evaluate_batch(filtered_df, config)
+                for _, row in scored_df.iterrows():
+                    evaluations[row['symbol']] = clean_nan_values(row.to_dict())
+
         results = []
 
-        # Helper for parallel execution
+        # Helper for parallel execution — fetches supplemental stock_data per symbol
         def fetch_one(symbol):
             try:
                 # Use cached data if available, only fetch if missing
@@ -77,13 +102,16 @@ def batch_get_stocks():
                 if not stock_data:
                     return None
 
-                evaluation = deps.criteria.evaluate_stock(symbol.upper(), algorithm=algorithm)
+                if active_character == 'lynch':
+                    evaluation = evaluations.get(symbol.upper())
+                else:
+                    evaluation = deps.criteria.evaluate_stock(symbol.upper(), algorithm=algorithm,
+                                                              character_id=active_character)
 
-                # Merge into single object as expected by frontend
                 if evaluation:
                     # Prefer evaluation data but fallback to stock_data
                     merged = {**clean_nan_values(stock_data), **clean_nan_values(evaluation)}
-                    merged['symbol'] = symbol.upper() # Ensure symbol is present
+                    merged['symbol'] = symbol.upper()
                     return merged
                 return None
             except Exception as e:
@@ -153,25 +181,24 @@ def get_stock_insider_trades(symbol, user_id):
 @stocks_bp.route('/api/cached', methods=['GET'])
 def get_cached_stocks():
     symbols = deps.db.get_all_cached_stocks()
+    if not symbols:
+        return jsonify({'total_analyzed': 0, 'results': []})
+
+    user_id = session.get('user_id')
+    _, config = resolve_scoring_config(user_id, None)
+
+    df = deps.stock_vectors.load_vectors()
+    filtered_df = df[df['symbol'].isin(symbols)]
 
     results = []
-    for symbol in symbols:
-        evaluation = deps.criteria.evaluate_stock(symbol)
-        if evaluation:
-            results.append(evaluation)
-
-    results_by_status = {
-        'pass': [r for r in results if r['overall_status'] == 'PASS'],
-        'close': [r for r in results if r['overall_status'] == 'CLOSE'],
-        'fail': [r for r in results if r['overall_status'] == 'FAIL']
-    }
+    if not filtered_df.empty:
+        scored_df = deps.criteria.evaluate_batch(filtered_df, config)
+        for _, row in scored_df.iterrows():
+            results.append(clean_nan_values(row.to_dict()))
 
     return jsonify({
         'total_analyzed': len(results),
-        'pass_count': len(results_by_status['pass']),
-        'close_count': len(results_by_status['close']),
-        'fail_count': len(results_by_status['fail']),
-        'results': results_by_status
+        'results': results
     })
 
 
