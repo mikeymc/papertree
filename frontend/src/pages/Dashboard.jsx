@@ -21,21 +21,21 @@ export default function Dashboard({ activeCharacter }) {
     const navigate = useNavigate()
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 overflow-hidden">
             {/* Row 1: Market Overview & Portfolios */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                 <IndexChart />
                 <PortfolioSummaryCard onNavigate={() => navigate('/portfolios')} />
             </div>
 
             {/* Row 2: Watchlist & Alerts */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                 <WatchlistQuickView onNavigate={() => navigate('/')} />
                 <AlertsSummary onNavigate={() => navigate('/alerts')} />
             </div>
 
             {/* Row 3: Earnings & Recent Theses */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                 <EarningsCalendar />
                 <NewTheses />
                 {/* <NewsFeed /> */}

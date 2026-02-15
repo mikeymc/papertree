@@ -50,7 +50,7 @@ export default function MarketMovers({ activeCharacter }) {
 
     return (
         <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="p-3 sm:p-4 pb-2">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                         <Zap className="h-4 w-4" />
@@ -71,7 +71,7 @@ export default function MarketMovers({ activeCharacter }) {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                 {loading ? (
                     <div className="space-y-3">
                         {[...Array(5)].map((_, i) => (
@@ -83,7 +83,7 @@ export default function MarketMovers({ activeCharacter }) {
                         {error}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                         {/* Gainers */}
                         <div>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">

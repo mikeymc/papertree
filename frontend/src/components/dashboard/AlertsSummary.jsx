@@ -41,7 +41,7 @@ export default function AlertsSummary({ onNavigate }) {
 
     return (
         <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="p-3 sm:p-4 pb-2">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                         <Bell className="h-4 w-4" />
@@ -52,7 +52,7 @@ export default function AlertsSummary({ onNavigate }) {
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                 {loading ? (
                     <Skeleton className="h-24 w-full" />
                 ) : error ? (

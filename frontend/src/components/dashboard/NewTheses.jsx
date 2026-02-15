@@ -41,7 +41,7 @@ export default function NewTheses() {
 
     return (
         <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="p-3 sm:p-4 pb-2">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                         <Lightbulb className="h-4 w-4" />
@@ -56,7 +56,7 @@ export default function NewTheses() {
                     </Link>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                 {loading ? (
                     <div className="space-y-3">
                         {[...Array(5)].map((_, i) => (

@@ -40,18 +40,18 @@ export default function WatchlistQuickView({ onNavigate }) {
 
     return (
         <Card>
-            <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                        <Star className="h-4 w-4" />
+            <CardHeader className="p-3 sm:p-4 pb-2">
+                <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 truncate">
+                        <Star className="h-4 w-4 shrink-0" />
                         Watchlist
                     </CardTitle>
-                    <Button variant="ghost" size="sm" onClick={onNavigate}>
-                        View all <ArrowRight className="h-4 w-4 ml-1" />
+                    <Button variant="ghost" size="sm" onClick={onNavigate} className="h-7 px-2 text-xs shrink-0">
+                        View all <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                 {loading ? (
                     <Skeleton className="h-24 w-full" />
                 ) : error ? (
@@ -88,29 +88,27 @@ function WatchlistRow({ stock, onClick }) {
     return (
         <button
             onClick={onClick}
-            className="w-full flex items-center justify-between py-0.5 px-2 rounded hover:bg-accent transition-colors text-left"
+            className="w-full flex items-center justify-between py-1.5 px-0 rounded-lg hover:bg-accent/50 transition-colors text-left min-w-0 overflow-hidden"
         >
-            <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{stock.symbol}</span>
-                    <span className="text-xs text-muted-foreground truncate">
-                        {stock.company_name}
-                    </span>
-                </div>
+            <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                <span className="font-bold text-xs sm:text-sm">{stock.symbol}</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                    {stock.company_name}
+                </span>
             </div>
-            <div className="flex items-center gap-3">
-                <div className="flex flex-col items-end min-w-[75px]">
-                    <span className="text-sm font-bold">
-                        ${stock.price?.toFixed(2) || '—'}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Price</span>
-                </div>
-                <div className="flex flex-col items-end min-w-[60px]">
-                    <div className={`flex items-center gap-1 text-sm font-bold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                        {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2">
+                <div className="flex flex-col items-end">
+                    <div className={`flex items-center gap-0.5 text-[11px] sm:text-sm font-bold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                        {isPositive ? <TrendingUp className="h-2.5 w-2.5 sm:h-3 w-3" /> : <TrendingDown className="h-2.5 w-2.5 sm:h-3 w-3" />}
                         {isPositive && '+'}{changePct}%
                     </div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Change</span>
+                    <span className="text-[8px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Change</span>
+                </div>
+                <div className="flex flex-col items-end sm:min-w-[75px]">
+                    <span className="text-[11px] sm:text-sm font-bold">
+                        ${stock.price?.toFixed(2) || '—'}
+                    </span>
+                    <span className="text-[8px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Price</span>
                 </div>
             </div>
         </button>

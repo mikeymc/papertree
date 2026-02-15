@@ -231,9 +231,9 @@ export default function IndexChart() {
 
     return (
         <Card className="h-full">
-            <CardHeader className="pb-2 space-y-0">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
+            <CardHeader className="p-3 sm:p-4 pb-2 space-y-0">
+                <div className="flex items-center justify-between gap-1 sm:gap-2">
+                    <CardTitle className="text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2">
                         <Activity className="h-4 w-4" />
                         Markets
                     </CardTitle>
@@ -253,7 +253,7 @@ export default function IndexChart() {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                 {loading ? (
                     <div className="h-48 w-full flex flex-col gap-2">
                         <Skeleton className="h-full w-full rounded-xl" />
@@ -272,33 +272,33 @@ export default function IndexChart() {
                     </div>
                 )}
 
-                <div className="mt-4 flex flex-col">
+                <div className="mt-3 sm:mt-4 flex flex-col gap-1">
                     {INDICES.map(idx => {
                         const isSelected = selectedSymbols.includes(idx.symbol)
                         const symbolData = data && !loading && !data.error ? data[idx.symbol] : null
 
                         return (
-                            <div key={idx.symbol} className="flex items-center justify-between h-6 px-1 rounded-md hover:bg-accent/50 transition-colors">
+                            <div key={idx.symbol} className="flex items-center justify-between h-auto py-1 sm:h-6 px-1 rounded-md hover:bg-accent/50 transition-colors gap-2">
                                 <button
                                     onClick={() => toggleSymbol(idx.symbol)}
-                                    className={`flex items-center gap-2 text-xs font-medium transition-colors hover:text-foreground text-left ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}
+                                    className={`flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-medium transition-colors hover:text-foreground text-left ${isSelected ? 'text-foreground' : 'text-muted-foreground'} min-w-0`}
                                 >
                                     <div
-                                        className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isSelected ? 'border-none' : 'border-muted'}`}
+                                        className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border flex items-center justify-center transition-all shrink-0 ${isSelected ? 'border-none' : 'border-muted'}`}
                                         style={{ backgroundColor: isSelected ? idx.color : 'transparent' }}
                                     >
-                                        {isSelected && <Check className="h-3 w-3 text-white" />}
+                                        {isSelected && <Check className="h-2.5 w-2.5 sm:h-3 sm:h-3 text-white" />}
                                     </div>
-                                    {idx.name}
+                                    <span className="truncate">{idx.name}</span>
                                 </button>
 
                                 {symbolData && !symbolData.error && (
-                                    <div className="flex items-center gap-3 text-xs font-medium">
+                                    <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-medium shrink-0">
                                         <span className="text-foreground">
-                                            {symbolData.current_price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            {symbolData.current_price?.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                         </span>
                                         <span className={`flex items-center ${symbolData.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                            {symbolData.change >= 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : <TrendingDown className="h-3 w-3 mr-0.5" />}
+                                            {symbolData.change >= 0 ? <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:h-3 mr-0.5" /> : <TrendingDown className="h-2.5 w-2.5 sm:h-3 sm:h-3 mr-0.5" />}
                                             {symbolData.change_pct}%
                                         </span>
                                     </div>

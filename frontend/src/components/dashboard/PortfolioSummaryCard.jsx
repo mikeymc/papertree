@@ -49,7 +49,7 @@ export default function PortfolioSummaryCard({ onNavigate }) {
 
     return (
         <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="p-3 sm:p-4 pb-2">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                         <Briefcase className="h-4 w-4" />
@@ -60,7 +60,7 @@ export default function PortfolioSummaryCard({ onNavigate }) {
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                 {loading ? (
                     <Skeleton className="h-24 w-full" />
                 ) : error ? (
@@ -92,35 +92,35 @@ function PortfolioRow({ portfolio, onClick }) {
 
     return (
         <div
-            className="flex items-center justify-between py-1.5 px-0 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+            className="flex items-center justify-between py-1.5 px-0 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors min-w-0 overflow-hidden"
             onClick={onClick}
         >
-            <div className="flex items-center gap-3 min-w-0">
-                <div className={`p-2 rounded-full ${isAutonomous ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                    {isAutonomous ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <div className={`p-1.5 sm:p-2 rounded-full shrink-0 ${isAutonomous ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    {isAutonomous ? <Bot className="h-3.5 w-3.5 sm:h-4 w-4" /> : <User className="h-3.5 w-3.5 sm:h-4 w-4" />}
                 </div>
                 <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate">{portfolio.name}</p>
+                    <p className="font-semibold text-xs sm:text-sm truncate">{portfolio.name}</p>
                     <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`text-[10px] h-4 px-1.5 font-medium ${isAutonomous ? 'border-primary/30 text-primary' : 'text-muted-foreground'}`}>
+                        <Badge variant="outline" className={`text-[9px] sm:text-[10px] h-3.5 sm:h-4 px-1 sm:px-1.5 font-medium ${isAutonomous ? 'border-primary/30 text-primary' : 'text-muted-foreground'}`}>
                             {isAutonomous ? 'Autonomous' : 'Self-Directed'}
                         </Badge>
                     </div>
                 </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <div className="flex flex-col items-end">
-                    <div className={`flex items-center gap-1 text-sm font-bold ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    <div className={`flex items-center gap-1 text-[11px] sm:text-sm font-bold ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {isPositive ? <ArrowUpRight className="h-2.5 w-2.5 sm:h-3 w-3" /> : <ArrowDownRight className="h-2.5 w-2.5 sm:h-3 w-3" />}
                         {(portfolio.total_gain_loss_pct || 0).toFixed(2)}%
                     </div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Return</span>
+                    <span className="text-[8px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Return</span>
                 </div>
-                <div className="flex flex-col items-end min-w-[75px]">
-                    <span className="text-sm font-bold">
+                <div className="flex flex-col items-end sm:min-w-[75px]">
+                    <span className="text-[11px] sm:text-sm font-bold">
                         {formatCurrency(portfolio.total_value)}
                     </span>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Value</span>
+                    <span className="text-[8px] sm:text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Value</span>
                 </div>
             </div>
         </div>
