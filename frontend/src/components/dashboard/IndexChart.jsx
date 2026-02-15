@@ -235,7 +235,7 @@ export default function IndexChart() {
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                         <Activity className="h-4 w-4" />
-                        Indices
+                        Markets
                     </CardTitle>
 
                     <div className="flex gap-1">
