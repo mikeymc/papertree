@@ -72,9 +72,13 @@ const TOOL_DESCRIPTIONS = {
   buy_stock: "Buying shares",
   sell_stock: "Selling shares",
   // Strategy management tools
-  get_strategy_templates: "Browsing strategy templates",
+  get_portfolio_templates: "Browsing strategy templates",
   create_strategy: "Creating investment strategy",
-  get_stock_thesis: "Checking for investment thesis"
+  get_stock_thesis: "Checking for investment thesis",
+  get_portfolio_strategy: "Reviewing portfolio strategy",
+  update_portfolio_strategy: "Updating strategy settings",
+  get_portfolio_strategy_activity: "Analyzing portfolio performance history",
+  get_portfolio_strategy_decisions: "Reviewing investment decisions"
 }
 
 // Custom markdown components
