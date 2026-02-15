@@ -995,7 +995,6 @@ function App() {
   const [featureFlags, setFeatureFlags] = useState({
     alertsEnabled: false,
     economyLinkEnabled: false,
-    dashboardEnabled: false,
     redditEnabled: false
   })
 
@@ -1029,7 +1028,6 @@ function App() {
           setFeatureFlags({
             alertsEnabled: settings.feature_alerts_enabled?.value === true,
             economyLinkEnabled: settings.feature_economy_link_enabled?.value === true,
-            dashboardEnabled: settings.feature_dashboard_enabled?.value === true,
             redditEnabled: settings.feature_reddit_enabled?.value === true || settings.feature_reddit_enabled?.value === 'true'
           })
         }
@@ -1207,7 +1205,8 @@ function App() {
             activeCharacter={activeCharacter}
           />
         }>
-          <Route path="/" element={
+          <Route path="/" element={<Dashboard activeCharacter={activeCharacter} />} />
+          <Route path="/stocks" element={
             <StockListView
               key={activeCharacter} // Force remount when character changes
               stocks={stocks}
@@ -1242,9 +1241,8 @@ function App() {
               user={user}
             />
           } />
-          <Route path="/stocks" element={<Navigate to="/" replace />} />
           <Route path="/earnings" element={<EarningsCalendarPage />} />
-          <Route path="/dashboard" element={<Dashboard activeCharacter={activeCharacter} />} />
+          <Route path="/dashboard" element={<Navigate to="/" replace />} />
           <Route path="/theses" element={<ThesesPage />} />
           <Route path="/stock/:symbol" element={
             <StockDetail

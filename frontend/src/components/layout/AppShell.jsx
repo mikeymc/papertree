@@ -115,7 +115,6 @@ function AppShellContent({
     const {
         alertsEnabled = false,
         economyLinkEnabled = false,
-        dashboardEnabled = false,
         redditEnabled = false
     } = featureFlags
 
@@ -179,8 +178,8 @@ function AppShellContent({
 
     const isStockDetail = location.pathname.startsWith('/stock/')
     const isEconomyPage = location.pathname === '/economy'
-    const isDashboard = location.pathname === '/dashboard'
-    const isStocksPage = location.pathname === '/'
+    const isDashboard = location.pathname === '/'
+    const isStocksPage = location.pathname === '/stocks'
 
     const getCount = (statusKey) => {
         if (!summary) return 0
@@ -235,6 +234,18 @@ function AppShellContent({
                                         <SidebarMenuButton
                                             onClick={() => {
                                                 navigate('/')
+                                                onNavClick()
+                                            }}
+                                            isActive={isDashboard}
+                                            className="pl-4 font-normal text-muted-foreground data-[active=true]:font-medium data-[active=true]:text-sidebar-primary"
+                                        >
+                                            <span>Dashboard</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            onClick={() => {
+                                                navigate('/stocks')
                                                 setFilter('all')
                                                 onNavClick()
                                             }}
@@ -247,11 +258,11 @@ function AppShellContent({
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
                                             onClick={() => {
-                                                navigate('/')
+                                                navigate('/stocks')
                                                 setFilter('watchlist')
                                                 onNavClick()
                                             }}
-                                            isActive={filter === 'watchlist'}
+                                            isActive={isStocksPage && filter === 'watchlist'}
                                             className="pl-4 font-normal text-muted-foreground data-[active=true]:font-medium data-[active=true]:text-sidebar-primary"
                                         >
                                             <span className="flex-1">Watchlist</span>
@@ -283,20 +294,6 @@ function AppShellContent({
                                                 className="pl-4 font-normal text-muted-foreground data-[active=true]:font-medium data-[active=true]:text-sidebar-primary"
                                             >
                                                 <span>Economy</span>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    )}
-                                    {dashboardEnabled && (
-                                        <SidebarMenuItem>
-                                            <SidebarMenuButton
-                                                onClick={() => {
-                                                    navigate('/dashboard')
-                                                    onNavClick()
-                                                }}
-                                                isActive={isDashboard}
-                                                className="pl-4 font-normal text-muted-foreground data-[active=true]:font-medium data-[active=true]:text-sidebar-primary"
-                                            >
-                                                <span>Dashboard</span>
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     )}
