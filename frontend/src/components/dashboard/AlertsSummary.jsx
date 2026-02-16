@@ -103,7 +103,7 @@ function AlertRow({ alert, isTriggered }) {
     const conditionText = formatCondition(alert)
 
     return (
-        <div className={`flex items-center justify-between py-0.5 px-2 rounded ${isTriggered ? 'bg-red-500/10' : 'bg-muted/50'} border-b border-border last:border-0`}>
+        <div className={`flex items-center justify-between py-0.5 px-0 rounded ${isTriggered ? 'bg-red-500/10' : 'bg-muted/50'} border-b border-border last:border-0`}>
             <div className="flex items-center gap-2">
                 <span className="font-medium text-sm">{alert.symbol}</span>
                 <span className="text-xs text-muted-foreground">{conditionText}</span>

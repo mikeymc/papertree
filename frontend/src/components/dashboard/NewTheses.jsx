@@ -97,7 +97,7 @@ function ThesisRow({ item, onClick }) {
     return (
         <button
             onClick={onClick}
-            className="w-full grid grid-cols-[38px_1fr_auto] items-center py-1 px-2 rounded hover:bg-accent transition-colors text-left border-b border-border last:border-0 overflow-hidden gap-2"
+            className="w-full grid grid-cols-[38px_1fr_auto] items-center py-1 px-0 rounded hover:bg-accent transition-colors text-left border-b border-border last:border-0 overflow-hidden gap-2"
         >
             <span className="font-bold text-sm shrink-0">{item.symbol}</span>
             <span className="text-xs text-muted-foreground truncate min-w-0">

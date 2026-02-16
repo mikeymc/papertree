@@ -139,7 +139,7 @@ function MoverRow({ stock, isGainer, onClick }) {
     return (
         <button
             onClick={onClick}
-            className="w-full flex items-center justify-between py-0.5 px-2 rounded hover:bg-accent transition-colors text-left"
+            className="w-full flex items-center justify-between py-0.5 px-0 rounded hover:bg-accent transition-colors text-left"
         >
             <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
                 <span className="font-medium text-sm shrink-0 w-12">{stock.symbol}</span>
