@@ -32,12 +32,20 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Bot,
-    User
+    User,
+    Play,
+    Settings
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { Line } from 'react-chartjs-2'
 import { useAuth } from '@/context/AuthContext'
 import BriefingsTab from '@/pages/portfolios/BriefingsTab'
+import StrategyRunsTab from '@/pages/portfolios/StrategyRunsTab'
+import StrategyWizard from '@/components/strategies/StrategyWizard'
+
+const LiveSignal = () => (
+    <span className="bg-yellow-400 h-2 w-2 rounded-full mr-2 inline-block shadow-sm animate-pulse" />
+)
 
 // Format currency with commas and optional decimal places
 const formatCurrency = (value, truncate = false) => {
@@ -380,6 +388,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
     const [valueHistory, setValueHistory] = useState([])
     const [loadingTransactions, setLoadingTransactions] = useState(false)
     const [loadingHistory, setLoadingHistory] = useState(false)
+    const [showStrategyWizard, setShowStrategyWizard] = useState(false)
 
     const totalValue = portfolio.total_value || 0
     const initialCash = portfolio.initial_cash || 100000
@@ -434,7 +443,10 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                 <div className="flex items-center gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{portfolio.name}</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-bold tracking-tight">{portfolio.name}</h1>
+                            {portfolio.strategy_id && portfolio.strategy_enabled && <LiveSignal />}
+                        </div>
                         <p className="text-sm text-muted-foreground">
                             Created {new Date(portfolio.created_at).toLocaleDateString()}
                         </p>
@@ -457,9 +469,9 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                             variant="outline"
                             size="sm"
                             className="h-9 px-2 sm:px-3 shrink-0"
-                            onClick={() => window.location.href = `/strategies/${portfolio.strategy_id}`}
+                            onClick={() => setShowStrategyWizard(true)}
                         >
-                            <Activity className="h-4 w-4 sm:mr-2" />
+                            <Settings className="h-4 w-4 sm:mr-2" />
                             <span className="hidden sm:inline">Strategy Detail</span>
                             <span className="inline sm:hidden text-xs">Strategy</span>
                         </Button>
@@ -513,6 +525,21 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                         </p>
                     </CardContent>
                 </Card>
+                {portfolio.strategy_id && (
+                    <>
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                                    <Activity className="h-4 w-4" />
+                                    Alpha vs SPY
+                                </div>
+                                <p className={`text-2xl font-bold ${(portfolio.latest_alpha || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                    {formatPercent(portfolio.latest_alpha || 0)}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
             </div>
 
             {/* Tabs */}
@@ -520,6 +547,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                 <div className="mb-4">
                     <TabsList className="w-full sm:w-auto flex sm:inline-flex justify-between sm:justify-start h-10 bg-muted/50 p-1">
                         {portfolio.strategy_id && <TabsTrigger value="briefings" className="px-1.5 sm:px-4 text-sm">Briefs</TabsTrigger>}
+                        {portfolio.strategy_id && <TabsTrigger value="runs" className="px-1.5 sm:px-4 text-sm">Runs</TabsTrigger>}
                         <TabsTrigger value="holdings" className="px-1.5 sm:px-4 text-sm">Holdings</TabsTrigger>
                         {!portfolio.strategy_id && <TabsTrigger value="trade" className="px-1.5 sm:px-4 text-sm">Trade</TabsTrigger>}
                         <TabsTrigger value="transactions" className="px-1.5 sm:px-4 text-sm">Transactions</TabsTrigger>
@@ -530,6 +558,12 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                 {portfolio.strategy_id && (
                     <TabsContent value="briefings">
                         <BriefingsTab portfolioId={portfolio.id} />
+                    </TabsContent>
+                )}
+
+                {portfolio.strategy_id && (
+                    <TabsContent value="runs">
+                        <StrategyRunsTab strategyId={portfolio.strategy_id} runsCount={portfolio.strategy_runs_count} />
                     </TabsContent>
                 )}
 
@@ -563,6 +597,24 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                     />
                 </TabsContent>
             </Tabs>
+
+            {showStrategyWizard && portfolio.strategy_id && (
+                <StrategyWizard
+                    initialData={{
+                        id: portfolio.strategy_id,
+                        name: portfolio.strategy_name,
+                        portfolio_id: portfolio.id,
+                        // We might need to fetch the full strategy object if StrategyWizard needs it
+                        // but usually StrategyId is enough for "edit" mode if it fetches its own data
+                    }}
+                    mode="edit"
+                    onClose={() => setShowStrategyWizard(false)}
+                    onSuccess={() => {
+                        setShowStrategyWizard(false);
+                        onRefresh();
+                    }}
+                />
+            )}
         </div>
     )
 }

@@ -25,7 +25,7 @@ export default function StrategyCard({ strategy }) {
     return (
         <Card
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => navigate(`/strategies/${strategy.id}`)}
+            onClick={() => navigate(`/portfolios/${strategy.portfolio_id}`)}
         >
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">

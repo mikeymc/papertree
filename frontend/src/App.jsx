@@ -29,7 +29,6 @@ import Alerts from './pages/Alerts'
 import Economy from './pages/Economy'
 import Portfolios from './pages/Portfolios'
 import Strategies from './pages/Strategies'
-import StrategyDetail from './pages/StrategyDetail'
 import RunDecisions from './pages/RunDecisions'
 import { screeningCache } from './utils/cache'
 import Help from './pages/Help'
@@ -1259,7 +1258,6 @@ function App() {
           <Route path="/portfolios" element={<Portfolios />} />
           <Route path="/portfolios/:id" element={<Portfolios />} />
           <Route path="/strategies" element={<Strategies />} />
-          <Route path="/strategies/:id" element={<StrategyDetail />} />
           <Route path="/strategies/:id/runs/:runId" element={<RunDecisions />} />
           <Route path="/economy" element={<Economy />} />
           <Route path="/help" element={<Help />} />

@@ -34,7 +34,9 @@ class PortfoliosMixin:
             cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
             cursor.execute("""
                 SELECT p.id, p.user_id, p.name, p.initial_cash, p.created_at,
-                       s.id as strategy_id, s.name as strategy_name
+                       s.id as strategy_id, s.name as strategy_name, s.enabled as strategy_enabled,
+                       (SELECT COUNT(*) FROM strategy_runs r WHERE r.strategy_id = s.id) as strategy_runs_count,
+                       (SELECT alpha FROM strategy_performance perf WHERE perf.strategy_id = s.id ORDER BY snapshot_date DESC LIMIT 1) as latest_alpha
                 FROM portfolios p
                 LEFT JOIN investment_strategies s ON p.id = s.portfolio_id
                 WHERE p.id = %s
@@ -49,7 +51,9 @@ class PortfoliosMixin:
         try:
             cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
             cursor.execute("""
-                SELECT p.*, s.id as strategy_id, s.name as strategy_name
+                SELECT p.*, s.id as strategy_id, s.name as strategy_name, s.enabled as strategy_enabled,
+                       (SELECT COUNT(*) FROM strategy_runs r WHERE r.strategy_id = s.id) as strategy_runs_count,
+                       (SELECT alpha FROM strategy_performance perf WHERE perf.strategy_id = s.id ORDER BY snapshot_date DESC LIMIT 1) as latest_alpha
                 FROM portfolios p
                 LEFT JOIN investment_strategies s ON p.id = s.portfolio_id
                 WHERE p.user_id = %s
@@ -812,6 +816,9 @@ class PortfoliosMixin:
             'gain_loss_percent': gain_loss_percent,
             'strategy_id': portfolio.get('strategy_id'),
             'strategy_name': portfolio.get('strategy_name'),
+            'strategy_enabled': portfolio.get('strategy_enabled'),
+            'strategy_runs_count': portfolio.get('strategy_runs_count', 0),
+            'latest_alpha': portfolio.get('latest_alpha'),
             # Dividend tracking
             'total_dividends': dividend_summary.get('total_dividends', 0),
             'ytd_dividends': dividend_summary.get('ytd_dividends', 0),
@@ -834,7 +841,9 @@ class PortfoliosMixin:
                 try:
                     cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
                     cursor.execute("""
-                        SELECT p.*, u.email as user_email, s.id as strategy_id, s.name as strategy_name
+                        SELECT p.*, u.email as user_email, s.id as strategy_id, s.name as strategy_name, s.enabled as strategy_enabled,
+                               (SELECT COUNT(*) FROM strategy_runs r WHERE r.strategy_id = s.id) as strategy_runs_count,
+                               (SELECT alpha FROM strategy_performance perf WHERE perf.strategy_id = s.id ORDER BY snapshot_date DESC LIMIT 1) as latest_alpha
                         FROM portfolios p
                         JOIN users u ON p.user_id = u.id
                         LEFT JOIN investment_strategies s ON p.id = s.portfolio_id

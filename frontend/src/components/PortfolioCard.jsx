@@ -61,18 +61,11 @@ export default function PortfolioCard({ portfolio, onClick, onDelete }) {
                         <div className="flex items-center gap-1.5 mt-1">
                             <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-primary/30 text-primary font-medium flex items-center gap-1">
                                 <Bot className="h-2.5 w-2.5" />
+                                {portfolio.strategy_enabled && (
+                                    <span className="bg-yellow-400 h-1.5 w-1.5 rounded-full mr-1 inline-block animate-pulse" />
+                                )}
                                 Autonomous
                             </Badge>
-                            <Button
-                                variant="link"
-                                className="p-0 h-auto text-[10px] text-primary"
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    window.location.href = `/strategies/${portfolio.strategy_id}`
-                                }}
-                            >
-                                Strategy Detail
-                            </Button>
                         </div>
                     ) : (
                         <div className="flex items-center gap-1.5 mt-1">
