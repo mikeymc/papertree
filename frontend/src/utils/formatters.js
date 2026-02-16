@@ -31,14 +31,13 @@ export function formatLargeCurrency(value, showCurrencySymbol = true) {
 }
 
 /**
- * Format a date string or object to the user's local timezone
- * @param {string|Date|number} dateInput - The date to format
- * @param {boolean} includeYear - Whether to include the year in the output
- * @param {boolean} includeTime - Whether to include the time (hour:minute) in the output
- * @returns {string} Formatted date string
+ * Parse a wide variety of date inputs into a valid Date object.
+ * Handles ISO strings with/without T, RFC 1123, and raw timestamps.
+ * @param {string|Date|number} dateInput - The date input to parse
+ * @returns {Date|null} Date object or null if invalid
  */
-export function formatLocal(dateInput, includeYear = true, includeTime = true) {
-    if (!dateInput) return '—';
+export function parseDate(dateInput) {
+    if (!dateInput) return null;
 
     try {
         let dateObj;
@@ -69,8 +68,25 @@ export function formatLocal(dateInput, includeYear = true, includeTime = true) {
             dateObj = new Date(dateInput);
         }
 
-        if (isNaN(dateObj.getTime())) return 'Invalid Date';
+        return isNaN(dateObj.getTime()) ? null : dateObj;
+    } catch (e) {
+        console.error("Date parse error:", e);
+        return null;
+    }
+}
 
+/**
+ * Format a date string or object to the user's local timezone
+ * @param {string|Date|number} dateInput - The date to format
+ * @param {boolean} includeYear - Whether to include the year in the output
+ * @param {boolean} includeTime - Whether to include the time (hour:minute) in the output
+ * @returns {string} Formatted date string
+ */
+export function formatLocal(dateInput, includeYear = true, includeTime = true) {
+    const dateObj = parseDate(dateInput);
+    if (!dateObj) return '—';
+
+    try {
         return dateObj.toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',

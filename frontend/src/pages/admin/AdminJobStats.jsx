@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatDistanceToNow, format } from 'date-fns'
 import { BarChart3, Clock, CheckCircle2, XCircle, PlayCircle, Loader2, RefreshCw, Activity, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Line } from 'react-chartjs-2'
-import { formatLocal } from '@/utils/formatters'
+import { formatLocal, parseDate } from '@/utils/formatters'
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -121,7 +121,11 @@ export default function AdminJobStats() {
 
         const totalDuration = completed.reduce((sum, j) => {
             if (j.started_at && j.completed_at) {
-                return sum + (new Date(j.completed_at) - new Date(j.started_at))
+                const start = parseDate(j.started_at);
+                const end = parseDate(j.completed_at);
+                if (start && end && !isNaN(start) && !isNaN(end)) {
+                    return sum + (end - start);
+                }
             }
             return sum
         }, 0)
@@ -191,8 +195,12 @@ export default function AdminJobStats() {
         return [...jobs].sort((a, b) => {
             let aValue, bValue
             if (config.key === 'duration') {
-                aValue = a.started_at && a.completed_at ? new Date(a.completed_at) - new Date(a.started_at) : 0
-                bValue = b.started_at && b.completed_at ? new Date(b.completed_at) - new Date(b.started_at) : 0
+                const aStart = parseDate(a.started_at);
+                const aEnd = parseDate(a.completed_at);
+                const bStart = parseDate(b.started_at);
+                const bEnd = parseDate(b.completed_at);
+                aValue = aStart && aEnd ? aEnd - aStart : 0;
+                bValue = bStart && bEnd ? bEnd - bStart : 0;
             } else {
                 aValue = a[config.key]
                 bValue = b[config.key]
@@ -225,8 +233,8 @@ export default function AdminJobStats() {
         const jobs = (data.jobs || []).filter(j => j.started_at)
         if (jobs.length === 0) return null
 
-        const startTimes = jobs.map(j => new Date(j.started_at.endsWith('Z') ? j.started_at : `${j.started_at}Z`).getTime())
-        const endTimes = jobs.map(j => j.completed_at ? new Date(j.completed_at.endsWith('Z') ? j.completed_at : `${j.completed_at}Z`).getTime() : Date.now())
+        const startTimes = jobs.map(j => parseDate(j.started_at)?.getTime() || 0)
+        const endTimes = jobs.map(j => j.completed_at ? parseDate(j.completed_at)?.getTime() || Date.now() : Date.now())
 
         const rawMin = Math.min(...startTimes)
         const rawMax = Math.max(...endTimes)
@@ -278,7 +286,7 @@ export default function AdminJobStats() {
     const trendChartData = useMemo(() => {
         const jobs = (data.jobs || [])
             .filter(j => j.status === 'completed' && j.started_at && j.completed_at)
-            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+            .sort((a, b) => parseDate(a.created_at) - parseDate(b.created_at))
 
         const datasets = Array.from(selectedTrendTypes).map(type => {
             const typeJobs = jobs.filter(j => j.job_type === type)
@@ -287,8 +295,8 @@ export default function AdminJobStats() {
             return {
                 label: type,
                 data: typeJobs.map(j => ({
-                    x: new Date(j.created_at),
-                    y: (new Date(j.completed_at) - new Date(j.started_at)) / (1000 * 60)
+                    x: parseDate(j.created_at),
+                    y: (parseDate(j.completed_at) - parseDate(j.started_at)) / (1000 * 60)
                 })),
                 borderColor: color,
                 backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.5)'),
@@ -602,8 +610,8 @@ export default function AdminJobStats() {
                                                             {/* Job Bar Container */}
                                                             <div className="relative h-full w-full bg-muted/20 rounded-md overflow-hidden ring-1 ring-inset ring-muted/30">
                                                                 {jobs.map((job) => {
-                                                                    const start = new Date(job.started_at).getTime()
-                                                                    const end = job.completed_at ? new Date(job.completed_at).getTime() : Date.now()
+                                                                    const start = parseDate(job.started_at).getTime()
+                                                                    const end = job.completed_at ? parseDate(job.completed_at).getTime() : Date.now()
                                                                     const left = ((start - timelineData.minTime) / timelineData.range) * 100
                                                                     const width = ((end - start) / timelineData.range) * 100
 
@@ -695,7 +703,7 @@ export default function AdminJobStats() {
                                     <tbody className="divide-y">
                                         {sortedJobs.slice(0, 50).map((job) => {
                                             const duration = job.started_at && job.completed_at
-                                                ? new Date(job.completed_at) - new Date(job.started_at)
+                                                ? parseDate(job.completed_at) - parseDate(job.started_at)
                                                 : null
 
                                             return (
@@ -712,7 +720,7 @@ export default function AdminJobStats() {
                                                         {duration ? formatDuration(duration) : 'N/A'}
                                                     </td>
                                                     <td className="px-4 py-3 text-right text-muted-foreground">
-                                                        {formatDistanceToNow(new Date(job.created_at.endsWith('Z') ? job.created_at : `${job.created_at}Z`), { addSuffix: true })}
+                                                        {formatDistanceToNow(parseDate(job.created_at), { addSuffix: true })}
                                                         <div className="text-[10px] opacity-70">{formatLocal(job.created_at)}</div>
                                                     </td>
                                                 </tr>
