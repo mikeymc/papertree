@@ -5,6 +5,18 @@ import { useState } from 'react'
 import { Sparkles, Loader2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Card, CardContent } from '@/components/ui/card'
+import { useMemo } from 'react'
+
+const markdownComponents = {
+    table: (props) => (
+        <div className="overflow-x-auto w-full border-t border-b sm:border-none my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-sm border-collapse" {...props} />
+        </div>
+    ),
+    thead: (props) => <thead className="bg-muted/50" {...props} />,
+    th: (props) => <th className="border p-2 text-left font-bold" {...props} />,
+    td: (props) => <td className="border p-2 text-left" {...props} />,
+}
 
 // Overlay button component for rendering inside the chart
 export function DCFOptimizeButton({ loading, hasRecommendations, onGenerate, className }) {
@@ -64,7 +76,7 @@ export default function DCFAIRecommendations({
             {/* Loading State */}
             {loading && (
                 <Card>
-                    <CardContent className="py-8 text-center text-muted-foreground italic">
+                    <CardContent className="p-3 sm:p-6 text-center text-muted-foreground italic">
                         <Loader2 className="h-6 w-6 animate-spin mx-auto mb-3" />
                         Generating DCF recommendation. Please wait. This could take up to a minute...
                     </CardContent>
@@ -81,7 +93,7 @@ export default function DCFAIRecommendations({
             {/* Recommendations Display */}
             {hasRecommendations && !loading && (
                 <Card>
-                    <CardContent className="pt-6 space-y-4">
+                    <CardContent className="p-3 sm:p-6 space-y-4">
                         {/* Scenario Buttons */}
                         <div className="grid grid-cols-3 gap-3">
                             {Object.entries(scenarioLabels).map(([key, { label }]) => (
@@ -143,7 +155,7 @@ export default function DCFAIRecommendations({
                                 {reasoningExpanded && (
                                     <div className="p-4 bg-muted/50 rounded-lg text-sm leading-relaxed">
                                         <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-4 [&>p:last-child]:mb-0 [&>ul]:mb-4 [&>ol]:mb-4">
-                                            <ReactMarkdown>{recommendations.reasoning}</ReactMarkdown>
+                                            <ReactMarkdown components={markdownComponents}>{recommendations.reasoning}</ReactMarkdown>
                                         </div>
                                     </div>
                                 )}

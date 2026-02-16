@@ -492,7 +492,7 @@ export default function StockCharts({ historyData, quarterlyHistoryData, loading
 
     return (
       <Card className="mt-4 bg-muted/50">
-        <CardContent className="pt-4">
+        <CardContent className="p-3 sm:p-6 pt-4">
           <div className="prose prose-sm max-w-none prose-p:mb-4 prose-p:leading-relaxed prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-li:text-foreground/90 [&>p]:mb-4 [&>p]:leading-relaxed">
             <ReactMarkdown>{processedContent}</ReactMarkdown>
           </div>
@@ -530,14 +530,14 @@ export default function StockCharts({ historyData, quarterlyHistoryData, loading
 
   return (
     <div className="w-full">
-      <div className="flex flex-col">
-        {/* Header with Toggle */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          {/* Analyze Button - positioned on the left */}
+      <div className="flex flex-col gap-4">
+        {/* Row 1: Analyze & Character Selector (Mobile: Side-by-side) */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Analyze Button */}
           {analyzeButtonState.onAnalyze && (
             <Button
               onClick={analyzeButtonState.onAnalyze}
-              className="gap-2"
+              className="gap-2 h-9"
               size="sm"
               disabled={analyzeButtonState.loading}
               variant={analyzeButtonState.loading ? "secondary" : "default"}
@@ -545,718 +545,719 @@ export default function StockCharts({ historyData, quarterlyHistoryData, loading
               {analyzeButtonState.loading ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  Generating
+                  <span className="hidden xs:inline">Generating</span>
                 </>
               ) : analyzeButtonState.hasAnyAnalysis ? (
                 <>
                   <RefreshCw className="h-4 w-4" />
-                  Re-Analyze
+                  <span className="hidden xs:inline">Re-Analyze</span>
+                  <span className="xs:hidden">Refresh</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Analyze
+                  <span>Analyze</span>
                 </>
               )}
             </Button>
           )}
 
-          {/* Toggle Controls - positioned on the right */}
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Time Horizon Selector */}
-            <div className="flex items-center space-x-1 bg-muted p-1 rounded-lg">
-              {[
-                { label: '3Y', value: '3y' },
-                { label: '5Y', value: '5y' },
-                { label: '10Y', value: '10y' },
-                { label: 'All', value: 'all' },
-              ].map((opt) => (
-                <Button
-                  key={opt.value}
-                  variant={timeHorizon === opt.value ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setTimeHorizon(opt.value)}
-                  className="h-8 shadow-none px-3"
-                >
-                  {opt.label}
-                </Button>
-              ))}
-            </div>
-
-            {/* View Mode Selector */}
-            <div className="flex items-center space-x-2 bg-muted p-1 rounded-lg">
-              <Button
-                variant={viewMode === 'annual' ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode('annual')}
-                className="h-8 shadow-none"
-              >
-                Annual
-              </Button>
-              <Button
-                variant={viewMode === 'quarterly' ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode('quarterly')}
-                disabled={!quarterlyHistoryData}
-                className="h-8 shadow-none"
-              >
-                Quarterly
-              </Button>
-            </div>
-
-            {/* Character Selector */}
-            <div className="flex items-center space-x-2 bg-muted p-1 rounded-lg">
-              <Button
-                variant={selectedCharacter === 'lynch' ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setSelectedCharacter('lynch')}
-                className="h-8 shadow-none"
-              >
-                Lynch
-              </Button>
-              <Button
-                variant={selectedCharacter === 'buffett' ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setSelectedCharacter('buffett')}
-                className="h-8 shadow-none"
-              >
-                Buffett
-              </Button>
-            </div>
+          {/* Character Selector */}
+          <div className="flex items-center space-x-1 bg-muted p-1 rounded-lg">
+            <Button
+              variant={selectedCharacter === 'lynch' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedCharacter('lynch')}
+              className="h-7 sm:h-8 shadow-none px-2 sm:px-3 text-xs"
+            >
+              Lynch
+            </Button>
+            <Button
+              variant={selectedCharacter === 'buffett' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedCharacter('buffett')}
+              className="h-7 sm:h-8 shadow-none px-2 sm:px-3 text-xs"
+            >
+              Buffett
+            </Button>
           </div>
         </div>
 
-        {/* Profitability & Growth */}
-        <div className="stock-charts mt-6" onMouseLeave={handleMouseLeave}>
-          <UnifiedChartAnalysis
-            symbol={symbol}
-            character={selectedCharacter}
-            onAnalysisGenerated={(result) => {
-              if (result.narrative) {
-                setNarrative(result.narrative)
-                setAnalyses({ growth: null, cash: null, valuation: null })
-              } else if (result.sections) {
-                setAnalyses(result.sections)
-                setNarrative(null)
-              } else {
-                // No analysis found for this character - clear both to show regular charts
-                setNarrative(null)
-                setAnalyses({ growth: null, cash: null, valuation: null })
-              }
-            }}
-            onButtonStateChange={handleButtonStateChange}
-          />
+        {/* Row 2: Time Horizon & View Mode (Mobile: Side-by-side) */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Time Horizon Selector */}
+          <div className="flex items-center space-x-1 bg-muted p-1 rounded-lg">
+            {[
+              { label: '3Y', value: '3y' },
+              { label: '5Y', value: '5y' },
+              { label: '10Y', value: '10y' },
+              { label: 'All', value: 'all' },
+            ].map((opt) => (
+              <Button
+                key={opt.value}
+                variant={timeHorizon === opt.value ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setTimeHorizon(opt.value)}
+                className="h-7 sm:h-8 shadow-none px-2 sm:px-3 text-xs"
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
 
-          {/* Narrative mode: render ChartNarrativeRenderer */}
-          {narrative && historyData && (
-            <ChartNarrativeRenderer narrative={narrative} historyData={activeData} isQuarterly={showQuarterly} />
-          )}
+          {/* View Mode Selector */}
+          <div className="flex items-center space-x-1 bg-muted p-1 rounded-lg shrink-0">
+            <Button
+              variant={viewMode === 'annual' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode('annual')}
+              className="h-7 sm:h-8 shadow-none px-2 sm:px-3 text-xs"
+            >
+              Annual
+            </Button>
+            <Button
+              variant={viewMode === 'quarterly' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode('quarterly')}
+              disabled={!quarterlyHistoryData}
+              className="h-7 sm:h-8 shadow-none px-2 sm:px-3 text-xs"
+            >
+              Quarterly
+            </Button>
+          </div>
+        </div>
+      </div>
 
-          {/* Legacy mode: render traditional chart sections */}
-          {!narrative && (loading ? (
-            <div className="loading">Loading historical data...</div>
-          ) : !historyData ? (
-            <div className="no-data">No historical data available</div>
-          ) : (
-            <>
-              {/* SECTION 1: Profitability & Growth */}
-              <Card className="mb-6">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold" style={{ color: '#999999' }}>Profitability & Growth</CardTitle>
-                </CardHeader>
-                <CardContent>
+      {/* Profitability & Growth */}
+      <div className="stock-charts mt-6" onMouseLeave={handleMouseLeave}>
+        <UnifiedChartAnalysis
+          symbol={symbol}
+          character={selectedCharacter}
+          onAnalysisGenerated={(result) => {
+            if (result.narrative) {
+              setNarrative(result.narrative)
+              setAnalyses({ growth: null, cash: null, valuation: null })
+            } else if (result.sections) {
+              setAnalyses(result.sections)
+              setNarrative(null)
+            } else {
+              // No analysis found for this character - clear both to show regular charts
+              setNarrative(null)
+              setAnalyses({ growth: null, cash: null, valuation: null })
+            }
+          }}
+          onButtonStateChange={handleButtonStateChange}
+        />
 
-                  {/* Row 1: Revenue + Net Income */}
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
-                    {/* Revenue */}
-                    {/* Revenue */}
-                    <div>
-                      <div className="h-64 chart-container">
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [
-                              {
-                                label: 'Revenue (Billions)',
-                                data: revenueData,
-                                borderColor: 'rgb(75, 192, 192)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                pointRadius: activeIndex !== null ? 3 : 0,
-                                pointHoverRadius: 5
-                              },
-                              // Analyst estimate projection
-                              ...(hasEstimates ? [{
-                                label: 'Analyst Est.',
-                                data: buildEstimateData(activeData.revenue, 'revenue', 1e9),
-                                borderColor: 'rgba(20, 184, 166, 0.8)',
-                                backgroundColor: 'transparent',
-                                borderDash: [5, 5],
-                                pointRadius: 4,
-                                pointStyle: 'triangle',
-                                pointHoverRadius: 6,
-                                spanGaps: true,
-                              }] : [])
-                            ]
-                          }}
-                          options={{
-                            ...createChartOptions('Revenue', 'Billions ($)', showQuarterly),
-                            plugins: {
-                              ...createChartOptions('Revenue', 'Billions ($)', showQuarterly).plugins,
-                              legend: {
-                                display: false,
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                      <CustomLegend items={[
-                        { label: 'Revenue', color: 'rgb(75, 192, 192)' },
-                        ...(hasEstimates ? [{ label: 'Analyst Est.', color: 'rgba(20, 184, 166, 0.8)', dashed: true }] : [])
-                      ]} />
-                    </div>
+        {/* Narrative mode: render ChartNarrativeRenderer */}
+        {narrative && historyData && (
+          <ChartNarrativeRenderer narrative={narrative} historyData={activeData} isQuarterly={showQuarterly} />
+        )}
 
-                    {/* Slot 2: EPS (Shared) */}
-                    <div>
-                      <div className="h-64 chart-container">
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [
-                              {
-                                label: 'EPS ($)',
-                                data: epsData,
-                                borderColor: 'rgb(6, 182, 212)',
-                                backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                                pointRadius: activeIndex !== null ? 3 : 0,
-                                pointHoverRadius: 5
-                              },
-                              // Analyst estimate projection
-                              ...(hasEstimates ? [{
-                                label: 'Analyst Est.',
-                                data: buildEstimateData(activeData.eps || [], 'eps', 1),
-                                borderColor: 'rgba(20, 184, 166, 0.8)',
-                                backgroundColor: 'transparent',
-                                borderDash: [5, 5],
-                                pointRadius: 4,
-                                pointStyle: 'triangle',
-                                pointHoverRadius: 6,
-                                spanGaps: true,
-                              }] : [])
-                            ]
-                          }}
-                          options={{
-                            ...createChartOptions('Earnings Per Share', 'EPS ($)', showQuarterly),
-                            plugins: {
-                              ...createChartOptions('Earnings Per Share', 'EPS ($)', showQuarterly).plugins,
-                              legend: {
-                                display: false,
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                      <CustomLegend items={[
-                        { label: 'EPS', color: 'rgb(6, 182, 212)' },
-                        ...(hasEstimates ? [{ label: 'Analyst Est.', color: 'rgba(20, 184, 166, 0.8)', dashed: true }] : [])
-                      ]} />
-                    </div>
-                  </div>
+        {/* Legacy mode: render traditional chart sections */}
+        {!narrative && (loading ? (
+          <div className="loading">Loading historical data...</div>
+        ) : !historyData ? (
+          <div className="no-data">No historical data available</div>
+        ) : (
+          <>
+            {/* SECTION 1: Profitability & Growth */}
+            <Card className="mb-6">
+              <CardHeader className="p-3 sm:p-6 pb-2">
+                <CardTitle className="text-lg font-semibold" style={{ color: '#999999' }}>Profitability & Growth</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
 
-                  {/* Row 2: Net Income/Margin + Dividend/ROE */}
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
-                    {/* Slot 3: Net Income (Lynch) or Net Margin (Buffett) */}
+                {/* Row 1: Revenue + Net Income */}
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
+                  {/* Revenue */}
+                  {/* Revenue */}
+                  <div>
                     <div className="h-64 chart-container">
-                      {isBuffett ? (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [{
-                              label: 'Net Margin (%)',
-                              data: netMarginData,
-                              borderColor: 'rgb(236, 72, 153)', // Pink
-                              backgroundColor: 'rgba(236, 72, 153, 0.2)',
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [
+                            {
+                              label: 'Revenue (Billions)',
+                              data: revenueData,
+                              borderColor: 'rgb(75, 192, 192)',
+                              backgroundColor: 'rgba(75, 192, 192, 0.2)',
                               pointRadius: activeIndex !== null ? 3 : 0,
                               pointHoverRadius: 5
-                            }]
-                          }}
-                          options={createChartOptions('Net Profit Margin', 'Margin (%)', showQuarterly)}
-                        />
-                      ) : (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [
-                              {
-                                label: 'Net Income (Billions)',
-                                data: netIncomeData,
-                                borderColor: 'rgb(153, 102, 255)',
-                                backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                                pointRadius: activeIndex !== null ? 3 : 0,
-                                pointHoverRadius: 5
-                              }
-                            ]
-                          }}
-                          options={createChartOptions('Net Income', 'Billions ($)', showQuarterly)}
-                        />
-                      )}
-                    </div>
-
-                    {/* Slot 4: Dividend Yield (Lynch) or ROE (Buffett) */}
-                    <div className="h-64 chart-container">
-                      {isBuffett ? (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [{
-                              label: 'ROE (%)',
-                              data: roeData,
-                              borderColor: 'rgb(245, 158, 11)', // Amber
-                              backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                              pointRadius: activeIndex !== null ? 3 : 0,
-                              pointHoverRadius: 5
-                            }]
-                          }}
-                          options={createChartOptions('Return on Equity', 'ROE (%)', showQuarterly)}
-                        />
-                      ) : (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: activeData.weekly_dividend_yields?.dates || [],
-                            datasets: [
-                              {
-                                label: 'Dividend Yield (%)',
-                                data: activeData.weekly_dividend_yields?.values || [],
-                                borderColor: 'rgb(255, 205, 86)',
-                                backgroundColor: 'rgba(255, 205, 86, 0.2)',
-                                pointRadius: 0,
-                                pointHoverRadius: 3,
-                                borderWidth: 1.5,
-                                tension: 0.1
-                              }
-                            ]
-                          }}
-                          options={{
-                            ...createChartOptions('Dividend Yield', 'Yield (%)', showQuarterly),
-                            scales: {
-                              ...createChartOptions('Dividend Yield', 'Yield (%)', showQuarterly).scales,
-                              x: {
-                                type: 'category',
-                                ticks: {
-                                  callback: yearTickCallback,
-                                  maxRotation: 45,
-                                  minRotation: 45,
-                                  autoSkip: false
-                                }
-                              }
-                            }
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {analyses.growth && <AnalysisBox content={analyses.growth} />}
-                </CardContent>
-              </Card>
-
-              {/* SECTION 2: Cash & Capital Efficiency */}
-              <Card className="mb-6">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold" style={{ color: '#999999' }}>Cash & Capital Efficiency</CardTitle>
-                </CardHeader>
-                <CardContent>
-
-                  {/* Row 1: Operating Cash Flow + Free Cash Flow */}
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
-                    {/* Slot 5: Operating Cash Flow (Lynch) or Free Cash Flow (Buffett - moved from slot 6) */}
-                    <div className="h-64 chart-container">
-                      {isBuffett ? (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [
-                              {
-                                label: 'Free Cash Flow (Billions)',
-                                data: fcfData,
-                                borderColor: 'rgb(16, 185, 129)',
-                                backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                                pointRadius: activeIndex !== null ? 3 : 0,
-                                pointHoverRadius: 5
-                              },
-                            ],
-                          }}
-                          options={createChartOptions('Free Cash Flow', 'Billions ($)', showQuarterly)}
-                        />
-                      ) : (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [
-                              {
-                                label: 'Operating Cash Flow (Billions)',
-                                data: ocfData,
-                                borderColor: 'rgb(54, 162, 235)',
-                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                pointRadius: activeIndex !== null ? 3 : 0,
-                                pointHoverRadius: 5
-                              },
-                            ],
-                          }}
-                          options={createChartOptions('Operating Cash Flow', 'Billions ($)', showQuarterly)}
-                        />
-                      )}
-                    </div>
-
-                    {/* Slot 6: Free Cash Flow (Lynch) or Debt-to-Earnings (Buffett) */}
-                    <div className="h-64 chart-container">
-                      {isBuffett ? (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [{
-                              label: 'Debt-to-Earnings (Years)',
-                              data: debtToEarningsData,
-                              borderColor: 'rgb(244, 63, 94)', // Rose
-                              backgroundColor: 'rgba(244, 63, 94, 0.2)',
-                              pointRadius: activeIndex !== null ? 3 : 0,
-                              pointHoverRadius: 5
-                            }]
-                          }}
-                          options={createChartOptions('Debt-to-Earnings (Years)', 'Years', showQuarterly)}
-                        />
-                      ) : (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [
-                              {
-                                label: 'Free Cash Flow (Billions)',
-                                data: fcfData,
-                                borderColor: 'rgb(16, 185, 129)',
-                                backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                                pointRadius: activeIndex !== null ? 3 : 0,
-                                pointHoverRadius: 5
-                              },
-                            ],
-                          }}
-                          options={createChartOptions('Free Cash Flow', 'Billions ($)', showQuarterly)}
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Row 2: Capital Expenditures + Debt-to-Equity */}
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
-                    {/* Slot 7: CapEx (Lynch) or Shares Outstanding (Buffett) */}
-                    <div className="h-64 chart-container">
-                      {isBuffett ? (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [{
-                              label: 'Shares Outstanding (Billions)',
-                              data: sharesDataBillion,
-                              borderColor: 'rgb(59, 130, 246)', // Blue
-                              backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                              pointRadius: activeIndex !== null ? 3 : 0,
-                              pointHoverRadius: 5
-                            }]
-                          }}
-                          options={createChartOptions('Shares Outstanding', 'Billions', showQuarterly)}
-                        />
-                      ) : (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [
-                              {
-                                label: 'Capital Expenditures (Billions)',
-                                data: capExData,
-                                borderColor: 'rgb(239, 68, 68)',
-                                backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                                pointRadius: activeIndex !== null ? 3 : 0,
-                                pointHoverRadius: 5
-                              },
-                            ],
-                          }}
-                          options={createChartOptions('Capital Expenditures', 'Billions ($)', showQuarterly)}
-                        />
-                      )}
-                    </div>
-
-                    {/* Slot 8: Debt-to-Equity (Lynch) or Book Value (Buffett) */}
-                    <div className="h-64 chart-container">
-                      {isBuffett ? (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [{
-                              label: 'Book Value Per Share ($)',
-                              data: bookValueData,
-                              borderColor: 'rgb(14, 165, 233)', // Sky Blue
-                              backgroundColor: 'rgba(14, 165, 233, 0.2)',
-                              pointRadius: activeIndex !== null ? 3 : 0,
-                              pointHoverRadius: 5
-                            }]
-                          }}
-                          options={createChartOptions('Book Value Per Share', 'BVPS ($)', showQuarterly)}
-                        />
-                      ) : (
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: getExtendedLabels(),
-                            datasets: [
-                              {
-                                label: 'Debt-to-Equity Ratio',
-                                data: debtToEquityData,
-                                borderColor: 'rgb(255, 99, 132)',
-                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                pointRadius: activeIndex !== null ? 3 : 0,
-                                pointHoverRadius: 5
-                              }
-                            ]
-                          }}
-                          options={createChartOptions('Debt-to-Equity', 'D/E Ratio', showQuarterly)}
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {analyses.cash && <AnalysisBox content={analyses.cash} />}
-                </CardContent>
-              </Card>
-
-              {/* SECTION 3: Market Valuation */}
-              <Card className="mb-6">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold" style={{ color: '#999999' }}>Market Valuation</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
-                    {/* Stock Price - Uses weekly data for granular display */}
-                    <div>
-                      <div className="h-64 chart-container">
-                        <Line plugins={[zeroLinePlugin, crosshairPlugin]}
-                          data={{
-                            labels: activeData.weekly_prices?.dates?.length > 0
-                              ? activeData.weekly_prices.dates
-                              : labels,
-                            datasets: [
-                              {
-                                label: 'Stock Price ($)',
-                                data: activeData.weekly_prices?.prices?.length > 0
-                                  ? activeData.weekly_prices.prices
-                                  : activeData.price,
-                                borderColor: 'rgb(255, 159, 64)',
-                                backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                                pointRadius: 0,
-                                pointHoverRadius: 3,
-                                borderWidth: 1.5,
-                                tension: 0.1,
-                                spanGaps: true
-                              },
-                              // Price target mean line
-                              ...(historyData.price_targets?.mean ? [{
-                                label: 'Analyst Target (Mean)',
-                                data: (activeData.weekly_prices?.dates || labels).map(() => historyData.price_targets.mean),
-                                borderColor: 'rgba(16, 185, 129, 0.7)',
-                                backgroundColor: 'transparent',
-                                borderDash: [8, 4],
-                                borderWidth: 2,
-                                pointRadius: 0,
-                                fill: false,
-                              }] : []),
-                              // Price target high line (upper bound)
-                              ...(historyData.price_targets?.high ? [{
-                                label: 'Target Range',
-                                data: (activeData.weekly_prices?.dates || labels).map(() => historyData.price_targets.high),
-                                borderColor: 'rgba(16, 185, 129, 0.3)',
-                                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                                borderWidth: 1,
-                                pointRadius: 0,
-                                fill: {
-                                  target: '+1',  // Fill to the next dataset (low)
-                                  above: 'rgba(16, 185, 129, 0.15)',
-                                },
-                              }] : []),
-                              // Price target low line (lower bound)
-                              ...(historyData.price_targets?.low ? [{
-                                label: 'Target Low',
-                                data: (activeData.weekly_prices?.dates || labels).map(() => historyData.price_targets.low),
-                                borderColor: 'rgba(16, 185, 129, 0.3)',
-                                backgroundColor: 'transparent',
-                                borderWidth: 1,
-                                pointRadius: 0,
-                                fill: false,
-                              }] : []),
-                            ],
-                          }}
-                          options={{
-                            ...createChartOptions('Stock Price', 'Price ($)', showQuarterly),
-                            plugins: {
-                              ...createChartOptions('Stock Price', 'Price ($)', showQuarterly).plugins,
-                              legend: {
-                                display: false,
-                              }
                             },
-                            scales: {
-                              ...createChartOptions('Stock Price', 'Price ($)', showQuarterly).scales,
-                              x: {
-                                type: 'category',
-                                ticks: {
-                                  callback: yearTickCallback,
-                                  maxRotation: 45,
-                                  minRotation: 45,
-                                  autoSkip: false
-                                }
+                            // Analyst estimate projection
+                            ...(hasEstimates ? [{
+                              label: 'Analyst Est.',
+                              data: buildEstimateData(activeData.revenue, 'revenue', 1e9),
+                              borderColor: 'rgba(20, 184, 166, 0.8)',
+                              backgroundColor: 'transparent',
+                              borderDash: [5, 5],
+                              pointRadius: 4,
+                              pointStyle: 'triangle',
+                              pointHoverRadius: 6,
+                              spanGaps: true,
+                            }] : [])
+                          ]
+                        }}
+                        options={{
+                          ...createChartOptions('Revenue', 'Billions ($)', showQuarterly),
+                          plugins: {
+                            ...createChartOptions('Revenue', 'Billions ($)', showQuarterly).plugins,
+                            legend: {
+                              display: false,
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                    <CustomLegend items={[
+                      { label: 'Revenue', color: 'rgb(75, 192, 192)' },
+                      ...(hasEstimates ? [{ label: 'Analyst Est.', color: 'rgba(20, 184, 166, 0.8)', dashed: true }] : [])
+                    ]} />
+                  </div>
+
+                  {/* Slot 2: EPS (Shared) */}
+                  <div>
+                    <div className="h-64 chart-container">
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [
+                            {
+                              label: 'EPS ($)',
+                              data: epsData,
+                              borderColor: 'rgb(6, 182, 212)',
+                              backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                              pointRadius: activeIndex !== null ? 3 : 0,
+                              pointHoverRadius: 5
+                            },
+                            // Analyst estimate projection
+                            ...(hasEstimates ? [{
+                              label: 'Analyst Est.',
+                              data: buildEstimateData(activeData.eps || [], 'eps', 1),
+                              borderColor: 'rgba(20, 184, 166, 0.8)',
+                              backgroundColor: 'transparent',
+                              borderDash: [5, 5],
+                              pointRadius: 4,
+                              pointStyle: 'triangle',
+                              pointHoverRadius: 6,
+                              spanGaps: true,
+                            }] : [])
+                          ]
+                        }}
+                        options={{
+                          ...createChartOptions('Earnings Per Share', 'EPS ($)', showQuarterly),
+                          plugins: {
+                            ...createChartOptions('Earnings Per Share', 'EPS ($)', showQuarterly).plugins,
+                            legend: {
+                              display: false,
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                    <CustomLegend items={[
+                      { label: 'EPS', color: 'rgb(6, 182, 212)' },
+                      ...(hasEstimates ? [{ label: 'Analyst Est.', color: 'rgba(20, 184, 166, 0.8)', dashed: true }] : [])
+                    ]} />
+                  </div>
+                </div>
+
+                {/* Row 2: Net Income/Margin + Dividend/ROE */}
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
+                  {/* Slot 3: Net Income (Lynch) or Net Margin (Buffett) */}
+                  <div className="h-64 chart-container">
+                    {isBuffett ? (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [{
+                            label: 'Net Margin (%)',
+                            data: netMarginData,
+                            borderColor: 'rgb(236, 72, 153)', // Pink
+                            backgroundColor: 'rgba(236, 72, 153, 0.2)',
+                            pointRadius: activeIndex !== null ? 3 : 0,
+                            pointHoverRadius: 5
+                          }]
+                        }}
+                        options={createChartOptions('Net Profit Margin', 'Margin (%)', showQuarterly)}
+                      />
+                    ) : (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [
+                            {
+                              label: 'Net Income (Billions)',
+                              data: netIncomeData,
+                              borderColor: 'rgb(153, 102, 255)',
+                              backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                              pointRadius: activeIndex !== null ? 3 : 0,
+                              pointHoverRadius: 5
+                            }
+                          ]
+                        }}
+                        options={createChartOptions('Net Income', 'Billions ($)', showQuarterly)}
+                      />
+                    )}
+                  </div>
+
+                  {/* Slot 4: Dividend Yield (Lynch) or ROE (Buffett) */}
+                  <div className="h-64 chart-container">
+                    {isBuffett ? (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [{
+                            label: 'ROE (%)',
+                            data: roeData,
+                            borderColor: 'rgb(245, 158, 11)', // Amber
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            pointRadius: activeIndex !== null ? 3 : 0,
+                            pointHoverRadius: 5
+                          }]
+                        }}
+                        options={createChartOptions('Return on Equity', 'ROE (%)', showQuarterly)}
+                      />
+                    ) : (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: activeData.weekly_dividend_yields?.dates || [],
+                          datasets: [
+                            {
+                              label: 'Dividend Yield (%)',
+                              data: activeData.weekly_dividend_yields?.values || [],
+                              borderColor: 'rgb(255, 205, 86)',
+                              backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                              pointRadius: 0,
+                              pointHoverRadius: 3,
+                              borderWidth: 1.5,
+                              tension: 0.1
+                            }
+                          ]
+                        }}
+                        options={{
+                          ...createChartOptions('Dividend Yield', 'Yield (%)', showQuarterly),
+                          scales: {
+                            ...createChartOptions('Dividend Yield', 'Yield (%)', showQuarterly).scales,
+                            x: {
+                              type: 'category',
+                              ticks: {
+                                callback: yearTickCallback,
+                                maxRotation: 45,
+                                minRotation: 45,
+                                autoSkip: false
                               }
                             }
-                          }}
-                        />
-                      </div>
-                      <CustomLegend items={[
-                        { label: 'Stock Price', color: 'rgb(255, 159, 64)' },
-                        ...(historyData.price_targets?.mean ? [{ label: 'Analyst Target (Mean)', color: 'rgba(16, 185, 129, 0.7)', dashed: true }] : []),
-                        ...(historyData.price_targets?.high ? [{ label: 'Target Range', color: 'rgba(16, 185, 129, 0.3)', type: 'rect' }] : [])
-                      ]} />
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {analyses.growth && <AnalysisBox content={analyses.growth} />}
+              </CardContent>
+            </Card>
+
+            {/* SECTION 2: Cash & Capital Efficiency */}
+            <Card className="mb-6">
+              <CardHeader className="p-3 sm:p-6 pb-2">
+                <CardTitle className="text-lg font-semibold" style={{ color: '#999999' }}>Cash & Capital Efficiency</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+
+                {/* Row 1: Operating Cash Flow + Free Cash Flow */}
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
+                  {/* Slot 5: Operating Cash Flow (Lynch) or Free Cash Flow (Buffett - moved from slot 6) */}
+                  <div className="h-64 chart-container">
+                    {isBuffett ? (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [
+                            {
+                              label: 'Free Cash Flow (Billions)',
+                              data: fcfData,
+                              borderColor: 'rgb(16, 185, 129)',
+                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                              pointRadius: activeIndex !== null ? 3 : 0,
+                              pointHoverRadius: 5
+                            },
+                          ],
+                        }}
+                        options={createChartOptions('Free Cash Flow', 'Billions ($)', showQuarterly)}
+                      />
+                    ) : (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [
+                            {
+                              label: 'Operating Cash Flow (Billions)',
+                              data: ocfData,
+                              borderColor: 'rgb(54, 162, 235)',
+                              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                              pointRadius: activeIndex !== null ? 3 : 0,
+                              pointHoverRadius: 5
+                            },
+                          ],
+                        }}
+                        options={createChartOptions('Operating Cash Flow', 'Billions ($)', showQuarterly)}
+                      />
+                    )}
+                  </div>
+
+                  {/* Slot 6: Free Cash Flow (Lynch) or Debt-to-Earnings (Buffett) */}
+                  <div className="h-64 chart-container">
+                    {isBuffett ? (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [{
+                            label: 'Debt-to-Earnings (Years)',
+                            data: debtToEarningsData,
+                            borderColor: 'rgb(244, 63, 94)', // Rose
+                            backgroundColor: 'rgba(244, 63, 94, 0.2)',
+                            pointRadius: activeIndex !== null ? 3 : 0,
+                            pointHoverRadius: 5
+                          }]
+                        }}
+                        options={createChartOptions('Debt-to-Earnings (Years)', 'Years', showQuarterly)}
+                      />
+                    ) : (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [
+                            {
+                              label: 'Free Cash Flow (Billions)',
+                              data: fcfData,
+                              borderColor: 'rgb(16, 185, 129)',
+                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                              pointRadius: activeIndex !== null ? 3 : 0,
+                              pointHoverRadius: 5
+                            },
+                          ],
+                        }}
+                        options={createChartOptions('Free Cash Flow', 'Billions ($)', showQuarterly)}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Row 2: Capital Expenditures + Debt-to-Equity */}
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
+                  {/* Slot 7: CapEx (Lynch) or Shares Outstanding (Buffett) */}
+                  <div className="h-64 chart-container">
+                    {isBuffett ? (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [{
+                            label: 'Shares Outstanding (Billions)',
+                            data: sharesDataBillion,
+                            borderColor: 'rgb(59, 130, 246)', // Blue
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            pointRadius: activeIndex !== null ? 3 : 0,
+                            pointHoverRadius: 5
+                          }]
+                        }}
+                        options={createChartOptions('Shares Outstanding', 'Billions', showQuarterly)}
+                      />
+                    ) : (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [
+                            {
+                              label: 'Capital Expenditures (Billions)',
+                              data: capExData,
+                              borderColor: 'rgb(239, 68, 68)',
+                              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                              pointRadius: activeIndex !== null ? 3 : 0,
+                              pointHoverRadius: 5
+                            },
+                          ],
+                        }}
+                        options={createChartOptions('Capital Expenditures', 'Billions ($)', showQuarterly)}
+                      />
+                    )}
+                  </div>
+
+                  {/* Slot 8: Debt-to-Equity (Lynch) or Book Value (Buffett) */}
+                  <div className="h-64 chart-container">
+                    {isBuffett ? (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [{
+                            label: 'Book Value Per Share ($)',
+                            data: bookValueData,
+                            borderColor: 'rgb(14, 165, 233)', // Sky Blue
+                            backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                            pointRadius: activeIndex !== null ? 3 : 0,
+                            pointHoverRadius: 5
+                          }]
+                        }}
+                        options={createChartOptions('Book Value Per Share', 'BVPS ($)', showQuarterly)}
+                      />
+                    ) : (
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: getExtendedLabels(),
+                          datasets: [
+                            {
+                              label: 'Debt-to-Equity Ratio',
+                              data: debtToEquityData,
+                              borderColor: 'rgb(255, 99, 132)',
+                              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                              pointRadius: activeIndex !== null ? 3 : 0,
+                              pointHoverRadius: 5
+                            }
+                          ]
+                        }}
+                        options={createChartOptions('Debt-to-Equity', 'D/E Ratio', showQuarterly)}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {analyses.cash && <AnalysisBox content={analyses.cash} />}
+              </CardContent>
+            </Card>
+
+            {/* SECTION 3: Market Valuation */}
+            <Card className="mb-6">
+              <CardHeader className="p-3 sm:p-6 pb-2">
+                <CardTitle className="text-lg font-semibold" style={{ color: '#999999' }}>Market Valuation</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,350px),1fr))] gap-4 mb-4">
+                  {/* Stock Price - Uses weekly data for granular display */}
+                  <div>
+                    <div className="h-64 chart-container">
+                      <Line plugins={[zeroLinePlugin, crosshairPlugin]}
+                        data={{
+                          labels: activeData.weekly_prices?.dates?.length > 0
+                            ? activeData.weekly_prices.dates
+                            : labels,
+                          datasets: [
+                            {
+                              label: 'Stock Price ($)',
+                              data: activeData.weekly_prices?.prices?.length > 0
+                                ? activeData.weekly_prices.prices
+                                : activeData.price,
+                              borderColor: 'rgb(255, 159, 64)',
+                              backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                              pointRadius: 0,
+                              pointHoverRadius: 3,
+                              borderWidth: 1.5,
+                              tension: 0.1,
+                              spanGaps: true
+                            },
+                            // Price target mean line
+                            ...(historyData.price_targets?.mean ? [{
+                              label: 'Analyst Target (Mean)',
+                              data: (activeData.weekly_prices?.dates || labels).map(() => historyData.price_targets.mean),
+                              borderColor: 'rgba(16, 185, 129, 0.7)',
+                              backgroundColor: 'transparent',
+                              borderDash: [8, 4],
+                              borderWidth: 2,
+                              pointRadius: 0,
+                              fill: false,
+                            }] : []),
+                            // Price target high line (upper bound)
+                            ...(historyData.price_targets?.high ? [{
+                              label: 'Target Range',
+                              data: (activeData.weekly_prices?.dates || labels).map(() => historyData.price_targets.high),
+                              borderColor: 'rgba(16, 185, 129, 0.3)',
+                              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                              borderWidth: 1,
+                              pointRadius: 0,
+                              fill: {
+                                target: '+1',  // Fill to the next dataset (low)
+                                above: 'rgba(16, 185, 129, 0.15)',
+                              },
+                            }] : []),
+                            // Price target low line (lower bound)
+                            ...(historyData.price_targets?.low ? [{
+                              label: 'Target Low',
+                              data: (activeData.weekly_prices?.dates || labels).map(() => historyData.price_targets.low),
+                              borderColor: 'rgba(16, 185, 129, 0.3)',
+                              backgroundColor: 'transparent',
+                              borderWidth: 1,
+                              pointRadius: 0,
+                              fill: false,
+                            }] : []),
+                          ],
+                        }}
+                        options={{
+                          ...createChartOptions('Stock Price', 'Price ($)', showQuarterly),
+                          plugins: {
+                            ...createChartOptions('Stock Price', 'Price ($)', showQuarterly).plugins,
+                            legend: {
+                              display: false,
+                            }
+                          },
+                          scales: {
+                            ...createChartOptions('Stock Price', 'Price ($)', showQuarterly).scales,
+                            x: {
+                              type: 'category',
+                              ticks: {
+                                callback: yearTickCallback,
+                                maxRotation: 45,
+                                minRotation: 45,
+                                autoSkip: false
+                              }
+                            }
+                          }
+                        }}
+                      />
                     </div>
+                    <CustomLegend items={[
+                      { label: 'Stock Price', color: 'rgb(255, 159, 64)' },
+                      ...(historyData.price_targets?.mean ? [{ label: 'Analyst Target (Mean)', color: 'rgba(16, 185, 129, 0.7)', dashed: true }] : []),
+                      ...(historyData.price_targets?.high ? [{ label: 'Target Range', color: 'rgba(16, 185, 129, 0.3)', type: 'rect' }] : [])
+                    ]} />
+                  </div>
 
-                    {/* P/E Ratio - Uses weekly data for granular display */}
-                    <div>
-                      {(() => {
-                        const weeklyPE = activeData?.weekly_pe_ratios
-                        const useWeeklyPE = weeklyPE?.dates?.length > 0 && weeklyPE?.values?.length > 0
-                        const peLabels = useWeeklyPE ? weeklyPE.dates : labels
-                        const peData = useWeeklyPE ? weeklyPE.values : activeData?.pe_ratio
+                  {/* P/E Ratio - Uses weekly data for granular display */}
+                  <div>
+                    {(() => {
+                      const weeklyPE = activeData?.weekly_pe_ratios
+                      const useWeeklyPE = weeklyPE?.dates?.length > 0 && weeklyPE?.values?.length > 0
+                      const peLabels = useWeeklyPE ? weeklyPE.dates : labels
+                      const peData = useWeeklyPE ? weeklyPE.values : activeData?.pe_ratio
 
-                        // Calculate 13-week rolling average (using partial windows at the start)
-                        const peSMA13 = (() => {
-                          if (!useWeeklyPE || !peData || peData.length < 1) return []
+                      // Calculate 13-week rolling average (using partial windows at the start)
+                      const peSMA13 = (() => {
+                        if (!useWeeklyPE || !peData || peData.length < 1) return []
 
-                          const windowSize = 13
-                          const sma = []
+                        const windowSize = 13
+                        const sma = []
 
-                          for (let i = 0; i < peData.length; i++) {
-                            // Use smaller window at the start (1, 2, 3... up to windowSize)
-                            const actualWindowSize = Math.min(i + 1, windowSize)
-                            const windowinfo = peData.slice(Math.max(0, i - actualWindowSize + 1), i + 1)
-                            const validValues = windowinfo.filter(v => v !== null && v !== undefined)
+                        for (let i = 0; i < peData.length; i++) {
+                          // Use smaller window at the start (1, 2, 3... up to windowSize)
+                          const actualWindowSize = Math.min(i + 1, windowSize)
+                          const windowinfo = peData.slice(Math.max(0, i - actualWindowSize + 1), i + 1)
+                          const validValues = windowinfo.filter(v => v !== null && v !== undefined)
 
-                            if (validValues.length === 0) {
-                              sma.push(null)
-                            } else {
-                              const sum = validValues.reduce((a, b) => a + b, 0)
-                              sma.push(sum / validValues.length)
-                            }
+                          if (validValues.length === 0) {
+                            sma.push(null)
+                          } else {
+                            const sum = validValues.reduce((a, b) => a + b, 0)
+                            sma.push(sum / validValues.length)
                           }
-                          return sma
-                        })()
+                        }
+                        return sma
+                      })()
 
-                        // Calculate 52-week rolling average (using partial windows at the start)
-                        const peSMA52 = (() => {
-                          if (!useWeeklyPE || !peData || peData.length < 1) return []
+                      // Calculate 52-week rolling average (using partial windows at the start)
+                      const peSMA52 = (() => {
+                        if (!useWeeklyPE || !peData || peData.length < 1) return []
 
-                          const windowSize = 52
-                          const sma = []
+                        const windowSize = 52
+                        const sma = []
 
-                          for (let i = 0; i < peData.length; i++) {
-                            // Use smaller window at the start (1, 2, 3... up to windowSize)
-                            const actualWindowSize = Math.min(i + 1, windowSize)
-                            const windowinfo = peData.slice(Math.max(0, i - actualWindowSize + 1), i + 1)
-                            const validValues = windowinfo.filter(v => v !== null && v !== undefined)
+                        for (let i = 0; i < peData.length; i++) {
+                          // Use smaller window at the start (1, 2, 3... up to windowSize)
+                          const actualWindowSize = Math.min(i + 1, windowSize)
+                          const windowinfo = peData.slice(Math.max(0, i - actualWindowSize + 1), i + 1)
+                          const validValues = windowinfo.filter(v => v !== null && v !== undefined)
 
-                            if (validValues.length === 0) {
-                              sma.push(null)
-                            } else {
-                              const sum = validValues.reduce((a, b) => a + b, 0)
-                              sma.push(sum / validValues.length)
-                            }
+                          if (validValues.length === 0) {
+                            sma.push(null)
+                          } else {
+                            const sum = validValues.reduce((a, b) => a + b, 0)
+                            sma.push(sum / validValues.length)
                           }
-                          return sma
-                        })()
+                        }
+                        return sma
+                      })()
 
-                        return (
-                          <>
-                            <div className="h-64 chart-container">
-                              <Line
-                                key={useWeeklyPE ? 'weekly' : 'annual'}
-                                plugins={[zeroLinePlugin, crosshairPlugin]}
-                                data={{
-                                  labels: peLabels,
-                                  datasets: [
-                                    {
-                                      label: 'P/E Ratio',
-                                      data: peData,
-                                      borderColor: 'rgb(168, 85, 247)',
-                                      backgroundColor: 'rgba(168, 85, 247, 0.2)',
-                                      pointRadius: 0,
-                                      pointHoverRadius: 3,
-                                      borderWidth: 1.5,
-                                      tension: 0.1,
-                                      spanGaps: true
-                                    },
-                                    // Add 13-Week Rolling Average Dataset
-                                    ...(useWeeklyPE && peSMA13.length > 0 ? [{
-                                      label: '13-Week Avg',
-                                      data: peSMA13,
-                                      borderColor: 'rgba(75, 192, 192, 0.8)', // Teal with 80% opacity
-                                      backgroundColor: 'transparent',
-                                      pointRadius: 0,
-                                      pointHoverRadius: 0,
-                                      borderWidth: 2,
-                                      tension: 0.2,
-                                      spanGaps: true
-                                    }] : []),
-                                    // Add 52-Week Rolling Average Dataset
-                                    ...(useWeeklyPE && peSMA52.length > 0 ? [{
-                                      label: '52-Week Avg',
-                                      data: peSMA52,
-                                      borderColor: 'rgba(168, 85, 247, 0.5)', // Purple with 50% opacity
-                                      backgroundColor: 'transparent',
-                                      borderDash: [5, 5], // Dashed line
-                                      pointRadius: 0,
-                                      pointHoverRadius: 0,
-                                      borderWidth: 2.5,
-                                      tension: 0.3,
-                                      spanGaps: true
-                                    }] : [])
-                                  ]
-                                }}
-                                options={{
-                                  ...createChartOptions('P/E Ratio', 'P/E', showQuarterly),
-                                  scales: {
-                                    ...createChartOptions('P/E Ratio', 'P/E', showQuarterly).scales,
-                                    x: {
-                                      type: 'category',
-                                      ticks: {
-                                        callback: yearTickCallback,
-                                        maxRotation: 45,
-                                        minRotation: 45,
-                                        autoSkip: true,
-                                        maxTicksLimit: 20
-                                      }
+                      return (
+                        <>
+                          <div className="h-64 chart-container">
+                            <Line
+                              key={useWeeklyPE ? 'weekly' : 'annual'}
+                              plugins={[zeroLinePlugin, crosshairPlugin]}
+                              data={{
+                                labels: peLabels,
+                                datasets: [
+                                  {
+                                    label: 'P/E Ratio',
+                                    data: peData,
+                                    borderColor: 'rgb(168, 85, 247)',
+                                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                                    pointRadius: 0,
+                                    pointHoverRadius: 3,
+                                    borderWidth: 1.5,
+                                    tension: 0.1,
+                                    spanGaps: true
+                                  },
+                                  // Add 13-Week Rolling Average Dataset
+                                  ...(useWeeklyPE && peSMA13.length > 0 ? [{
+                                    label: '13-Week Avg',
+                                    data: peSMA13,
+                                    borderColor: 'rgba(75, 192, 192, 0.8)', // Teal with 80% opacity
+                                    backgroundColor: 'transparent',
+                                    pointRadius: 0,
+                                    pointHoverRadius: 0,
+                                    borderWidth: 2,
+                                    tension: 0.2,
+                                    spanGaps: true
+                                  }] : []),
+                                  // Add 52-Week Rolling Average Dataset
+                                  ...(useWeeklyPE && peSMA52.length > 0 ? [{
+                                    label: '52-Week Avg',
+                                    data: peSMA52,
+                                    borderColor: 'rgba(168, 85, 247, 0.5)', // Purple with 50% opacity
+                                    backgroundColor: 'transparent',
+                                    borderDash: [5, 5], // Dashed line
+                                    pointRadius: 0,
+                                    pointHoverRadius: 0,
+                                    borderWidth: 2.5,
+                                    tension: 0.3,
+                                    spanGaps: true
+                                  }] : [])
+                                ]
+                              }}
+                              options={{
+                                ...createChartOptions('P/E Ratio', 'P/E', showQuarterly),
+                                scales: {
+                                  ...createChartOptions('P/E Ratio', 'P/E', showQuarterly).scales,
+                                  x: {
+                                    type: 'category',
+                                    ticks: {
+                                      callback: yearTickCallback,
+                                      maxRotation: 45,
+                                      minRotation: 45,
+                                      autoSkip: true,
+                                      maxTicksLimit: 20
                                     }
                                   }
-                                }}
-                              />
-                            </div>
-                            <CustomLegend items={[
-                              { label: 'P/E Ratio', color: 'rgb(168, 85, 247)' },
-                              ...(useWeeklyPE && peSMA13.length > 0 ? [{ label: '13-Week Avg', color: 'rgba(75, 192, 192, 0.8)' }] : []),
-                              ...(useWeeklyPE && peSMA52.length > 0 ? [{ label: '52-Week Avg', color: 'rgba(168, 85, 247, 0.5)', dashed: true }] : [])
-                            ]} />
-                          </>
-                        )
-                      })()}
-                    </div>
+                                }
+                              }}
+                            />
+                          </div>
+                          <CustomLegend items={[
+                            { label: 'P/E Ratio', color: 'rgb(168, 85, 247)' },
+                            ...(useWeeklyPE && peSMA13.length > 0 ? [{ label: '13-Week Avg', color: 'rgba(75, 192, 192, 0.8)' }] : []),
+                            ...(useWeeklyPE && peSMA52.length > 0 ? [{ label: '52-Week Avg', color: 'rgba(168, 85, 247, 0.5)', dashed: true }] : [])
+                          ]} />
+                        </>
+                      )
+                    })()}
                   </div>
+                </div>
 
-                  {analyses.valuation && <AnalysisBox content={analyses.valuation} />}
-                </CardContent>
-              </Card>
-            </>
-          ))}
-        </div>
+                {analyses.valuation && <AnalysisBox content={analyses.valuation} />}
+              </CardContent>
+            </Card>
+          </>
+        ))}
       </div>
     </div>
   )

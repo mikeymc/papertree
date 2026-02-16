@@ -81,9 +81,9 @@ const TOOL_DESCRIPTIONS = {
   get_portfolio_strategy_decisions: "Reviewing investment decisions"
 }
 
-// Custom markdown components
+// Custom markdown hook
 // isStreaming: when true, show placeholders for charts to avoid dimension measurement issues
-const MarkdownComponents = ({ navigate, isStreaming = false }) => useMemo(() => ({
+const useMarkdownComponents = ({ navigate, isStreaming = false }) => useMemo(() => ({
   h1: (props) => (
     <h1 className="scroll-m-20 text-2xl font-semibold tracking-tight mb-4" {...props} />
   ),
@@ -142,6 +142,14 @@ const MarkdownComponents = ({ navigate, isStreaming = false }) => useMemo(() => 
       </code>
     )
   },
+  table: (props) => (
+    <div className="overflow-x-auto w-full border-t border-b sm:border-none my-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <table className="w-full text-sm border-collapse" {...props} />
+    </div>
+  ),
+  thead: (props) => <thead className="bg-muted/50" {...props} />,
+  th: (props) => <th className="border p-2 text-left font-bold" {...props} />,
+  td: (props) => <td className="border p-2 text-left" {...props} />,
   // Custom link renderer for client-side navigation
   a({ href, children, ...props }) {
     const handleClick = (e) => {
@@ -197,9 +205,9 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
   // Navigation for internal links
   const navigate = useNavigate()
   // Components for finalized messages (charts render normally)
-  const components = MarkdownComponents({ navigate, isStreaming: false })
+  const components = useMarkdownComponents({ navigate, isStreaming: false })
   // Components for streaming messages (charts show placeholder)
-  const streamingComponents = MarkdownComponents({ navigate, isStreaming: true })
+  const streamingComponents = useMarkdownComponents({ navigate, isStreaming: true })
 
   // Shared chat context for sidebar integration
   const {
@@ -907,7 +915,7 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
       )}
       {(analysisLoading || isGenerating) && !analysis ? (
         <Card className="h-full">
-          <div className="flex flex-col items-center justify-center h-[50vh] space-y-6 text-center text-muted-foreground">
+          <div className="flex flex-col items-center justify-center h-[50vh] space-y-6 text-center text-muted-foreground p-3 sm:p-6">
             <div className="relative">
               <div className="h-12 w-12 rounded-full border-4 border-primary/20"></div>
               <div className="absolute top-0 left-0 h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
@@ -922,7 +930,7 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
         </Card>
       ) : analysisError ? (
         <Card className="h-full">
-          <div className="flex flex-col items-center justify-center h-[50vh] space-y-4 text-destructive">
+          <div className="flex flex-col items-center justify-center h-[50vh] space-y-4 text-destructive p-3 sm:p-6">
             <p>Failed to load analysis: {analysisError}</p>
             <Button onClick={() => fetchAnalysis(false, null, true)} variant="outline">
               Retry
@@ -931,7 +939,7 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
         </Card>
       ) : !analysis ? (
         <Card className="h-full">
-          <div className="flex flex-col items-center justify-center h-[50vh] space-y-4 text-muted-foreground">
+          <div className="flex flex-col items-center justify-center h-[50vh] space-y-4 text-muted-foreground p-3 sm:p-6">
             <p>No thesis generated yet for {stockName}.</p>
             <Button onClick={handleGenerate} className="mt-4">
               <Sparkles className="mr-2 h-4 w-4" /> Generate Thesis
@@ -940,11 +948,13 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
         </Card>
       ) : (
         <Card>
-          <CardHeader className="pb-4">
+          <CardHeader className="p-3 sm:p-6 pb-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">
-                {cached ? 'Cached' : 'Fresh'} · {formatDate(generatedAt)}
-              </span>
+              <div className="flex flex-col sm:flex-row sm:items-center text-sm text-muted-foreground font-medium">
+                <span>{cached ? 'Cached' : 'Fresh'}</span>
+                <span className="hidden sm:inline mx-1.5">·</span>
+                <span>{formatDate(generatedAt)}</span>
+              </div>
               <Button
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -957,7 +967,7 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6 pt-0">
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>{analysis}</ReactMarkdown>
             </div>

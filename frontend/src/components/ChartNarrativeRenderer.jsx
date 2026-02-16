@@ -925,12 +925,12 @@ export default function ChartNarrativeRenderer({ narrative, historyData, isQuart
                     key={sIdx}
                     className="overflow-hidden border-border bg-card shadow-md transition-all duration-300 hover:shadow-lg"
                 >
-                    <div className="px-6 py-4 border-b border-border bg-muted/30">
+                    <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-border bg-muted/30">
                         <h3 className="text-lg font-bold" style={{ color: '#999999' }}>
                             {section.title}
                         </h3>
                     </div>
-                    <CardContent className="p-6 flex flex-col gap-6">
+                    <CardContent className="p-3 sm:p-6 flex flex-col gap-6">
                         {section.elements.map((item, eIdx) => (
                             <div key={eIdx}>
                                 {item.type === 'text' ? (
@@ -938,7 +938,7 @@ export default function ChartNarrativeRenderer({ narrative, historyData, isQuart
                                         <ReactMarkdown>{item.content}</ReactMarkdown>
                                     </div>
                                 ) : (
-                                    <div className="chart-wrapper chart-container bg-background rounded-xl p-4 border border-border shadow-inner">
+                                    <div className="chart-wrapper chart-container bg-background rounded-xl p-2 sm:p-4 border border-border shadow-inner">
                                         {chartRegistry[item.name]?.()}
                                     </div>
                                 )}

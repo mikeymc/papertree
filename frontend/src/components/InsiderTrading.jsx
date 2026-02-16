@@ -33,8 +33,8 @@ export default function InsiderTrading({ symbol }) {
         return () => { active = false }
     }, [symbol])
 
-    if (loading) return <div className="p-8 text-muted-foreground">Loading insider trading data...</div>
-    if (error) return <div className="p-8 text-destructive">Error: {error}</div>
+    if (loading) return <div className="p-4 sm:p-8 text-muted-foreground">Loading insider trading data...</div>
+    if (error) return <div className="p-4 sm:p-8 text-destructive">Error: {error}</div>
     if (!data) return null
 
     const { metrics, insider_trades } = data
@@ -49,10 +49,10 @@ export default function InsiderTrading({ symbol }) {
     return (
         <div className="w-full space-y-6">
             <Card>
-                <CardHeader>
+                <CardHeader className="p-3 sm:p-6 pb-2">
                     <CardTitle>Insider Trading Activity</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                     <div className="flex items-center gap-4 mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
                         <div>
                             <div className="text-sm text-muted-foreground mb-1">Net Insider Activity (6m)</div>

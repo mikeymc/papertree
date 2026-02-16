@@ -48,7 +48,7 @@ export default function StockNews({ newsData, loading, symbol }) {
 
                                 return (
                                     <Card key={article.id || index}>
-                                        <CardHeader className="pb-3">
+                                        <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-3">
                                             <div className="flex items-center gap-2 mb-1 text-sm text-muted-foreground">
                                                 <span className="font-semibold text-foreground">{article.source || 'Unknown source'}</span>
                                                 <span>•</span>
@@ -71,7 +71,7 @@ export default function StockNews({ newsData, loading, symbol }) {
                                         </CardHeader>
 
                                         {article.summary && (
-                                            <CardContent>
+                                            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                                                 <p className="text-sm leading-relaxed text-muted-foreground">
                                                     {article.summary}
                                                 </p>

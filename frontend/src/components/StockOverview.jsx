@@ -12,7 +12,7 @@ const CHARACTER_METRICS = {
             { key: 'dividend_yield', label: 'Div Yield', format: 'percent', decimals: 2 },
         ],
         growth: [
-            { key: 'institutional_ownership', label: 'Inst. Ownership', format: 'percent_decimal', decimals: 1, colSpan: 'col-span-2 sm:col-span-1' },
+            { key: 'institutional_ownership', label: 'Inst. Ownership', format: 'percent_decimal', decimals: 1 },
             { key: 'revenue_cagr', label: '5Y Rev Growth', format: 'percent', decimals: 1, goodWhen: v => v > 10 },
             { key: 'earnings_cagr', label: '5Y Inc Growth', format: 'percent', decimals: 1, goodWhen: v => v > 10 },
         ]
@@ -25,7 +25,7 @@ const CHARACTER_METRICS = {
             { key: 'dividend_yield', label: 'Div Yield', format: 'percent', decimals: 2 },
         ],
         growth: [
-            { key: 'owner_earnings', label: 'Owner Earnings', format: 'currency', decimals: 1, colSpan: 'col-span-2 sm:col-span-1' },
+            { key: 'owner_earnings', label: 'Owner Earnings', format: 'currency', decimals: 1 },
             { key: 'gross_margin', label: 'Gross Margin', format: 'percent', decimals: 1, goodWhen: v => v > 40 },
             { key: 'revenue_cagr', label: '5Y Rev Growth', format: 'percent', decimals: 1, goodWhen: v => v > 10 },
             { key: 'earnings_cagr', label: '5Y Inc Growth', format: 'percent', decimals: 1, goodWhen: v => v > 10 },

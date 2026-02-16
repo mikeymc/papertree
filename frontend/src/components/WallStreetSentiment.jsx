@@ -768,17 +768,17 @@ export default function WallStreetSentiment({ symbol }) {
                         <p className="text-sm text-muted-foreground mb-4">
                             Net upward vs downward revisions in the last 30 days.
                         </p>
-                        <div className="flex items-center justify-center gap-8 py-8">
+                        <div className="flex items-center justify-center gap-4 sm:gap-8 py-4 sm:py-8">
                             <div className="text-center">
-                                <div className="text-5xl font-bold text-green-500">↑{totalUp}</div>
+                                <div className="text-3xl sm:text-5xl font-bold text-green-500">↑{totalUp}</div>
                                 <div className="text-sm text-muted-foreground mt-2">Upward</div>
                             </div>
                             <div className="text-center">
-                                <div className="text-5xl font-bold text-red-500">↓{totalDown}</div>
+                                <div className="text-3xl sm:text-5xl font-bold text-red-500">↓{totalDown}</div>
                                 <div className="text-sm text-muted-foreground mt-2">Downward</div>
                             </div>
-                            <div className="text-center border-l pl-8">
-                                <div className={`text-5xl font-bold ${netRevisions > 0 ? 'text-green-500' : netRevisions < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                            <div className="text-center border-l pl-4 sm:pl-8">
+                                <div className={`text-3xl sm:text-5xl font-bold ${netRevisions > 0 ? 'text-green-500' : netRevisions < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
                                     {netRevisions > 0 ? '+' : ''}{netRevisions}
                                 </div>
                                 <div className={`text-sm font-medium mt-2 ${netRevisions > 0 ? 'text-green-500' : netRevisions < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>

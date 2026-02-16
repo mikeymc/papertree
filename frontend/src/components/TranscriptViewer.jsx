@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm'
 import { Sparkles, FileText, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useMemo } from 'react'
 
 export default function TranscriptViewer({ symbol }) {
     const [transcript, setTranscript] = useState(null)
@@ -16,6 +17,17 @@ export default function TranscriptViewer({ symbol }) {
     const [summary, setSummary] = useState(null)
     const [summaryLoading, setSummaryLoading] = useState(false)
     const [summaryError, setSummaryError] = useState(null)
+
+    const markdownComponents = useMemo(() => ({
+        table: (props) => (
+            <div className="overflow-x-auto w-full border-t border-b sm:border-none my-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+                <table className="w-full text-sm border-collapse" {...props} />
+            </div>
+        ),
+        thead: (props) => <thead className="bg-muted/50" {...props} />,
+        th: (props) => <th className="border p-2 text-left font-bold" {...props} />,
+        td: (props) => <td className="border p-2 text-left" {...props} />,
+    }), [])
 
     useEffect(() => {
         const fetchTranscript = async () => {
@@ -198,7 +210,7 @@ export default function TranscriptViewer({ symbol }) {
 
     if (loading) {
         return (
-            <div className="p-10 text-center text-muted-foreground flex items-center justify-center gap-2">
+            <div className="p-4 sm:p-8 text-center text-muted-foreground flex items-center justify-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Loading transcript...
             </div>
@@ -208,10 +220,10 @@ export default function TranscriptViewer({ symbol }) {
     if (error || !transcript) {
         return (
             <Card>
-                <CardHeader>
+                <CardHeader className="p-3 sm:p-6 pb-2">
                     <CardTitle>Earnings Call Transcript</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                     <p className="text-center text-muted-foreground py-8">
                         {error || 'No transcript available for this stock.'}
                     </p>
@@ -222,7 +234,7 @@ export default function TranscriptViewer({ symbol }) {
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-6 pb-2">
                 <div className="flex flex-col gap-1">
                     <CardTitle className="text-xl">Earnings Call Transcript</CardTitle>
                     <div className="text-sm text-primary font-medium">
@@ -230,7 +242,7 @@ export default function TranscriptViewer({ symbol }) {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                 {/* View Mode Toggle */}
                 <div className="inline-flex bg-muted rounded-lg p-1 gap-1 mb-6">
                     <button
@@ -276,7 +288,12 @@ export default function TranscriptViewer({ symbol }) {
                 <div className="min-h-[400px]">
                     {viewMode === 'summary' && summary ? (
                         <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{summary}</ReactMarkdown>
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={markdownComponents}
+                            >
+                                {summary}
+                            </ReactMarkdown>
                         </div>
                     ) : (
                         <div className="space-y-2">

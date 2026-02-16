@@ -135,10 +135,10 @@ export default function BusinessHealth({ symbol }) {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Inventory Check */}
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="p-3 sm:p-6 pb-2">
                         <CardTitle>Inventory vs Revenue Trends</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                         <p className="text-sm text-muted-foreground mb-4">
                             Warning Sign: If Inventory (Orange) is growing faster than Revenue (Blue).
                         </p>
@@ -156,10 +156,10 @@ export default function BusinessHealth({ symbol }) {
 
                 {/* Moat Stability */}
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="p-3 sm:p-6 pb-2">
                         <CardTitle>Gross Margin Trend</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                         <p className="text-sm text-muted-foreground mb-4">
                             Stable or expanding gross margins indicate pricing power and a durable moat.
                         </p>

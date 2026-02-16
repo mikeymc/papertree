@@ -522,11 +522,11 @@ const DCFAnalysis = ({ stockData, earningsHistory }) => {
         {/* Historical FCF Chart with AI Optimize Button */}
         {historicalMetrics && getChartData() && (
           <Card className="mb-6 relative">
-            <CardHeader className="flex flex-col items-center gap-4 pb-4">
+            <CardHeader className="flex flex-col items-center gap-4 p-3 sm:p-6 pb-4">
               <CardTitle className="text-xl font-semibold text-center">Free Cash Flow</CardTitle>
             </CardHeader>
 
-            <CardContent className="pt-0">
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
               <div className="h-64">
                 <Line data={getChartData()} options={chartOptions} />
               </div>
@@ -540,10 +540,10 @@ const DCFAnalysis = ({ stockData, earningsHistory }) => {
 
         {/* Valuation Results Panel - Moved to top */}
         <Card className="mb-6">
-          <CardHeader>
+          <CardHeader className="p-3 sm:p-6 pb-2">
             <CardTitle>Valuation Results</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex-1 min-w-[120px] p-4 bg-muted/50 rounded-lg text-center">
                 <p className="text-sm text-muted-foreground mb-1">Intrinsic Value</p>
@@ -577,7 +577,7 @@ const DCFAnalysis = ({ stockData, earningsHistory }) => {
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 mt-6">
           {/* Assumptions Panel */}
           <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-6 pb-2">
               <CardTitle>Assumptions</CardTitle>
               <DCFOptimizeButton
                 loading={aiLoading}
@@ -585,7 +585,7 @@ const DCFAnalysis = ({ stockData, earningsHistory }) => {
                 onGenerate={generateAiRecommendations}
               />
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 space-y-6">
 
               {/* Base Year Selection */}
               {historicalMetrics && (
@@ -711,10 +711,10 @@ const DCFAnalysis = ({ stockData, earningsHistory }) => {
 
           {/* Projections Panel */}
           <Card className="h-full">
-            <CardHeader>
+            <CardHeader className="p-3 sm:p-6 pb-2">
               <CardTitle>Projections</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -761,7 +761,7 @@ const DCFAnalysis = ({ stockData, earningsHistory }) => {
         {/* Sensitivity Analysis */}
         < Card className="mt-6" >
           <CardHeader
-            className="cursor-pointer flex flex-row items-center space-y-0 pb-2"
+            className="cursor-pointer flex flex-row items-center space-y-0 p-3 sm:p-6 pb-2"
             onClick={() => setShowSensitivity(!showSensitivity)}
           >
             <CardTitle className="text-lg flex items-center gap-2">
@@ -775,7 +775,7 @@ const DCFAnalysis = ({ stockData, earningsHistory }) => {
               if (!sensitivity) return null;
 
               return (
-                <CardContent className="fade-in-slide-down">
+                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 fade-in-slide-down">
                   <p className="text-sm text-muted-foreground mb-4">
                     Intrinsic value at different growth and discount rates (current assumption highlighted)
                   </p>

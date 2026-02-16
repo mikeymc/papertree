@@ -144,13 +144,13 @@ export default function UnifiedChartAnalysis({ symbol, character, onAnalysisGene
             )}
 
             {loading && (
-                <div className="p-8 bg-muted rounded-lg border border-border text-muted-foreground italic text-center animate-pulse mb-6">
+                <div className="p-4 sm:p-8 bg-muted rounded-lg border border-border text-muted-foreground italic text-center animate-pulse mb-6">
                     Generating analysis. Please wait. This could take up to a minute...
                 </div>
             )}
 
             {error && (
-                <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20 text-destructive mb-6">
+                <div className="p-3 sm:p-4 bg-destructive/10 rounded-lg border border-destructive/20 text-destructive mb-6">
                     Error: {error}
                 </div>
             )}

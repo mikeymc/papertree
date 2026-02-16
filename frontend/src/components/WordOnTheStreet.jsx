@@ -3,6 +3,18 @@
 
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { useMemo } from 'react'
+
+const markdownComponents = {
+    table: (props) => (
+        <div className="overflow-x-auto w-full border-t border-b sm:border-none my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-sm border-collapse" {...props} />
+        </div>
+    ),
+    thead: (props) => <thead className="bg-muted/50" {...props} />,
+    th: (props) => <th className="border p-2 text-left font-bold" {...props} />,
+    td: (props) => <td className="border p-2 text-left" {...props} />,
+}
 import { RefreshCw, MessageCircle, ArrowUp, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -189,7 +201,7 @@ export default function WordOnTheStreet({ symbol }) {
                             {/* Post Body */}
                             {post.selftext && (
                                 <div className="text-sm text-muted-foreground leading-relaxed mb-2 prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2">
-                                    <ReactMarkdown>{post.selftext}</ReactMarkdown>
+                                    <ReactMarkdown components={markdownComponents}>{post.selftext}</ReactMarkdown>
                                 </div>
                             )}
 
@@ -221,7 +233,7 @@ export default function WordOnTheStreet({ symbol }) {
                                                     </span>
                                                 </div>
                                                 <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none [&>p]:mb-1">
-                                                    <ReactMarkdown>{comment.body}</ReactMarkdown>
+                                                    <ReactMarkdown components={markdownComponents}>{comment.body}</ReactMarkdown>
                                                 </div>
 
                                                 {/* Nested Replies */}
@@ -239,7 +251,7 @@ export default function WordOnTheStreet({ symbol }) {
                                                                     </span>
                                                                 </div>
                                                                 <div className="text-sm text-muted-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none [&>p]:mb-1">
-                                                                    <ReactMarkdown>{reply.body}</ReactMarkdown>
+                                                                    <ReactMarkdown components={markdownComponents}>{reply.body}</ReactMarkdown>
                                                                 </div>
                                                             </div>
                                                         ))}
