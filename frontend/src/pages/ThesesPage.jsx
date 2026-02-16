@@ -46,10 +46,6 @@ export default function ThesesPage() {
     return (
         <div className="container mx-auto py-8 max-w-5xl space-y-6">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Investment Theses</h1>
-                    <p className="text-muted-foreground">Comprehensive collection of recent character analyst theses</p>
-                </div>
                 <div className="relative w-72">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
