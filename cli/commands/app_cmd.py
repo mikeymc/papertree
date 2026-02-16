@@ -103,12 +103,13 @@ def start_app_logic(name: str, root_dir: Path, backend_port: Optional[int] = Non
         backend_cmd = ["uv", "run", "python", "-m", "app"]
         console.print(f"[dim]Starting Backend...[/dim]")
         be_proc = subprocess.Popen(
-            backend_cmd, 
-            cwd=backend_dir, 
-            env=env, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.STDOUT, 
-            text=True,
+            backend_cmd,
+            cwd=backend_dir,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding='utf-8',
+            errors='replace',
             bufsize=1
         )
         processes.append(be_proc)
@@ -121,12 +122,13 @@ def start_app_logic(name: str, root_dir: Path, backend_port: Optional[int] = Non
         worker_cmd = ["uv", "run", "python", "-m", "worker"]
         console.print(f"[dim]Starting Worker...[/dim]")
         worker_proc = subprocess.Popen(
-            worker_cmd, 
-            cwd=backend_dir, 
-            env=env, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.STDOUT, 
-            text=True,
+            worker_cmd,
+            cwd=backend_dir,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding='utf-8',
+            errors='replace',
             bufsize=1
         )
         processes.append(worker_proc)
@@ -140,12 +142,13 @@ def start_app_logic(name: str, root_dir: Path, backend_port: Optional[int] = Non
         frontend_cmd = ["npm", "run", "dev", "--", "--port", str(frontend_port)]
         console.print(f"[dim]Starting Frontend...[/dim]")
         fe_proc = subprocess.Popen(
-            frontend_cmd, 
-            cwd=frontend_dir, 
-            env=env, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.STDOUT, 
-            text=True,
+            frontend_cmd,
+            cwd=frontend_dir,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding='utf-8',
+            errors='replace',
             bufsize=1
         )
         processes.append(fe_proc)
