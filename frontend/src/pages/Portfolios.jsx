@@ -434,37 +434,36 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                 <div className="flex items-center gap-4">
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold tracking-tight">{portfolio.name}</h1>
-                            {portfolio.strategy_id ? (
-                                <Badge variant="outline" className="border-primary/30 text-primary font-medium flex items-center gap-1">
-                                    <Bot className="h-4 w-4" />
-                                    Autonomous
-                                </Badge>
-                            ) : (
-                                <Badge variant="outline" className="text-muted-foreground font-medium flex items-center gap-1">
-                                    <User className="h-4 w-4" />
-                                    Self-Directed
-                                </Badge>
-                            )}
-                        </div>
+                        <h1 className="text-2xl font-bold tracking-tight">{portfolio.name}</h1>
                         <p className="text-sm text-muted-foreground">
                             Created {new Date(portfolio.created_at).toLocaleDateString()}
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    {portfolio.strategy_id ? (
+                        <Badge variant="outline" className="border-primary/30 text-primary font-medium flex items-center gap-1 h-9 px-3">
+                            <Bot className="h-4 w-4" />
+                            Autonomous
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-muted-foreground font-medium flex items-center gap-1 h-9 px-3">
+                            <User className="h-4 w-4" />
+                            Self-Directed
+                        </Badge>
+                    )}
                     {portfolio.strategy_id && (
                         <Button
                             variant="outline"
                             size="sm"
+                            className="h-9 px-3"
                             onClick={() => window.location.href = `/strategies/${portfolio.strategy_id}`}
                         >
                             <Activity className="h-4 w-4 mr-2" />
                             Strategy Detail
                         </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={onDelete}>
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-9 w-9" onClick={onDelete}>
                         <Trash2 className="h-5 w-5" />
                     </Button>
                 </div>
