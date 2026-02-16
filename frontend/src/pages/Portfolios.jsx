@@ -375,7 +375,7 @@ export default function Portfolios() {
 
 
 function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
-    const [activeTab, setActiveTab] = useState('holdings')
+    const [activeTab, setActiveTab] = useState(portfolio.strategy_id ? 'briefings' : 'holdings')
     const [transactions, setTransactions] = useState([])
     const [valueHistory, setValueHistory] = useState([])
     const [loadingTransactions, setLoadingTransactions] = useState(false)
@@ -516,17 +516,21 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="relative mb-4">
-                    <div className="overflow-x-auto scrollbar-hide -mx-2 px-2 pb-1">
-                        <TabsList className="w-max sm:w-inline-flex">
-                            <TabsTrigger value="holdings" className="px-1 sm:px-2">Holdings</TabsTrigger>
-                            {!portfolio.strategy_id && <TabsTrigger value="trade" className="px-1 sm:px-2">Trade</TabsTrigger>}
-                            <TabsTrigger value="transactions" className="px-1 sm:px-2">Transactions</TabsTrigger>
-                            <TabsTrigger value="performance" className="px-1 sm:px-2">Performance</TabsTrigger>
-                            {portfolio.strategy_id && <TabsTrigger value="briefings" className="px-1 sm:px-2">Briefings</TabsTrigger>}
-                        </TabsList>
-                    </div>
+                <div className="mb-4">
+                    <TabsList className="w-full sm:w-auto flex sm:inline-flex justify-between sm:justify-start h-10 bg-muted/50 p-1">
+                        {portfolio.strategy_id && <TabsTrigger value="briefings" className="px-1.5 sm:px-4 text-sm">Briefs</TabsTrigger>}
+                        <TabsTrigger value="holdings" className="px-1.5 sm:px-4 text-sm">Holdings</TabsTrigger>
+                        {!portfolio.strategy_id && <TabsTrigger value="trade" className="px-1.5 sm:px-4 text-sm">Trade</TabsTrigger>}
+                        <TabsTrigger value="transactions" className="px-1.5 sm:px-4 text-sm">Transactions</TabsTrigger>
+                        <TabsTrigger value="performance" className="px-1.5 sm:px-4 text-sm">Performance</TabsTrigger>
+                    </TabsList>
                 </div>
+
+                {portfolio.strategy_id && (
+                    <TabsContent value="briefings">
+                        <BriefingsTab portfolioId={portfolio.id} />
+                    </TabsContent>
+                )}
 
                 <TabsContent value="holdings">
                     <HoldingsTab portfolio={portfolio} />
@@ -557,12 +561,6 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                         initialCash={initialCash}
                     />
                 </TabsContent>
-
-                {portfolio.strategy_id && (
-                    <TabsContent value="briefings">
-                        <BriefingsTab portfolioId={portfolio.id} />
-                    </TabsContent>
-                )}
             </Tabs>
         </div>
     )
