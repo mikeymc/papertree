@@ -440,30 +440,31 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                         </p>
                     </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2">
                     {portfolio.strategy_id ? (
-                        <Badge variant="outline" className="border-primary/30 text-primary font-medium flex items-center gap-1 h-9 px-3">
+                        <Badge variant="outline" className="border-primary/30 text-primary font-medium flex items-center gap-1 h-9 px-2 sm:px-3 shrink-0">
                             <Bot className="h-4 w-4" />
-                            Autonomous
+                            <span className="text-xs sm:text-sm">Autonomous</span>
                         </Badge>
                     ) : (
-                        <Badge variant="outline" className="text-muted-foreground font-medium flex items-center gap-1 h-9 px-3">
+                        <Badge variant="outline" className="text-muted-foreground font-medium flex items-center gap-1 h-9 px-2 sm:px-3 shrink-0">
                             <User className="h-4 w-4" />
-                            Self-Directed
+                            <span className="text-xs sm:text-sm">Self-Directed</span>
                         </Badge>
                     )}
                     {portfolio.strategy_id && (
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-9 px-3"
+                            className="h-9 px-2 sm:px-3 shrink-0"
                             onClick={() => window.location.href = `/strategies/${portfolio.strategy_id}`}
                         >
-                            <Activity className="h-4 w-4 mr-2" />
-                            Strategy Detail
+                            <Activity className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Strategy Detail</span>
+                            <span className="inline sm:hidden text-xs">Strategy</span>
                         </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-9 w-9" onClick={onDelete}>
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-9 w-9 shrink-0" onClick={onDelete}>
                         <Trash2 className="h-5 w-5" />
                     </Button>
                 </div>
