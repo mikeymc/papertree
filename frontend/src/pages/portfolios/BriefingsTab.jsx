@@ -77,8 +77,6 @@ export default function BriefingsTab({ portfolioId }) {
 }
 
 function BriefingCard({ briefing }) {
-    const alpha = briefing.alpha || 0
-    const isPositiveAlpha = alpha >= 0
     const date = briefing.generated_at
         ? new Date(briefing.generated_at).toLocaleDateString('en-US', {
             weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
@@ -101,23 +99,6 @@ function BriefingCard({ briefing }) {
                     <CardTitle className="text-base font-medium text-muted-foreground">
                         {date}
                     </CardTitle>
-                    <div className="flex items-center gap-3">
-                        {briefing.portfolio_return_pct != null && (
-                            <span className={`text-sm font-medium ${briefing.portfolio_return_pct >= 0
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-red-600 dark:text-red-400'
-                                }`}>
-                                {briefing.portfolio_return_pct >= 0 ? '+' : ''}
-                                {briefing.portfolio_return_pct.toFixed(2)}% return
-                            </span>
-                        )}
-                        <Badge
-                            variant={isPositiveAlpha ? 'success' : 'destructive'}
-                            className="tabular-nums"
-                        >
-                            {isPositiveAlpha ? '+' : ''}{alpha.toFixed(2)}% alpha
-                        </Badge>
-                    </div>
                 </div>
             </CardHeader>
 
