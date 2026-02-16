@@ -159,33 +159,30 @@ function StrategyDetail() {
     if (!strategy) return <div className="p-10 text-center">Strategy not found</div>
 
     return (
-        <div className="space-y-6">
+        <div className="container px-2 sm:px-4 py-4 sm:py-8 max-w-5xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{strategy.name}</h1>
-                        <p className="text-muted-foreground">{strategy.description || 'Autonomous Investment Strategy'}</p>
-                    </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">{strategy.name}</h1>
+                    <p className="text-muted-foreground">{strategy.description || 'Autonomous Investment Strategy'}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                     <Badge
                         variant={strategy.enabled ? "success" : "destructive"}
-                        className="cursor-pointer hover:opacity-80 transition-opacity select-none flex items-center"
+                        className="h-9 cursor-pointer hover:opacity-80 transition-opacity select-none flex items-center px-1.5 sm:px-3 shrink-0"
                         onClick={handleToggleEnabled}
                     >
                         {strategy.enabled && <LiveSignal />}
-                        {strategy.enabled ? 'Active' : 'Paused'}
+                        <span className="text-xs sm:text-sm font-medium">{strategy.enabled ? 'Active' : 'Paused'}</span>
                     </Badge>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/portfolios/${strategy.portfolio_id}`)}>
-                        <Wallet className="h-4 w-4 mr-2" />
-                        View Portfolio
+                    <Button variant="outline" size="sm" className="h-9 px-2 sm:px-3 shrink-0" onClick={() => navigate(`/portfolios/${strategy.portfolio_id}`)}>
+                        <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
+                        <span className="text-xs sm:text-sm ml-1.5 sm:ml-0">Portfolio</span>
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setShowConfigModal(true)}>
-                        <Settings className="h-4 w-4 mr-2" />
-                        Configure
+                    <Button variant="outline" size="sm" className="h-9 px-2 sm:px-3 shrink-0" onClick={() => setShowConfigModal(true)}>
+                        <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
+                        <span className="text-xs sm:text-sm ml-1.5 sm:ml-0">Settings</span>
                     </Button>
-
                 </div>
             </div>
 
@@ -223,11 +220,11 @@ function StrategyDetail() {
 
                 <TabsContent value="history">
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="p-3 sm:p-4 pb-2">
                             <CardTitle>Execution History</CardTitle>
                             <CardDescription>Recent strategy execution runs</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -294,11 +291,11 @@ function StrategyDetail() {
 function MetricCard({ title, value, icon }) {
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-2">
                 <CardTitle className="text-sm font-medium">{title}</CardTitle>
                 {icon}
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                 <div className="text-2xl font-bold">{value}</div>
             </CardContent>
         </Card>
@@ -307,7 +304,7 @@ function MetricCard({ title, value, icon }) {
 
 function DetailSkeleton() {
     return (
-        <div className="space-y-6">
+        <div className="container px-2 sm:px-4 py-4 sm:py-8 max-w-5xl mx-auto space-y-6">
             <div className="flex justify-between">
                 <Skeleton className="h-10 w-64" />
                 <Skeleton className="h-10 w-32" />
@@ -432,7 +429,7 @@ function DecisionCard({ decision }) {
 
     return (
         <Card className={`border-l-4 ${isBuy ? 'border-l-green-500' : 'border-l-muted'}`}>
-            <CardHeader className="py-3">
+            <CardHeader className="p-3 sm:p-4 pb-2">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         <Link to={`/stock/${decision.symbol}`}>
@@ -444,7 +441,7 @@ function DecisionCard({ decision }) {
                     </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="py-3 pt-0 text-sm">
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 text-sm">
                 <div className="grid grid-cols-2 gap-4 mb-3">
                     <div className="bg-muted/30 p-2 rounded">
                         <span className="font-semibold text-xs block mb-1">LYNCH</span>
