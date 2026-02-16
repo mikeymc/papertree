@@ -44,7 +44,7 @@ import StrategyRunsTab from '@/pages/portfolios/StrategyRunsTab'
 import StrategyWizard from '@/components/strategies/StrategyWizard'
 
 const LiveSignal = () => (
-    <span className="bg-yellow-400 h-2 w-2 rounded-full mr-2 inline-block shadow-sm animate-pulse" />
+    <span className="bg-yellow-400 h-2 w-2 rounded-full mr-2 inline-block shadow-sm" />
 )
 
 // Format currency with commas and optional decimal places
@@ -445,7 +445,6 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-2xl font-bold tracking-tight">{portfolio.name}</h1>
-                            {portfolio.strategy_id && portfolio.strategy_enabled && <LiveSignal />}
                         </div>
                         <p className="text-sm text-muted-foreground">
                             Created {new Date(portfolio.created_at).toLocaleDateString()}
@@ -454,10 +453,16 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                 </div>
                 <div className="flex items-center gap-2">
                     {portfolio.strategy_id ? (
-                        <Badge variant="outline" className="border-primary/30 text-primary font-medium flex items-center gap-1 h-9 px-2 sm:px-3 shrink-0">
-                            <Bot className="h-4 w-4" />
-                            <span className="text-xs sm:text-sm">Autonomous</span>
-                        </Badge>
+                        <>
+                            <Badge variant="outline" className="border-primary/30 text-primary font-medium flex items-center gap-1 h-9 px-2 sm:px-3 shrink-0">
+                                <Bot className="h-4 w-4" />
+                                <span className="text-xs sm:text-sm">Autonomous</span>
+                            </Badge>
+                            <Badge variant={portfolio.strategy_enabled ? "success" : "destructive"} className="flex items-center h-9 px-2 sm:px-3 shrink-0">
+                                {portfolio.strategy_enabled && <LiveSignal />}
+                                <span className="text-xs sm:text-sm font-medium">{portfolio.strategy_enabled ? 'Active' : 'Paused'}</span>
+                            </Badge>
+                        </>
                     ) : (
                         <Badge variant="outline" className="text-muted-foreground font-medium flex items-center gap-1 h-9 px-2 sm:px-3 shrink-0">
                             <User className="h-4 w-4" />
@@ -472,7 +477,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                             onClick={() => setShowStrategyWizard(true)}
                         >
                             <Settings className="h-4 w-4 sm:mr-2" />
-                            <span className="hidden sm:inline">Strategy Detail</span>
+                            <span className="hidden sm:inline text-xs sm:text-sm font-medium">Strategy Detail</span>
                             <span className="inline sm:hidden text-xs">Strategy</span>
                         </Button>
                     )}
