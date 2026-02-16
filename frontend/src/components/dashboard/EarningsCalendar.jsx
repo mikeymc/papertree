@@ -128,14 +128,14 @@ function EarningsRow({ item, onClick }) {
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {formatDate(item.earnings_date)}
                 </span>
                 <Badge
                     variant={isToday ? 'destructive' : isTomorrow ? 'default' : isThisWeek ? 'secondary' : 'outline'}
-                    className="text-xs h-5 py-0"
+                    className="text-[10px] sm:text-xs h-5 py-0 w-12 justify-center shrink-0"
                 >
-                    {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : `${daysUntil}d`}
+                    {isToday ? 'Today' : isTomorrow ? '1d' : `${daysUntil}d`}
                 </Badge>
             </div>
         </button>
