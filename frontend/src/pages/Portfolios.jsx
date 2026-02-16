@@ -249,10 +249,6 @@ export default function Portfolios() {
     return (
         <div className="container px-2 sm:px-4 py-4 sm:py-8 max-w-5xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-8 min-w-0">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Portfolios</h1>
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage your paper trading portfolios</p>
-                </div>
                 <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                     <DialogTrigger asChild>
                         <Button>

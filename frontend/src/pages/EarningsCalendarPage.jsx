@@ -51,20 +51,13 @@ export default function EarningsCalendarPage() {
     return (
         <div className="container mx-auto py-8 max-w-4xl space-y-6">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Earnings Calendar</h1>
-                        <p className="text-muted-foreground">Upcoming earnings (Next 90 Days)</p>
-                    </div>
-                </div>
-
                 <div className="flex items-center gap-4">
                     <div className="flex bg-muted rounded-md p-1 min-w-fit">
                         <button
                             onClick={() => setScope('user')}
                             className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-all ${scope === 'user'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
                             My List
@@ -72,8 +65,8 @@ export default function EarningsCalendarPage() {
                         <button
                             onClick={() => setScope('all')}
                             className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-all ${scope === 'all'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
                             All Stocks
