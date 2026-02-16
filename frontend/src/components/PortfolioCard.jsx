@@ -32,7 +32,7 @@ export default function PortfolioCard({ portfolio, onClick, onDelete }) {
 
     return (
         <Card
-            className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 group relative"
+            className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 group relative w-full min-w-0"
             onClick={onClick}
         >
             {onDelete && (
@@ -48,8 +48,8 @@ export default function PortfolioCard({ portfolio, onClick, onDelete }) {
                     <Trash2 className="h-4 w-4" />
                 </Button>
             )}
-            <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-semibold truncate pr-8">
+            <CardHeader className="p-3 sm:p-4 pb-2 min-w-0">
+                <CardTitle className="text-lg font-semibold truncate pr-8 max-w-full block">
                     {portfolio.name}
                 </CardTitle>
                 <CardDescription className="text-xs flex flex-col gap-1">
@@ -84,7 +84,7 @@ export default function PortfolioCard({ portfolio, onClick, onDelete }) {
                     )}
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                 <div className="space-y-3">
                     <div>
                         <p className="text-2xl font-bold tracking-tight">

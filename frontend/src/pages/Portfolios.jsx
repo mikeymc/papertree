@@ -207,7 +207,7 @@ export default function Portfolios() {
 
     if (loading && portfolios.length === 0) {
         return (
-            <div className="container py-8 max-w-5xl mx-auto">
+            <div className="container px-2 sm:px-4 py-4 sm:py-8 max-w-5xl mx-auto">
                 <div className="mb-8">
                     <Skeleton className="h-9 w-48" />
                 </div>
@@ -222,7 +222,7 @@ export default function Portfolios() {
 
     if (error) {
         return (
-            <div className="container py-8 max-w-5xl mx-auto">
+            <div className="container px-2 sm:px-4 py-4 sm:py-8 max-w-5xl mx-auto">
                 <Card className="border-destructive/50 bg-destructive/5">
                     <CardContent className="py-12 text-center">
                         <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
@@ -247,11 +247,11 @@ export default function Portfolios() {
 
     // Portfolio list view
     return (
-        <div className="container py-8 max-w-5xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
+        <div className="container px-2 sm:px-4 py-4 sm:py-8 max-w-5xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-8 min-w-0">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Portfolios</h1>
-                    <p className="text-muted-foreground mt-1">Manage your paper trading portfolios</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Portfolios</h1>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage your paper trading portfolios</p>
                 </div>
                 <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                     <DialogTrigger asChild>
@@ -360,14 +360,15 @@ export default function Portfolios() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 w-full min-w-0">
                     {portfolios.map(portfolio => (
-                        <PortfolioCard
-                            key={portfolio.id}
-                            portfolio={portfolio}
-                            onClick={() => selectPortfolio(portfolio)}
-                            onDelete={() => deletePortfolio(portfolio.id)}
-                        />
+                        <div key={portfolio.id} className="min-w-0 w-full">
+                            <PortfolioCard
+                                portfolio={portfolio}
+                                onClick={() => selectPortfolio(portfolio)}
+                                onDelete={() => deletePortfolio(portfolio.id)}
+                            />
+                        </div>
                     ))}
                 </div>
             )}
@@ -432,9 +433,9 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
     }
 
     return (
-        <div className="container py-8 max-w-5xl mx-auto">
+        <div className="container px-2 sm:px-4 py-4 sm:py-8 max-w-5xl mx-auto">
             {/* Header */}
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                 <div className="flex items-center gap-4">
                     <div>
                         <div className="flex items-center gap-2">
@@ -474,7 +475,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-4 mb-6">
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-6 w-full">
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
