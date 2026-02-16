@@ -519,11 +519,11 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                 <div className="relative mb-4">
                     <div className="overflow-x-auto scrollbar-hide -mx-2 px-2 pb-1">
                         <TabsList className="w-max sm:w-inline-flex">
-                            <TabsTrigger value="holdings">Holdings</TabsTrigger>
-                            {!portfolio.strategy_id && <TabsTrigger value="trade">Trade</TabsTrigger>}
-                            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-                            <TabsTrigger value="performance">Performance</TabsTrigger>
-                            {portfolio.strategy_id && <TabsTrigger value="briefings">Briefings</TabsTrigger>}
+                            <TabsTrigger value="holdings" className="px-1 sm:px-2">Holdings</TabsTrigger>
+                            {!portfolio.strategy_id && <TabsTrigger value="trade" className="px-1 sm:px-2">Trade</TabsTrigger>}
+                            <TabsTrigger value="transactions" className="px-1 sm:px-2">Transactions</TabsTrigger>
+                            <TabsTrigger value="performance" className="px-1 sm:px-2">Performance</TabsTrigger>
+                            {portfolio.strategy_id && <TabsTrigger value="briefings" className="px-1 sm:px-2">Briefings</TabsTrigger>}
                         </TabsList>
                     </div>
                 </div>
