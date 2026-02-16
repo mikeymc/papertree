@@ -33,6 +33,7 @@ function StrategyDetail() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [activeRunId, setActiveRunId] = useState(null)
+    const [activeTab, setActiveTab] = useState('history')
     const [showConfigModal, setShowConfigModal] = useState(false)
 
     useEffect(() => {
@@ -46,31 +47,8 @@ function StrategyDetail() {
                 setStrategy(data.strategy)
                 setPerformance(data.performance)
                 setRuns(data.runs)
-                if (data.runs.length > 0) {
-                    setActiveRunId(data.runs[0].id)
-                }
-            } catch (err) {
-                console.error(err)
-                setError(err.message)
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchDetail()
-    }, [id])
-
-    useEffect(() => {
-        const fetchDetail = async () => {
-            try {
-                const response = await fetch(`/api/strategies/${id}`)
-                if (!response.ok) {
-                    throw new Error('Failed to fetch strategy details')
-                }
-                const data = await response.json()
-                setStrategy(data.strategy)
-                setPerformance(data.performance)
-                setRuns(data.runs)
-                if (data.runs.length > 0) {
+                // Only set initial activeRunId if none is selected
+                if (data.runs.length > 0 && !activeRunId) {
                     setActiveRunId(data.runs[0].id)
                 }
             } catch (err) {
@@ -211,7 +189,7 @@ function StrategyDetail() {
             </div>
 
             {/* Main Content Tabs */}
-            <Tabs defaultValue="history" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="history">Run History</TabsTrigger>
                     <TabsTrigger value="decisions">Decisions Log</TabsTrigger>
@@ -221,49 +199,115 @@ function StrategyDetail() {
                 <TabsContent value="history">
                     <Card>
                         <CardHeader className="p-3 sm:p-4 pb-2">
-                            <CardTitle>Execution History</CardTitle>
-                            <CardDescription>Recent strategy execution runs</CardDescription>
+                            <CardTitle>Strategy Runs</CardTitle>
                         </CardHeader>
                         <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Screened</TableHead>
-                                        <TableHead>Scored</TableHead>
-                                        <TableHead>Trades</TableHead>
-                                        <TableHead>Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {runs.map((run) => (
-                                        <TableRow key={run.id}>
-                                            <TableCell>{format(new Date(run.started_at), 'MMM d, yyyy HH:mm')}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={run.status === 'completed' ? 'success' : 'default'} className="capitalize">
+                            {/* Desktop View: Table */}
+                            <div className="hidden sm:block">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Screened</TableHead>
+                                            <TableHead>Scored</TableHead>
+                                            <TableHead>Trades</TableHead>
+                                            <TableHead>Decisions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {runs.map((run) => (
+                                            <TableRow
+                                                key={run.id}
+                                                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                                onClick={() => {
+                                                    setActiveRunId(run.id);
+                                                    setActiveTab('decisions');
+                                                    window.scrollTo({ top: 350, behavior: 'smooth' });
+                                                }}
+                                            >
+                                                <TableCell className="font-medium">{format(new Date(run.started_at), 'MMM d, yyyy HH:mm')}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={run.status === 'completed' ? 'success' : 'default'} className="capitalize">
+                                                        {run.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>{run.stocks_screened}</TableCell>
+                                                <TableCell>{run.stocks_scored}</TableCell>
+                                                <TableCell>{run.trades_executed}</TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 px-2 hover:bg-transparent"
+                                                    >
+                                                        View
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            {/* Mobile View: 3-column Grid */}
+                            <div className="block sm:hidden space-y-2">
+                                {runs.map((run) => (
+                                    <div
+                                        key={run.id}
+                                        className="grid grid-cols-3 gap-2 py-4 border-b last:border-0 cursor-pointer active:bg-muted/50"
+                                        onClick={() => {
+                                            setActiveRunId(run.id);
+                                            setActiveTab('decisions');
+                                            window.scrollTo({ top: 350, behavior: 'smooth' });
+                                        }}
+                                    >
+                                        {/* Col 1: Date & Status */}
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight h-3">Date</span>
+                                                <span className="text-xs font-medium truncate">{format(new Date(run.started_at), 'MMM d, HH:mm')}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <Badge variant={run.status === 'completed' ? 'success' : 'default'} className="capitalize text-[10px] px-1.5 h-5 w-fit">
                                                     {run.status}
                                                 </Badge>
-                                            </TableCell>
-                                            <TableCell>{run.stocks_screened}</TableCell>
-                                            <TableCell>{run.stocks_scored}</TableCell>
-                                            <TableCell>{run.trades_executed}</TableCell>
-                                            <TableCell>
-                                                <Button variant="ghost" size="sm" onClick={() => setActiveRunId(run.id)}>
-                                                    View
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {runs.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                                                No runs recorded yet.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                            </div>
+                                        </div>
+
+                                        {/* Col 2: Screened & Scored */}
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight h-3">Screened</span>
+                                                <span className="text-xs font-medium">{run.stocks_screened}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight h-3">Scored</span>
+                                                <span className="text-xs font-medium">{run.stocks_scored}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Col 3: Trades & Link */}
+                                        <div className="flex flex-col gap-2 text-right items-end">
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight h-3">Trades</span>
+                                                <span className="text-xs font-medium">{run.trades_executed}</span>
+                                            </div>
+                                            <div className="flex flex-col items-end pt-1">
+                                                <span className="text-[10px] text-primary font-bold uppercase tracking-wider flex items-center underline decoration-primary/30">
+                                                    Decisions →
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {runs.length === 0 && (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    No runs recorded yet.
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -351,68 +395,52 @@ function DecisionsView({ runId, runs, onRunChange }) {
         return true
     })
 
+    const selectedRun = runs.find(r => String(r.id) === String(runId))
+
     if (!runId && runs.length === 0) {
         return <div className="p-8 text-center text-muted-foreground">No runs available to view decisions.</div>
     }
 
     if (!runId) {
-        return <div className="p-8 text-center text-muted-foreground">Select a run to view decisions.</div>
+        return <div className="p-8 text-center text-muted-foreground">Select a run from the history tab to view decisions.</div>
     }
 
     return (
-        <div className="grid grid-cols-12 gap-6">
-            {/* Sidebar: Run Selector */}
-            <div className="col-span-3 border-r pr-4 h-[600px]">
-                <h3 className="font-semibold mb-4 px-2">Select Run</h3>
-                <ScrollArea className="h-full">
-                    <div className="space-y-1">
-                        {runs.map(run => (
-                            <div
-                                key={run.id}
-                                className={`px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-accent ${run.id === runId ? 'bg-accent font-medium' : ''}`}
-                                onClick={() => onRunChange(run.id)}
-                            >
-                                <div className="flex justify-between">
-                                    <span>{format(new Date(run.started_at), 'MMM d, HH:mm')}</span>
-                                    <span className="text-muted-foreground">{run.trades_executed} trades</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </ScrollArea>
-            </div>
-
-            {/* Main: Decisions List */}
-            <div className="col-span-9">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold">Decisions Log ({filteredDecisions.length})</h3>
-                    <Tabs value={filter} onValueChange={setFilter} className="w-[400px]">
-                        <TabsList className="grid w-full grid-cols-4">
-                            <TabsTrigger value="ALL">All</TabsTrigger>
-                            <TabsTrigger value="BUY">Buy</TabsTrigger>
-                            <TabsTrigger value="SKIP">Skip</TabsTrigger>
-                            <TabsTrigger value="SELL">Sell</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
+        <div className="space-y-6">
+            {/* Context Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
+                <div>
+                    <h3 className="font-semibold text-lg">Decisions Log</h3>
+                    <p className="text-sm text-muted-foreground">
+                        Showing {filteredDecisions.length} decisions for run on {selectedRun ? format(new Date(selectedRun.started_at), 'MMM d, yyyy HH:mm') : '-'}
+                    </p>
                 </div>
-
-                {loading ? (
-                    <div className="space-y-4">
-                        <Skeleton className="h-32 w-full" />
-                        <Skeleton className="h-32 w-full" />
-                    </div>
-                ) : filteredDecisions.length === 0 ? (
-                    <div className="text-center p-8 text-muted-foreground border rounded-lg border-dashed">
-                        No decisions found for this filter.
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {filteredDecisions.map(decision => (
-                            <DecisionCard key={decision.id} decision={decision} />
-                        ))}
-                    </div>
-                )}
+                <Tabs value={filter} onValueChange={setFilter} className="w-full sm:w-[320px]">
+                    <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="ALL" className="text-xs sm:text-sm">All</TabsTrigger>
+                        <TabsTrigger value="BUY" className="text-xs sm:text-sm">Buy</TabsTrigger>
+                        <TabsTrigger value="SKIP" className="text-xs sm:text-sm">Skip</TabsTrigger>
+                        <TabsTrigger value="SELL" className="text-xs sm:text-sm">Sell</TabsTrigger>
+                    </TabsList>
+                </Tabs>
             </div>
+
+            {loading ? (
+                <div className="space-y-4">
+                    <Skeleton className="h-32 w-full" />
+                    <Skeleton className="h-32 w-full" />
+                </div>
+            ) : filteredDecisions.length === 0 ? (
+                <div className="text-center p-12 text-muted-foreground border rounded-lg border-dashed">
+                    No decisions found for this filter.
+                </div>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-1">
+                    {filteredDecisions.map(decision => (
+                        <DecisionCard key={decision.id} decision={decision} />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
