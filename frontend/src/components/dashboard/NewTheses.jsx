@@ -105,19 +105,19 @@ function ThesisRow({ item, onClick }) {
                     <span className="text-xs text-muted-foreground truncate max-w-[140px]">
                         {item.name}
                     </span>
-                    <Badge variant="secondary" className="text-[9px] h-4 px-1 lowercase py-0 opacity-70">
-                        {item.character_id}
-                    </Badge>
                 </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
-                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <Badge variant="secondary" className="text-[9px] h-4 px-1 lowercase py-0 opacity-70 w-12 justify-center shrink-0">
+                    {item.character_id}
+                </Badge>
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap w-20 text-right shrink-0">
                     {formatLocal(item.generated_at, false)}
                 </span>
                 <Badge
                     variant="outline"
-                    className={`text-[10px] h-5 px-1.5 font-bold ${getVerdictColor(verdict)}`}
+                    className={`text-[10px] h-5 px-1.5 font-bold w-14 justify-center shrink-0 ${getVerdictColor(verdict)}`}
                 >
                     {verdict}
                 </Badge>
