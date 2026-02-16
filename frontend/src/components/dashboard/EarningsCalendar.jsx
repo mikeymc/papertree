@@ -103,37 +103,35 @@ function EarningsRow({ item, onClick }) {
     return (
         <button
             onClick={onClick}
-            className="w-full flex items-center justify-between py-0.5 px-2 rounded hover:bg-accent transition-colors text-left border-b border-border last:border-0"
+            className="w-full grid grid-cols-[42px_1fr_auto] items-center py-1 px-2 rounded hover:bg-accent transition-colors text-left border-b border-border last:border-0 overflow-hidden gap-1.5 sm:gap-2"
         >
-            <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{item.symbol}</span>
-                    <span className="text-xs text-muted-foreground truncate">
-                        {item.company_name}
-                    </span>
-                    {item.has_8k && (
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div className="flex items-center">
-                                        <Zap className="h-3 w-3 text-amber-500 fill-amber-500 animate-pulse" />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>8-K (Item 2.02) filed on earnings date - Fresh data available</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    )}
-                </div>
+            <span className="font-medium text-sm shrink-0">{item.symbol}</span>
+            <div className="min-w-0 flex items-center gap-1">
+                <span className="text-xs text-muted-foreground truncate">
+                    {item.company_name}
+                </span>
+                {item.has_8k && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="flex items-center shrink-0">
+                                    <Zap className="h-3 w-3 text-amber-500 fill-amber-500 animate-pulse" />
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>8-K (Item 2.02) filed on earnings date - Fresh data available</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
             </div>
-            <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <span className="text-xs text-muted-foreground whitespace-nowrap w-[42px] sm:w-14 text-right">
                     {formatDate(item.earnings_date)}
                 </span>
                 <Badge
                     variant={isToday ? 'destructive' : isTomorrow ? 'default' : isThisWeek ? 'secondary' : 'outline'}
-                    className="text-[10px] sm:text-xs h-5 py-0 w-12 justify-center shrink-0"
+                    className="text-[10px] sm:text-xs h-5 py-0 w-10 sm:w-12 justify-center shrink-0"
                 >
                     {isToday ? 'Today' : isTomorrow ? '1d' : `${daysUntil}d`}
                 </Badge>

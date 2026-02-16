@@ -34,9 +34,10 @@ export function formatLargeCurrency(value, showCurrencySymbol = true) {
  * Format a date string or object to the user's local timezone
  * @param {string|Date|number} dateInput - The date to format
  * @param {boolean} includeYear - Whether to include the year in the output
+ * @param {boolean} includeTime - Whether to include the time (hour:minute) in the output
  * @returns {string} Formatted date string
  */
-export function formatLocal(dateInput, includeYear = true) {
+export function formatLocal(dateInput, includeYear = true, includeTime = true) {
     if (!dateInput) return '—';
 
     try {
@@ -74,8 +75,8 @@ export function formatLocal(dateInput, includeYear = true) {
             month: 'short',
             day: 'numeric',
             year: includeYear ? 'numeric' : undefined,
-            hour: 'numeric',
-            minute: '2-digit',
+            hour: includeTime ? 'numeric' : undefined,
+            minute: includeTime ? '2-digit' : undefined,
             hour12: false
         });
     } catch (e) {

@@ -97,27 +97,24 @@ function ThesisRow({ item, onClick }) {
     return (
         <button
             onClick={onClick}
-            className="w-full flex items-center justify-between py-0.5 px-2 rounded hover:bg-accent transition-colors text-left border-b border-border last:border-0"
+            className="w-full grid grid-cols-[38px_1fr_auto] items-center py-1 px-2 rounded hover:bg-accent transition-colors text-left border-b border-border last:border-0 overflow-hidden gap-2"
         >
-            <div className="min-w-0 flex-1 mr-4">
-                <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm shrink-0">{item.symbol}</span>
-                    <span className="text-xs text-muted-foreground truncate max-w-[140px]">
-                        {item.name}
-                    </span>
-                </div>
-            </div>
+            <span className="font-bold text-sm shrink-0">{item.symbol}</span>
+            <span className="text-xs text-muted-foreground truncate min-w-0">
+                {item.name}
+            </span>
 
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                <Badge variant="secondary" className="text-[9px] h-4 px-1 lowercase py-0 opacity-70 w-12 justify-center shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+                <Badge variant="secondary" className="text-[9px] h-4 px-1 lowercase py-0 opacity-70 w-10 sm:w-12 justify-center shrink-0 font-normal">
                     {item.character_id}
                 </Badge>
-                <span className="text-[10px] text-muted-foreground whitespace-nowrap w-20 text-right shrink-0">
-                    {formatLocal(item.generated_at, false)}
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap w-10 sm:w-20 text-right shrink-0">
+                    <span className="sm:hidden">{formatLocal(item.generated_at, false, false)}</span>
+                    <span className="hidden sm:inline">{formatLocal(item.generated_at, false, true)}</span>
                 </span>
                 <Badge
                     variant="outline"
-                    className={`text-[10px] h-5 px-1.5 font-bold w-14 justify-center shrink-0 ${getVerdictColor(verdict)}`}
+                    className={`text-[10px] h-5 px-1.5 font-bold w-[46px] sm:w-14 justify-center shrink-0 ${getVerdictColor(verdict)}`}
                 >
                     {verdict}
                 </Badge>
