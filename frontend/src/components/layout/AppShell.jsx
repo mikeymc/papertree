@@ -560,7 +560,10 @@ function AppShellContent({
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                     <ChatHistory
-                                        onSelectConversation={onNavClick}
+                                        onSelectConversation={() => {
+                                            onNavClick()
+                                            if (isMobile) setChatOpen(true)
+                                        }}
                                         onDeleteConversation={handleDeleteConversation}
                                     />
                                 </CollapsibleContent>

@@ -245,6 +245,9 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
   const [isNearBottom, setIsNearBottom] = useState(true)
   const [streamingCharacter, setStreamingCharacter] = useState(null)
 
+  // Track the ID we had at mount time to avoid overwriting it during async loading
+  const initialActiveIdRef = useRef(activeConversationId)
+
   // Start a new chat session - creates a new conversation on the backend
   const startNewChat = useCallback(async () => {
     try {
@@ -433,10 +436,14 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
           // Store all conversations for the chat history (via context)
           setConversations(data.conversations)
 
-          // Load most recent conversation
-          const conv = data.conversations[0]
+          // Load currently active conversation or most recent one
+          const currentActiveId = initialActiveIdRef.current || activeConversationId
+          const conv = data.conversations.find(c => c.id === currentActiveId) || data.conversations[0]
           setConversationId(conv.id)
-          setActiveConversationId(conv.id)
+
+          if (activeConversationId !== conv.id) {
+            setActiveConversationId(conv.id)
+          }
 
           // Load messages for the most recent conversation
           const msgResponse = await fetch(`${API_BASE}/agent/conversation/${conv.id}/messages`, { credentials: 'include' })
