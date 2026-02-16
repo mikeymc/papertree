@@ -39,14 +39,14 @@ import { Line } from 'react-chartjs-2'
 import { useAuth } from '@/context/AuthContext'
 import BriefingsTab from '@/pages/portfolios/BriefingsTab'
 
-// Format currency with commas and 2 decimal places
-const formatCurrency = (value) => {
-    if (value === null || value === undefined) return '$0.00'
+// Format currency with commas and optional decimal places
+const formatCurrency = (value, truncate = false) => {
+    if (value === null || value === undefined) return '$0'
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        minimumFractionDigits: truncate ? 0 : 2,
+        maximumFractionDigits: truncate ? 0 : 2
     }).format(value)
 }
 
@@ -475,14 +475,14 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-6 w-full">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6 w-full">
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                             <DollarSign className="h-4 w-4" />
                             Total Value
                         </div>
-                        <p className="text-2xl font-bold">{formatCurrency(totalValue)}</p>
+                        <p className="text-2xl font-bold">{formatCurrency(totalValue, true)}</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -491,7 +491,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                             <Wallet className="h-4 w-4" />
                             Cash
                         </div>
-                        <p className="text-2xl font-bold">{formatCurrency(cash)}</p>
+                        <p className="text-2xl font-bold">{formatCurrency(cash, true)}</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -500,7 +500,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                             <Activity className="h-4 w-4" />
                             Holdings
                         </div>
-                        <p className="text-2xl font-bold">{formatCurrency(holdingsValue)}</p>
+                        <p className="text-2xl font-bold">{formatCurrency(holdingsValue, true)}</p>
                     </CardContent>
                 </Card>
                 <Card className={isPositive ? 'border-emerald-500/30' : 'border-red-500/30'}>
@@ -510,7 +510,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                             Gain/Loss
                         </div>
                         <p className={`text-2xl font-bold ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {formatCurrency(gainLoss)}
+                            {formatCurrency(gainLoss, true)}
                         </p>
                         <p className={`text-sm ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                             {formatPercent(gainLossPercent)}
@@ -521,13 +521,17 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="mb-4">
-                    <TabsTrigger value="holdings">Holdings</TabsTrigger>
-                    {!portfolio.strategy_id && <TabsTrigger value="trade">Trade</TabsTrigger>}
-                    <TabsTrigger value="transactions">Transactions</TabsTrigger>
-                    <TabsTrigger value="performance">Performance</TabsTrigger>
-                    {portfolio.strategy_id && <TabsTrigger value="briefings">Briefings</TabsTrigger>}
-                </TabsList>
+                <div className="relative mb-4">
+                    <div className="overflow-x-auto scrollbar-hide -mx-2 px-2 pb-1">
+                        <TabsList className="w-max sm:w-inline-flex">
+                            <TabsTrigger value="holdings">Holdings</TabsTrigger>
+                            {!portfolio.strategy_id && <TabsTrigger value="trade">Trade</TabsTrigger>}
+                            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+                            <TabsTrigger value="performance">Performance</TabsTrigger>
+                            {portfolio.strategy_id && <TabsTrigger value="briefings">Briefings</TabsTrigger>}
+                        </TabsList>
+                    </div>
+                </div>
 
                 <TabsContent value="holdings">
                     <HoldingsTab portfolio={portfolio} />

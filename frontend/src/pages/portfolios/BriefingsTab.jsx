@@ -96,7 +96,7 @@ function BriefingCard({ briefing }) {
 
     return (
         <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="p-3 sm:p-4 pb-3">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-medium text-muted-foreground">
                         {date}
@@ -104,8 +104,8 @@ function BriefingCard({ briefing }) {
                     <div className="flex items-center gap-3">
                         {briefing.portfolio_return_pct != null && (
                             <span className={`text-sm font-medium ${briefing.portfolio_return_pct >= 0
-                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                    : 'text-red-600 dark:text-red-400'
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-red-600 dark:text-red-400'
                                 }`}>
                                 {briefing.portfolio_return_pct >= 0 ? '+' : ''}
                                 {briefing.portfolio_return_pct.toFixed(2)}% return
@@ -121,7 +121,7 @@ function BriefingCard({ briefing }) {
                 </div>
             </CardHeader>
 
-            <CardContent className="space-y-4">
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 space-y-4">
                 {/* Executive Summary (markdown) */}
                 {briefing.executive_summary && (
                     <div className="prose prose-sm max-w-none dark:prose-invert">
@@ -157,8 +157,8 @@ function ScoreBadge({ score, status }) {
 
     const colorClass = status === 'excellent' ? 'text-emerald-600 dark:text-emerald-400'
         : status === 'good' ? 'text-emerald-600/80 dark:text-emerald-400/80'
-        : status === 'fair' ? 'text-yellow-600 dark:text-yellow-400'
-        : 'text-red-600 dark:text-red-400'
+            : status === 'fair' ? 'text-yellow-600 dark:text-yellow-400'
+                : 'text-red-600 dark:text-red-400'
 
     return (
         <span className={`text-xs font-medium tabular-nums ${colorClass}`}>
@@ -236,7 +236,7 @@ function UpsideBadge({ pct }) {
 
     const colorClass = pct >= 10 ? 'text-emerald-600 dark:text-emerald-400'
         : pct >= 0 ? 'text-yellow-600 dark:text-yellow-400'
-        : 'text-red-600 dark:text-red-400'
+            : 'text-red-600 dark:text-red-400'
 
     return (
         <span className={`text-xs font-medium tabular-nums ${colorClass}`}>
@@ -271,7 +271,7 @@ function HoldsSection({ holds }) {
                                 <Badge
                                     variant={item.consensus_verdict === 'BUY' ? 'success'
                                         : item.consensus_verdict === 'AVOID' ? 'destructive'
-                                        : 'secondary'}
+                                            : 'secondary'}
                                     className="text-[10px] px-1.5 py-0"
                                 >
                                     {item.consensus_verdict}
