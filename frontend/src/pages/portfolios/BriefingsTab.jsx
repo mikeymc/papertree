@@ -78,9 +78,10 @@ export default function BriefingsTab({ portfolioId }) {
 
 function BriefingCard({ briefing }) {
     const date = briefing.generated_at
-        ? new Date(briefing.generated_at).toLocaleDateString('en-US', {
+        ? new Date(briefing.generated_at.endsWith('Z') ? briefing.generated_at : `${briefing.generated_at}Z`).toLocaleDateString('en-US', {
             weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
             hour: 'numeric', minute: '2-digit',
+            timeZone: 'America/New_York'
         })
         : 'Unknown date'
 

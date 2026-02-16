@@ -9,7 +9,20 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import ReactMarkdown from 'react-markdown'
-import { format } from 'date-fns'
+
+const formatEastern = (dateStr) => {
+    if (!dateStr) return '—';
+    const dateObj = new Date(dateStr.endsWith('Z') ? dateStr : `${dateStr}Z`);
+    return dateObj.toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: false
+    });
+};
 
 export function DecisionsView({ runId, runs, onRunChange }) {
     const [decisions, setDecisions] = useState([])
@@ -62,7 +75,7 @@ export function DecisionsView({ runId, runs, onRunChange }) {
                 <div>
                     <h3 className="font-semibold text-lg">Decisions Log</h3>
                     <p className="text-sm text-muted-foreground">
-                        Showing {filteredDecisions.length} decisions for run on {selectedRun ? format(new Date(selectedRun.started_at), 'MMM d, yyyy HH:mm') : '-'}
+                        Showing {filteredDecisions.length} decisions for run on {selectedRun ? formatEastern(selectedRun.started_at) : '-'}
                     </p>
                 </div>
                 <Tabs value={filter} onValueChange={setFilter} className="w-full sm:w-[320px]">

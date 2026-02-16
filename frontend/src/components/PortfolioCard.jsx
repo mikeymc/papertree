@@ -53,7 +53,7 @@ export default function PortfolioCard({ portfolio, onClick, onDelete }) {
                     {portfolio.name}
                 </CardTitle>
                 <CardDescription className="text-xs flex flex-col gap-1">
-                    <span>Created {new Date(portfolio.created_at).toLocaleDateString()}</span>
+                    <span>Created {new Date(portfolio.created_at.endsWith('Z') ? portfolio.created_at : `${portfolio.created_at}Z`).toLocaleDateString('en-US', { timeZone: 'America/New_York' })}</span>
                     {portfolio.user_email && (
                         <span className="text-muted-foreground/80 font-medium">User: {portfolio.user_email}</span>
                     )}

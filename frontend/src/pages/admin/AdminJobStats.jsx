@@ -224,8 +224,8 @@ export default function AdminJobStats() {
         const jobs = (data.jobs || []).filter(j => j.started_at)
         if (jobs.length === 0) return null
 
-        const startTimes = jobs.map(j => new Date(j.started_at).getTime())
-        const endTimes = jobs.map(j => j.completed_at ? new Date(j.completed_at).getTime() : Date.now())
+        const startTimes = jobs.map(j => new Date(j.started_at.endsWith('Z') ? j.started_at : `${j.started_at}Z`).getTime())
+        const endTimes = jobs.map(j => j.completed_at ? new Date(j.completed_at.endsWith('Z') ? j.completed_at : `${j.completed_at}Z`).getTime() : Date.now())
 
         const rawMin = Math.min(...startTimes)
         const rawMax = Math.max(...endTimes)
@@ -262,10 +262,16 @@ export default function AdminJobStats() {
                 let currentTick = minTime
                 while (currentTick <= maxTime) {
                     const dateObj = new Date(currentTick)
-                    const formatStr = range > 24 * 60 * 60 * 1000 ? 'HH:mm MMM d' : 'HH:mm'
                     labels.push({
                         time: currentTick,
-                        text: format(dateObj, formatStr),
+                        text: new Intl.DateTimeFormat('en-US', {
+                            timeZone: 'America/New_York',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: false,
+                            month: range > 24 * 60 * 60 * 1000 ? 'short' : undefined,
+                            day: range > 24 * 60 * 60 * 1000 ? 'numeric' : undefined
+                        }).format(dateObj),
                         position: ((currentTick - minTime) / range) * 100
                     })
                     currentTick += interval
@@ -712,7 +718,7 @@ export default function AdminJobStats() {
                                                         {duration ? formatDuration(duration) : 'N/A'}
                                                     </td>
                                                     <td className="px-4 py-3 text-right text-muted-foreground">
-                                                        {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}
+                                                        {formatDistanceToNow(new Date(job.created_at.endsWith('Z') ? job.created_at : `${job.created_at}Z`), { addSuffix: true })}
                                                     </td>
                                                 </tr>
                                             )

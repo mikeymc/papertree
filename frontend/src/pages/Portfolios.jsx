@@ -447,7 +447,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                             <h1 className="text-2xl font-bold tracking-tight">{portfolio.name}</h1>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Created {new Date(portfolio.created_at).toLocaleDateString()}
+                            Created {new Date(portfolio.created_at.endsWith('Z') ? portfolio.created_at : `${portfolio.created_at}Z`).toLocaleDateString('en-US', { timeZone: 'America/New_York' })}
                         </p>
                     </div>
                 </div>
@@ -874,7 +874,15 @@ function TransactionsTab({ transactions, loading }) {
                     {transactions.map(tx => (
                         <TableRow key={tx.id}>
                             <TableCell className="text-muted-foreground text-sm">
-                                {formatDate(tx.executed_at)}
+                                {new Intl.DateTimeFormat('en-US', {
+                                    timeZone: 'America/New_York',
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true
+                                }).format(new Date(tx.executed_at.endsWith('Z') ? tx.executed_at : `${tx.executed_at}Z`))}
                             </TableCell>
                             <TableCell>
                                 <Badge

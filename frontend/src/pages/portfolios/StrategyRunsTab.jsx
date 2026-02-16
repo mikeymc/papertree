@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { format } from 'date-fns'
 import {
     Table,
     TableBody,
@@ -13,6 +12,20 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+
+const formatEastern = (dateStr, includeYear = true) => {
+    if (!dateStr) return '—';
+    const dateObj = new Date(dateStr.endsWith('Z') ? dateStr : `${dateStr}Z`);
+    return dateObj.toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        month: 'short',
+        day: 'numeric',
+        year: includeYear ? 'numeric' : undefined,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: false
+    });
+};
 
 export default function StrategyRunsTab({ strategyId, runsCount }) {
     const navigate = useNavigate()
@@ -98,7 +111,7 @@ export default function StrategyRunsTab({ strategyId, runsCount }) {
                                         navigate(`/strategies/${strategyId}/runs/${run.id}`);
                                     }}
                                 >
-                                    <TableCell className="font-medium">{format(new Date(run.started_at), 'MMM d, yyyy HH:mm')}</TableCell>
+                                    <TableCell className="font-medium">{formatEastern(run.started_at)}</TableCell>
                                     <TableCell>
                                         <Badge variant={run.status === 'completed' ? 'success' : 'default'} className="capitalize">
                                             {run.status}
@@ -136,7 +149,7 @@ export default function StrategyRunsTab({ strategyId, runsCount }) {
                             <div className="flex flex-col gap-2">
                                 <div className="flex flex-col">
                                     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight h-3">Date</span>
-                                    <span className="text-xs font-medium truncate">{format(new Date(run.started_at), 'MMM d, HH:mm')}</span>
+                                    <span className="text-xs font-medium truncate">{formatEastern(run.started_at, false)}</span>
                                 </div>
                                 <div className="flex flex-col">
                                     <Badge variant={run.status === 'completed' ? 'success' : 'default'} className="capitalize text-[10px] px-1.5 h-5 w-fit">

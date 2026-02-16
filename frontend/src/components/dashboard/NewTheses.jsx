@@ -140,10 +140,11 @@ function getVerdictColor(verdict) {
 
 function formatDate(dateStr) {
     if (!dateStr) return ''
-    const date = new Date(dateStr)
+    const date = new Date(dateStr.endsWith('Z') ? dateStr : `${dateStr}Z`)
     return date.toLocaleDateString('en-US', {
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: 'America/New_York'
     })
 }
 
