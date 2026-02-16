@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Lightbulb, Calendar } from 'lucide-react'
+import { formatLocal } from '@/utils/formatters'
 
 export default function NewTheses() {
     const navigate = useNavigate()
@@ -112,7 +113,7 @@ function ThesisRow({ item, onClick }) {
 
             <div className="flex items-center gap-3 shrink-0">
                 <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                    {formatDate(item.generated_at)}
+                    {formatLocal(item.generated_at, false)}
                 </span>
                 <Badge
                     variant="outline"
@@ -136,16 +137,6 @@ function getVerdictColor(verdict) {
         default:
             return 'border-muted text-muted-foreground bg-muted/10'
     }
-}
-
-function formatDate(dateStr) {
-    if (!dateStr) return ''
-    const date = new Date(dateStr.endsWith('Z') ? dateStr : `${dateStr}Z`)
-    return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        timeZone: 'America/New_York'
-    })
 }
 
 function EmptyState() {

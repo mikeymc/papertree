@@ -2,7 +2,7 @@
 # ABOUTME: Handles adding, removing, and retrieving symbols from user watchlists
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class WatchlistMixin:
             VALUES (%s, %s, %s)
             ON CONFLICT (user_id, symbol) DO NOTHING
         """
-        args = (user_id, symbol, datetime.now())
+        args = (user_id, symbol, datetime.now(timezone.utc))
         self.write_queue.put((sql, args))
 
     def remove_from_watchlist(self, user_id: int, symbol: str):

@@ -26,7 +26,7 @@ class AnalysisMixin:
                     analysis_text = EXCLUDED.analysis_text,
                     generated_at = EXCLUDED.generated_at,
                     model_version = EXCLUDED.model_version
-            """, (user_id, symbol, character_id, analysis_text, datetime.now(), model_version))
+            """, (user_id, symbol, character_id, analysis_text, datetime.now(timezone.utc), model_version))
             conn.commit()
         finally:
             self.return_connection(conn)
@@ -82,7 +82,7 @@ class AnalysisMixin:
                     final_verdict = EXCLUDED.final_verdict,
                     generated_at = EXCLUDED.generated_at,
                     model_version = EXCLUDED.model_version
-            """, (user_id, symbol, deliberation_text, final_verdict, datetime.now(), model_version))
+            """, (user_id, symbol, deliberation_text, final_verdict, datetime.now(timezone.utc), model_version))
             conn.commit()
         finally:
             self.return_connection(conn)
@@ -220,7 +220,7 @@ class AnalysisMixin:
                     analysis_text = EXCLUDED.analysis_text,
                     generated_at = EXCLUDED.generated_at,
                     model_version = EXCLUDED.model_version
-            """, (user_id, symbol, section, character_id, analysis_text, datetime.now(), model_version))
+            """, (user_id, symbol, section, character_id, analysis_text, datetime.now(timezone.utc), model_version))
             conn.commit()
         finally:
             self.return_connection(conn)
@@ -268,7 +268,7 @@ class AnalysisMixin:
                     recommendations_json = EXCLUDED.recommendations_json,
                     generated_at = EXCLUDED.generated_at,
                     model_version = EXCLUDED.model_version
-            """, (user_id, symbol, recommendations_json, datetime.now(), model_version))
+            """, (user_id, symbol, recommendations_json, datetime.now(timezone.utc), model_version))
             conn.commit()
         finally:
             self.return_connection(conn)

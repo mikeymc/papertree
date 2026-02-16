@@ -23,7 +23,7 @@ class FilingsMixin:
                 filing_date = EXCLUDED.filing_date,
                 document_url = EXCLUDED.document_url,
                 last_updated = EXCLUDED.last_updated
-        """, (symbol, filing_type, filing_date, document_url, accession_number, datetime.now()))
+        """, (symbol, filing_type, filing_date, document_url, accession_number, datetime.now(timezone.utc)))
         conn.commit()
         self.return_connection(conn)
 
@@ -91,7 +91,7 @@ class FilingsMixin:
             return False
 
         last_updated = row[0]
-        age_days = (datetime.now() - last_updated).total_seconds() / 86400
+        age_days = (datetime.now(timezone.utc) - last_updated.replace(tzinfo=timezone.utc)).total_seconds() / 86400
         return age_days < max_age_days
 
     def get_latest_sec_filing_date(self, symbol: str) -> Optional[str]:
@@ -134,7 +134,7 @@ class FilingsMixin:
                 content = EXCLUDED.content,
                 filing_date = EXCLUDED.filing_date,
                 last_updated = EXCLUDED.last_updated
-        """, (symbol, section_name, content, filing_type, filing_date, datetime.now()))
+        """, (symbol, section_name, content, filing_type, filing_date, datetime.now(timezone.utc)))
         conn.commit()
         self.return_connection(conn)
 
@@ -180,7 +180,7 @@ class FilingsMixin:
             return False
 
         last_updated = row[0]
-        age_days = (datetime.now() - last_updated).total_seconds() / 86400
+        age_days = (datetime.now(timezone.utc) - last_updated.replace(tzinfo=timezone.utc)).total_seconds() / 86400
         return age_days < max_age_days
 
     def save_filing_section_summary(self, symbol: str, section_name: str, summary: str,
@@ -196,7 +196,7 @@ class FilingsMixin:
                 summary = EXCLUDED.summary,
                 filing_date = EXCLUDED.filing_date,
                 last_updated = EXCLUDED.last_updated
-        """, (symbol, section_name, summary, filing_type, filing_date, datetime.now()))
+        """, (symbol, section_name, summary, filing_type, filing_date, datetime.now(timezone.utc)))
         conn.commit()
         self.return_connection(conn)
 
@@ -268,7 +268,7 @@ class FilingsMixin:
             article_data.get('category'),
             article_data.get('datetime'),
             article_data.get('published_date'),
-            datetime.now()
+            datetime.now(timezone.utc)
         )
         self.write_queue.put((sql, args))
 
@@ -463,7 +463,7 @@ class FilingsMixin:
             event_data.get('sec_accession_number'),
             event_data.get('sec_item_codes', []),
             event_data.get('content_text'),
-            datetime.now()
+            datetime.now(timezone.utc)
         )
         self.write_queue.put((sql, args))
 

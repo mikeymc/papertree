@@ -29,3 +29,57 @@ export function formatLargeCurrency(value, showCurrencySymbol = true) {
 
     return `${symbol}${num.toFixed(2)}`;
 }
+
+/**
+ * Format a date string or object to the user's local timezone
+ * @param {string|Date|number} dateInput - The date to format
+ * @param {boolean} includeYear - Whether to include the year in the output
+ * @returns {string} Formatted date string
+ */
+export function formatLocal(dateInput, includeYear = true) {
+    if (!dateInput) return '—';
+
+    try {
+        let dateObj;
+        if (dateInput instanceof Date) {
+            dateObj = dateInput;
+        } else if (typeof dateInput === 'string') {
+            // Check if it's already a format the browser knows well (like RFC 1123 from backend)
+            // or if it already has timezone information.
+            const hasTimezone = dateInput.endsWith('Z') ||
+                dateInput.includes('GMT') ||
+                dateInput.includes('UTC') ||
+                /[+-]\d{2}:?\d{2}$/.test(dateInput);
+
+            if (hasTimezone || dateInput.includes(',')) {
+                // It's likely an RFC 1123 string or has an offset/Z already
+                dateObj = new Date(dateInput);
+            } else {
+                // It's a "naked" ISO string (e.g. "2026-02-16 17:29" or "2026-02-16T17:29")
+                // Replace space with T for browser compatibility
+                let normalized = dateInput.replace(' ', 'T');
+                // Append Z to force UTC if no other TZ info is present
+                if (!normalized.endsWith('Z')) {
+                    normalized += 'Z';
+                }
+                dateObj = new Date(normalized);
+            }
+        } else {
+            dateObj = new Date(dateInput);
+        }
+
+        if (isNaN(dateObj.getTime())) return 'Invalid Date';
+
+        return dateObj.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: includeYear ? 'numeric' : undefined,
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: false
+        });
+    } catch (e) {
+        console.error("Format error:", e);
+        return 'Invalid Date';
+    }
+}

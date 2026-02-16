@@ -42,6 +42,7 @@ import { useAuth } from '@/context/AuthContext'
 import BriefingsTab from '@/pages/portfolios/BriefingsTab'
 import StrategyRunsTab from '@/pages/portfolios/StrategyRunsTab'
 import StrategyWizard from '@/components/strategies/StrategyWizard'
+import { formatLocal } from '@/utils/formatters'
 
 const LiveSignal = () => (
     <span className="bg-yellow-400 h-2 w-2 rounded-full mr-2 inline-block shadow-sm" />
@@ -447,7 +448,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                             <h1 className="text-2xl font-bold tracking-tight">{portfolio.name}</h1>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Created {new Date(portfolio.created_at.endsWith('Z') ? portfolio.created_at : `${portfolio.created_at}Z`).toLocaleDateString('en-US', { timeZone: 'America/New_York' })}
+                            Created {formatLocal(portfolio.created_at)}
                         </p>
                     </div>
                 </div>
@@ -874,15 +875,7 @@ function TransactionsTab({ transactions, loading }) {
                     {transactions.map(tx => (
                         <TableRow key={tx.id}>
                             <TableCell className="text-muted-foreground text-sm">
-                                {new Intl.DateTimeFormat('en-US', {
-                                    timeZone: 'America/New_York',
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                    hour12: true
-                                }).format(new Date(tx.executed_at.endsWith('Z') ? tx.executed_at : `${tx.executed_at}Z`))}
+                                {formatLocal(tx.executed_at)}
                             </TableCell>
                             <TableCell>
                                 <Badge

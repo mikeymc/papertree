@@ -23,7 +23,7 @@ class ScreeningMixin:
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
-            """, (datetime.now(), algorithm, total_count, 0, total_analyzed, pass_count, close_count, fail_count, 'running'))
+            """, (datetime.now(timezone.utc), algorithm, total_count, 0, total_analyzed, pass_count, close_count, fail_count, 'running'))
             session_id = cursor.fetchone()[0]
             conn.commit()
             return session_id
@@ -198,7 +198,7 @@ class ScreeningMixin:
             result_data.get('institutional_ownership_score'),
             result_data.get('overall_status'),
             result_data.get('overall_score'),
-            datetime.now(),
+            datetime.now(timezone.utc),
             result_data.get('roe'),
             result_data.get('owner_earnings'),
             result_data.get('debt_to_earnings'),
@@ -446,7 +446,7 @@ class ScreeningMixin:
                 peg_score,
                 debt_score,
                 institutional_ownership_score,
-                scored_at or datetime.now(),
+                scored_at or datetime.now(timezone.utc),
                 symbol
             ))
 

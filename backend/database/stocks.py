@@ -24,7 +24,7 @@ class StocksMixin:
                 ipo_year = EXCLUDED.ipo_year,
                 last_updated = EXCLUDED.last_updated
         """
-        args = (symbol, company_name, exchange, sector, country, ipo_year, datetime.now())
+        args = (symbol, company_name, exchange, sector, country, ipo_year, datetime.now(timezone.utc))
         self.write_queue.put((sql, args))
 
     def ensure_stocks_exist_batch(self, market_data_cache: Dict[str, Dict[str, Any]]):
@@ -52,7 +52,7 @@ class StocksMixin:
                     INSERT INTO stocks (symbol, company_name, last_updated)
                     VALUES (%s, %s, %s)
                     ON CONFLICT (symbol) DO NOTHING
-                """, (symbol, data.get('name', symbol), datetime.now()))
+                """, (symbol, data.get('name', symbol), datetime.now(timezone.utc)))
 
             conn.commit()
         finally:
@@ -627,7 +627,7 @@ class StocksMixin:
 
         # Batch write
         for date_str, price in zip(weekly_data['dates'], weekly_data['prices']):
-            args = (symbol, date_str, price, datetime.now())
+            args = (symbol, date_str, price, datetime.now(timezone.utc))
             self.write_queue.put((sql, args))
 
     def get_weekly_prices(self, symbol: str, start_year: int = None) -> Dict[str, Any]:
@@ -697,7 +697,7 @@ class StocksMixin:
                 return False
 
             last_updated = row[0]
-            age_hours = (datetime.now() - last_updated).total_seconds() / 3600
+            age_hours = (datetime.now(timezone.utc) - last_updated.replace(tzinfo=timezone.utc)).total_seconds() / 3600
             return age_hours < max_age_hours
         finally:
             self.return_connection(conn)

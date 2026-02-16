@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatDistanceToNow, format } from 'date-fns'
 import { BarChart3, Clock, CheckCircle2, XCircle, PlayCircle, Loader2, RefreshCw, Activity, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Line } from 'react-chartjs-2'
+import { formatLocal } from '@/utils/formatters'
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -264,14 +265,7 @@ export default function AdminJobStats() {
                     const dateObj = new Date(currentTick)
                     labels.push({
                         time: currentTick,
-                        text: new Intl.DateTimeFormat('en-US', {
-                            timeZone: 'America/New_York',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: false,
-                            month: range > 24 * 60 * 60 * 1000 ? 'short' : undefined,
-                            day: range > 24 * 60 * 60 * 1000 ? 'numeric' : undefined
-                        }).format(dateObj),
+                        text: formatLocal(dateObj, range > 24 * 60 * 60 * 1000),
                         position: ((currentTick - minTime) / range) * 100
                     })
                     currentTick += interval
@@ -719,6 +713,7 @@ export default function AdminJobStats() {
                                                     </td>
                                                     <td className="px-4 py-3 text-right text-muted-foreground">
                                                         {formatDistanceToNow(new Date(job.created_at.endsWith('Z') ? job.created_at : `${job.created_at}Z`), { addSuffix: true })}
+                                                        <div className="text-[10px] opacity-70">{formatLocal(job.created_at)}</div>
                                                     </td>
                                                 </tr>
                                             )

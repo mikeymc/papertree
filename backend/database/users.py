@@ -27,7 +27,7 @@ class UsersMixin:
                     picture = EXCLUDED.picture,
                     last_login = EXCLUDED.last_login
                 RETURNING id
-            """, (google_id, email, name, picture, datetime.now(), datetime.now()))
+            """, (google_id, email, name, picture, datetime.now(timezone.utc), datetime.now(timezone.utc)))
             user_id = cursor.fetchone()[0]
             conn.commit()
             return user_id
@@ -46,7 +46,7 @@ class UsersMixin:
                 INSERT INTO users (email, password_hash, name, created_at, last_login, is_verified, verification_code, code_expires_at, theme)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'midnight')
                 RETURNING id
-            """, (email, password_hash, name, datetime.now(), datetime.now(), is_verified, verification_code, code_expires_at))
+            """, (email, password_hash, name, datetime.now(timezone.utc), datetime.now(timezone.utc), is_verified, verification_code, code_expires_at))
             user_id = cursor.fetchone()[0]
             conn.commit()
             return user_id
@@ -129,7 +129,7 @@ class UsersMixin:
     def update_last_login(self, user_id: int):
         """Update user's last login timestamp"""
         sql = "UPDATE users SET last_login = %s WHERE id = %s"
-        args = (datetime.now(), user_id)
+        args = (datetime.now(timezone.utc), user_id)
         self.write_queue.put((sql, args))
 
     def get_user_character(self, user_id: int) -> str:

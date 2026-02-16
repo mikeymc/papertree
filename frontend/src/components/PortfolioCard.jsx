@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown, Trash2, Bot, User } from 'lucide-react'
+import { formatLocal } from '@/utils/formatters'
 
 // Format currency with commas and 2 decimal places
 const formatCurrency = (value) => {
@@ -53,7 +54,7 @@ export default function PortfolioCard({ portfolio, onClick, onDelete }) {
                     {portfolio.name}
                 </CardTitle>
                 <CardDescription className="text-xs flex flex-col gap-1">
-                    <span>Created {new Date(portfolio.created_at.endsWith('Z') ? portfolio.created_at : `${portfolio.created_at}Z`).toLocaleDateString('en-US', { timeZone: 'America/New_York' })}</span>
+                    <span>Created {formatLocal(portfolio.created_at)}</span>
                     {portfolio.user_email && (
                         <span className="text-muted-foreground/80 font-medium">User: {portfolio.user_email}</span>
                     )}

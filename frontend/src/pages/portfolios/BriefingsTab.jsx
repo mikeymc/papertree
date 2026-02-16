@@ -1,12 +1,15 @@
 // ABOUTME: Strategy run briefings tab for autonomous portfolios
 // ABOUTME: Displays briefing cards with markdown summaries, trades table, and score-enriched holds
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { formatLocal } from '@/utils/formatters'
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
@@ -77,13 +80,7 @@ export default function BriefingsTab({ portfolioId }) {
 }
 
 function BriefingCard({ briefing }) {
-    const date = briefing.generated_at
-        ? new Date(briefing.generated_at.endsWith('Z') ? briefing.generated_at : `${briefing.generated_at}Z`).toLocaleDateString('en-US', {
-            weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-            hour: 'numeric', minute: '2-digit',
-            timeZone: 'America/New_York'
-        })
-        : 'Unknown date'
+    const date = formatLocal(briefing.generated_at)
 
     const buys = safeParse(briefing.buys_json)
     const sells = safeParse(briefing.sells_json)
