@@ -122,10 +122,10 @@ class TestStockRescorerUsesVectorPath:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# StrategyExecutorCore._get_current_scores
+# StrategyExecutorCore._build_scorer
 # ══════════════════════════════════════════════════════════════════════════════
 
-class TestGetCurrentScoresUsesVectorPath:
+class TestBuildScorerUsesVectorPath:
 
     def _build_executor(self):
         mock_db = MagicMock()
@@ -140,22 +140,22 @@ class TestGetCurrentScoresUsesVectorPath:
         executor.benchmark_tracker = MagicMock()
         return executor, mock_db, mock_criteria
 
-    def _make_scored_single(self, lynch_score=72.0, buffett_score=65.0):
+    def _make_scored_single(self, symbol='AAPL', lynch_score=72.0, buffett_score=65.0):
         """Build paired DataFrames for Lynch + Buffett single-symbol scoring."""
         lynch_df = pd.DataFrame([{
-            'symbol': 'AAPL',
+            'symbol': symbol,
             'overall_score': lynch_score,
             'overall_status': 'PASS',
         }])
         buffett_df = pd.DataFrame([{
-            'symbol': 'AAPL',
+            'symbol': symbol,
             'overall_score': buffett_score,
             'overall_status': 'CLOSE',
         }])
         return lynch_df, buffett_df
 
-    def test_get_current_scores_uses_evaluate_batch(self):
-        """_get_current_scores must call evaluate_batch, never evaluate_stock."""
+    def test_scorer_uses_evaluate_batch(self):
+        """_build_scorer must produce a scorer that calls evaluate_batch, never evaluate_stock."""
         executor, mock_db, mock_criteria = self._build_executor()
 
         lynch_df, buffett_df = self._make_scored_single()
@@ -166,13 +166,13 @@ class TestGetCurrentScoresUsesVectorPath:
             mock_sv_class.return_value = mock_sv
             mock_sv.load_vectors.return_value = _make_vector_df(['AAPL'])
 
-            scores = executor._get_current_scores('AAPL')
+            scores = executor._build_scorer()('AAPL')
 
         assert mock_criteria.evaluate_batch.call_count == 2
         mock_criteria.evaluate_stock.assert_not_called()
 
-    def test_get_current_scores_returns_both_characters(self):
-        """Result must contain lynch_score, lynch_status, buffett_score, buffett_status."""
+    def test_scorer_returns_both_characters(self):
+        """Scorer result must contain lynch_score, lynch_status, buffett_score, buffett_status."""
         executor, mock_db, mock_criteria = self._build_executor()
 
         lynch_df, buffett_df = self._make_scored_single(lynch_score=72.0, buffett_score=65.0)
@@ -183,15 +183,15 @@ class TestGetCurrentScoresUsesVectorPath:
             mock_sv_class.return_value = mock_sv
             mock_sv.load_vectors.return_value = _make_vector_df(['AAPL'])
 
-            scores = executor._get_current_scores('AAPL')
+            scores = executor._build_scorer()('AAPL')
 
         assert scores['lynch_score'] == 72.0
         assert scores['lynch_status'] == 'PASS'
         assert scores['buffett_score'] == 65.0
         assert scores['buffett_status'] == 'CLOSE'
 
-    def test_get_current_scores_returns_empty_for_unknown_symbol(self):
-        """Returns empty dict when symbol is not in vector universe."""
+    def test_scorer_returns_empty_for_unknown_symbol(self):
+        """Scorer returns empty dict when symbol is not in vector universe."""
         executor, mock_db, mock_criteria = self._build_executor()
 
         with patch('strategy_executor.core.StockVectors') as mock_sv_class:
@@ -199,10 +199,34 @@ class TestGetCurrentScoresUsesVectorPath:
             mock_sv_class.return_value = mock_sv
             mock_sv.load_vectors.return_value = _make_vector_df([])  # empty
 
-            scores = executor._get_current_scores('UNKN')
+            scores = executor._build_scorer()('UNKN')
 
         assert scores == {}
         mock_criteria.evaluate_batch.assert_not_called()
+
+    def test_vectors_loaded_once_for_multiple_symbols(self):
+        """load_vectors must be called exactly once regardless of how many symbols are scored."""
+        executor, mock_db, mock_criteria = self._build_executor()
+
+        def _batch_side_effect(df, config):
+            if df.empty:
+                return pd.DataFrame()
+            symbol = df.iloc[0]['symbol']
+            return pd.DataFrame([{'symbol': symbol, 'overall_score': 70.0, 'overall_status': 'PASS'}])
+
+        mock_criteria.evaluate_batch.side_effect = _batch_side_effect
+
+        with patch('strategy_executor.core.StockVectors') as mock_sv_class:
+            mock_sv = MagicMock()
+            mock_sv_class.return_value = mock_sv
+            mock_sv.load_vectors.return_value = _make_vector_df(['AAPL', 'MSFT', 'GOOG'])
+
+            scorer = executor._build_scorer()
+            scorer('AAPL')
+            scorer('MSFT')
+            scorer('GOOG')
+
+        mock_sv.load_vectors.assert_called_once()
 
 
 # ══════════════════════════════════════════════════════════════════════════════

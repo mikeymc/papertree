@@ -197,7 +197,7 @@ class StrategyExecutorCore:
             price_time_exits = self.exit_checker.check_exits(
                 portfolio_id,
                 exit_conditions,
-                scoring_func=self._get_current_scores
+                scoring_func=self._build_scorer()
             )
             exit_decisions.extend(price_time_exits)
 
@@ -270,56 +270,58 @@ class StrategyExecutorCore:
             )
             raise
 
-    def _get_current_scores(self, symbol: str) -> Dict[str, Any]:
-        """Get current Lynch and Buffett scores for a symbol.
+    def _build_scorer(self):
+        """Load vectors once, return a per-symbol scoring function.
 
-        Used by ExitConditionChecker for score degradation checks.
+        Avoids reloading the full vector dataset for every held position
+        during exit condition checks.
         """
-        try:
-            vectors = StockVectors(self.db)
-            df_all = vectors.load_vectors()
-            df = df_all[df_all['symbol'] == symbol]
+        vectors = StockVectors(self.db)
+        df_all = vectors.load_vectors()
 
-            if df.empty:
+        buffett_config = {}
+        for sw in BUFFETT.scoring_weights:
+            if sw.metric == 'roe':
+                buffett_config['weight_roe'] = sw.weight
+                buffett_config['roe_excellent'] = sw.threshold.excellent
+                buffett_config['roe_good'] = sw.threshold.good
+                buffett_config['roe_fair'] = sw.threshold.fair
+            elif sw.metric == 'debt_to_earnings':
+                buffett_config['weight_debt_earnings'] = sw.weight
+                buffett_config['de_excellent'] = sw.threshold.excellent
+                buffett_config['de_good'] = sw.threshold.good
+                buffett_config['de_fair'] = sw.threshold.fair
+            elif sw.metric == 'gross_margin':
+                buffett_config['weight_gross_margin'] = sw.weight
+                buffett_config['gm_excellent'] = sw.threshold.excellent
+                buffett_config['gm_good'] = sw.threshold.good
+                buffett_config['gm_fair'] = sw.threshold.fair
+
+        def _score(symbol: str) -> Dict[str, Any]:
+            try:
+                df = df_all[df_all['symbol'] == symbol]
+                if df.empty:
+                    return {}
+
+                scores = {}
+
+                lynch_df = self.lynch_criteria.evaluate_batch(df, DEFAULT_ALGORITHM_CONFIG)
+                if not lynch_df.empty:
+                    row = lynch_df.iloc[0]
+                    scores['lynch_score'] = row.get('overall_score', 0)
+                    scores['lynch_status'] = row.get('overall_status', 'N/A')
+
+                buffett_df = self.lynch_criteria.evaluate_batch(df, buffett_config)
+                if not buffett_df.empty:
+                    row = buffett_df.iloc[0]
+                    scores['buffett_score'] = row.get('overall_score', 0)
+                    scores['buffett_status'] = row.get('overall_status', 'N/A')
+
+                return scores
+
+            except Exception as e:
+                logger.warning(f"Failed to get scores for {symbol}: {e}")
                 return {}
 
-            scores = {}
-
-            # Lynch scores
-            lynch_df = self.lynch_criteria.evaluate_batch(df, DEFAULT_ALGORITHM_CONFIG)
-            if not lynch_df.empty:
-                row = lynch_df.iloc[0]
-                scores['lynch_score'] = row.get('overall_score', 0)
-                scores['lynch_status'] = row.get('overall_status', 'N/A')
-
-            # Buffett scores
-            buffett_config = {}
-            for sw in BUFFETT.scoring_weights:
-                if sw.metric == 'roe':
-                    buffett_config['weight_roe'] = sw.weight
-                    buffett_config['roe_excellent'] = sw.threshold.excellent
-                    buffett_config['roe_good'] = sw.threshold.good
-                    buffett_config['roe_fair'] = sw.threshold.fair
-                elif sw.metric == 'debt_to_earnings':
-                    buffett_config['weight_debt_earnings'] = sw.weight
-                    buffett_config['de_excellent'] = sw.threshold.excellent
-                    buffett_config['de_good'] = sw.threshold.good
-                    buffett_config['de_fair'] = sw.threshold.fair
-                elif sw.metric == 'gross_margin':
-                    buffett_config['weight_gross_margin'] = sw.weight
-                    buffett_config['gm_excellent'] = sw.threshold.excellent
-                    buffett_config['gm_good'] = sw.threshold.good
-                    buffett_config['gm_fair'] = sw.threshold.fair
-
-            buffett_df = self.lynch_criteria.evaluate_batch(df, buffett_config)
-            if not buffett_df.empty:
-                row = buffett_df.iloc[0]
-                scores['buffett_score'] = row.get('overall_score', 0)
-                scores['buffett_status'] = row.get('overall_status', 'N/A')
-
-            return scores
-
-        except Exception as e:
-            logger.warning(f"Failed to get scores for {symbol}: {e}")
-            return {}
+        return _score
 
