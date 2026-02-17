@@ -11,8 +11,19 @@ from strategy_executor.utils import log_event
 logger = logging.getLogger(__name__)
 
 
+
 class TradingMixin:
-    """Phase 6: Position sizing and trade execution."""
+    """Phase 6: Trade execution and portfolio management."""
+
+    def _process_exits(
+        self,
+        exit_decisions,
+        portfolio_id,
+        run_id,
+        strategy_id='manual'
+    ):
+        # ... (rest of function omitted for brevity if not matched)
+        pass 
 
     def _process_exits(
         self,
@@ -148,7 +159,7 @@ class TradingMixin:
                     self.db.update_strategy_decision(
                         decision_id=decision['id'],
                         shares_traded=0,
-                        decision_reasoning=f"{current_reason} [Skipped Execution: {reason}]"
+                        decision_reasoning=f"{current_reason} [Skipped: {reason}]"
                     )
                 continue
 
@@ -174,7 +185,7 @@ class TradingMixin:
                     print(f"    ✓ Trade executed successfully")
 
                     if decision.get('id'):
-                        self.db.update_strategy_decision(
+                        updated = self.db.update_strategy_decision(
                             decision_id=decision['id'],
                             shares_traded=position.shares,
                             trade_price=position.estimated_value / position.shares,
@@ -326,12 +337,14 @@ class TradingMixin:
                 b = source_item.get('buffett_score') or 0
                 score = (l + b) / 2
 
-            candidates.append({
+            candidate = source_item.copy()
+            candidate.update({
                 'symbol': sym,
                 'conviction': score,
                 'price': 0,
-                'source_data': source_item
+                'source_data': source_item  # Keep for compatibility
             })
+            candidates.append(candidate)
 
         for d in buy_decisions:
             add_candidate(d)

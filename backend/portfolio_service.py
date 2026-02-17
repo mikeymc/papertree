@@ -77,6 +77,24 @@ def fetch_current_price(symbol: str, db=None) -> Optional[float]:
             price = fast_info['lastPrice']
             if price is not None and price > 0:
                 logger.info(f"[PortfolioService] Fetched price for {symbol} from yfinance: ${price:.2f}")
+                
+                # JIT Cache Update: Sync this price to DB so portfolio valuation matches execution price
+                if db:
+                    try:
+                        metrics = {'price': float(price)}
+                        
+                        # Try to get extra context
+                        prev_close = fast_info.get('previousClose')
+                        if prev_close:
+                            metrics['prev_close'] = float(prev_close)
+                            metrics['price_change'] = float(price - prev_close)
+                            metrics['price_change_pct'] = float((price - prev_close) / prev_close * 100)
+                            
+                        db.save_stock_metrics(symbol, metrics)
+                        # We don't flush here to avoid blocking execution, let the bg writer handle it
+                    except Exception as e:
+                        logger.warning(f"[PortfolioService] Failed to JIT cache price for {symbol}: {e}")
+                
                 return float(price)
     except Exception as e:
         logger.warning(f"[PortfolioService] yfinance error for {symbol}: {e}")

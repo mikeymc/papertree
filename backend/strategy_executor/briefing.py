@@ -70,16 +70,41 @@ class BriefingGenerator:
             }
 
             if decision == 'BUY':
-                entry['shares'] = d.get('shares_traded')
-                entry['price'] = d.get('trade_price')
-                entry['position_value'] = d.get('position_value')
-                buys.append(entry)
+                # Filter: Only include if actually traded or queued
+                # Fix: Handle None for shares_traded safely
+                shares = d.get('shares_traded')
+                if shares is None:
+                    shares = 0
+                
+                if (d.get('transaction_id') or 
+                    (shares > 0) or 
+                    'QUEUED' in str(d.get('decision_reasoning', '')) or
+                    'PENDING' in str(d.get('decision_reasoning', ''))):
+                    
+                    entry['shares'] = shares
+                    entry['price'] = d.get('trade_price')
+                    entry['position_value'] = d.get('position_value')
+                    buys.append(entry)
+                else:
+                    # Treat as skipped/watchlist if not executed
+                    entry['verdict'] = 'WATCH (Skipped)'
+                    watchlist.append(entry)
+
             elif decision == 'SELL':
-                entry['shares'] = d.get('shares_traded')
-                entry['price'] = d.get('trade_price')
-                entry['position_value'] = d.get('position_value')
-                entry['exit_type'] = 'strategy'
-                sells.append(entry)
+                shares = d.get('shares_traded') or 0
+                if (d.get('transaction_id') or 
+                    (shares > 0) or 
+                    'QUEUED' in str(d.get('decision_reasoning', ''))):
+                    
+                    entry['shares'] = shares
+                    entry['price'] = d.get('trade_price')
+                    entry['position_value'] = d.get('position_value')
+                    entry['exit_type'] = 'strategy'
+                    sells.append(entry)
+                else:
+                    # Failed sell -> Hold
+                    entry['verdict'] = 'HOLD (Failed Sell)'
+                    holds.append(entry)
             elif decision == 'HOLD':
                 entry['verdict'] = d.get('thesis_verdict', 'HOLD')
                 entry['position_value'] = d.get('position_value')

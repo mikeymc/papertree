@@ -227,6 +227,18 @@ class StrategyExecutorCore:
 
             perf = self.benchmark_tracker.record_strategy_performance(strategy_id, new_value)
 
+            # Update run stats BEFORE generating briefing so briefing picks up correct counts
+            self.db.update_strategy_run(
+                run_id,
+                status='completed',
+                completed_at=datetime.now(),
+                trades_executed=trades_executed
+            )
+
+            # Wait for DB consistency/commit visibility
+            import time
+            time.sleep(2)
+
             # Phase 8: Generate briefing
             try:
                 from strategy_executor.briefing import BriefingGenerator
@@ -241,14 +253,6 @@ class StrategyExecutorCore:
                 print(f"✓ Briefing generated\n")
             except Exception as e:
                 logger.warning(f"Briefing generation failed (non-fatal): {e}")
-
-            # Complete run
-            self.db.update_strategy_run(
-                run_id,
-                status='completed',
-                completed_at=datetime.now(),
-                trades_executed=trades_executed
-            )
 
             return {
                 'status': 'completed',
