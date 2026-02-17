@@ -41,7 +41,6 @@ import { Line } from 'react-chartjs-2'
 import { useAuth } from '@/context/AuthContext'
 import BriefingsTab from '@/pages/portfolios/BriefingsTab'
 import StrategyRunsTab from '@/pages/portfolios/StrategyRunsTab'
-import StrategyWizard from '@/components/strategies/StrategyWizard'
 import { formatLocal } from '@/utils/formatters'
 
 const LiveSignal = () => (
@@ -282,7 +281,7 @@ export default function Portfolios() {
                             <div className="grid grid-cols-2 gap-4 py-6">
                                 <Card
                                     className="cursor-pointer hover:border-primary transition-colors border-2 border-muted"
-                                    onClick={() => navigate('/strategies?create=true')}
+                                    onClick={() => navigate('/strategies/new')}
                                 >
                                     <CardContent className="pt-6 flex flex-col items-center text-center">
                                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -384,12 +383,12 @@ export default function Portfolios() {
 
 
 function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
+    const navigate = useNavigate()
     const [activeTab, setActiveTab] = useState(portfolio.strategy_id ? 'briefings' : 'holdings')
     const [transactions, setTransactions] = useState([])
     const [valueHistory, setValueHistory] = useState([])
     const [loadingTransactions, setLoadingTransactions] = useState(false)
     const [loadingHistory, setLoadingHistory] = useState(false)
-    const [showStrategyWizard, setShowStrategyWizard] = useState(false)
 
     const totalValue = portfolio.total_value || 0
     const initialCash = portfolio.initial_cash || 100000
@@ -475,9 +474,8 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                             variant="outline"
                             size="sm"
                             className="h-9 px-2 sm:px-3 shrink-0"
-                            onClick={() => setShowStrategyWizard(true)}
+                            onClick={() => navigate(`/strategies/${portfolio.strategy_id}/edit`)}
                         >
-                            <Settings className="h-4 w-4 sm:mr-2" />
                             <span className="hidden sm:inline text-xs sm:text-sm font-medium">Strategy Detail</span>
                             <span className="inline sm:hidden text-xs">Strategy</span>
                         </Button>
@@ -603,24 +601,6 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                     />
                 </TabsContent>
             </Tabs>
-
-            {showStrategyWizard && portfolio.strategy_id && (
-                <StrategyWizard
-                    initialData={{
-                        id: portfolio.strategy_id,
-                        name: portfolio.strategy_name,
-                        portfolio_id: portfolio.id,
-                        // We might need to fetch the full strategy object if StrategyWizard needs it
-                        // but usually StrategyId is enough for "edit" mode if it fetches its own data
-                    }}
-                    mode="edit"
-                    onClose={() => setShowStrategyWizard(false)}
-                    onSuccess={() => {
-                        setShowStrategyWizard(false);
-                        onRefresh();
-                    }}
-                />
-            )}
         </div>
     )
 }
