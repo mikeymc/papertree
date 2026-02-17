@@ -155,6 +155,81 @@ class PortfoliosMixin:
         finally:
             self.return_connection(conn)
 
+    def get_portfolio_trade_stats(self, portfolio_id: int) -> Dict[str, Any]:
+        """Compute trade statistics from closed positions (buy/sell pairs)."""
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
+
+            # For each symbol with both buys and sells, compute avg buy price vs avg sell price
+            cursor.execute("""
+                WITH buys AS (
+                    SELECT symbol,
+                           SUM(total_value) / NULLIF(SUM(quantity), 0) AS avg_buy_price,
+                           SUM(quantity) AS total_bought,
+                           MIN(executed_at) AS first_buy,
+                           MAX(executed_at) AS last_buy
+                    FROM portfolio_transactions
+                    WHERE portfolio_id = %s AND transaction_type = 'BUY'
+                    GROUP BY symbol
+                ),
+                sells AS (
+                    SELECT symbol,
+                           SUM(total_value) / NULLIF(SUM(quantity), 0) AS avg_sell_price,
+                           SUM(quantity) AS total_sold,
+                           MIN(executed_at) AS first_sell,
+                           MAX(executed_at) AS last_sell
+                    FROM portfolio_transactions
+                    WHERE portfolio_id = %s AND transaction_type = 'SELL'
+                    GROUP BY symbol
+                ),
+                closed AS (
+                    SELECT b.symbol,
+                           b.avg_buy_price,
+                           s.avg_sell_price,
+                           CASE WHEN b.avg_buy_price > 0
+                                THEN (s.avg_sell_price - b.avg_buy_price) / b.avg_buy_price * 100
+                                ELSE 0 END AS return_pct,
+                           EXTRACT(EPOCH FROM (s.last_sell - b.first_buy)) / 86400 AS hold_days
+                    FROM buys b
+                    JOIN sells s ON b.symbol = s.symbol
+                )
+                SELECT symbol, return_pct, hold_days FROM closed
+            """, (portfolio_id, portfolio_id))
+
+            rows = cursor.fetchall()
+
+            if not rows:
+                return {
+                    'total_trades': 0,
+                    'winning_trades': 0,
+                    'losing_trades': 0,
+                    'win_rate': 0.0,
+                    'best_trade': None,
+                    'worst_trade': None,
+                    'avg_hold_days': 0.0
+                }
+
+            winning = [r for r in rows if (r['return_pct'] or 0) > 0]
+            losing = [r for r in rows if (r['return_pct'] or 0) <= 0]
+            best = max(rows, key=lambda r: r['return_pct'] or 0)
+            worst = min(rows, key=lambda r: r['return_pct'] or 0)
+            hold_days = [r['hold_days'] for r in rows if r['hold_days']]
+            avg_hold = sum(hold_days) / len(hold_days) if hold_days else 0.0
+
+            total = len(rows)
+            return {
+                'total_trades': total,
+                'winning_trades': len(winning),
+                'losing_trades': len(losing),
+                'win_rate': round(len(winning) / total * 100, 1) if total else 0.0,
+                'best_trade': {'symbol': best['symbol'], 'return_pct': round(best['return_pct'] or 0, 2)},
+                'worst_trade': {'symbol': worst['symbol'], 'return_pct': round(worst['return_pct'] or 0, 2)},
+                'avg_hold_days': round(avg_hold, 1)
+            }
+        finally:
+            self.return_connection(conn)
+
     def get_portfolio_holdings(self, portfolio_id: int) -> Dict[str, int]:
         """Compute current holdings from transactions.
 
