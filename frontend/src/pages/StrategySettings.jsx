@@ -72,7 +72,6 @@ const StrategySettings = () => {
     const [formData, setFormData] = useState(defaults);
 
     const handleConsensusChange = React.useCallback((val) => {
-        console.log('handleConsensusChange triggered:', val);
         setFormData(prev => {
             return { ...prev, consensus_mode: val };
         });
@@ -116,12 +115,13 @@ const StrategySettings = () => {
             fetch(`/api/strategies/${id}`)
                 .then(r => r.json())
                 .then(data => {
+                    const strategy = data.strategy;
                     setFormData(prev => ({
                         ...defaults,
-                        ...data,
-                        conditions: { ...defaults.conditions, ...data.conditions },
-                        exit_conditions: { ...defaults.exit_conditions, ...data.exit_conditions },
-                        position_sizing: { ...defaults.position_sizing, ...data.position_sizing }
+                        ...strategy,
+                        conditions: { ...defaults.conditions, ...strategy.conditions },
+                        exit_conditions: { ...defaults.exit_conditions, ...strategy.exit_conditions },
+                        position_sizing: { ...defaults.position_sizing, ...strategy.position_sizing }
                     }));
                 })
                 .catch(err => {

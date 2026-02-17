@@ -24,12 +24,17 @@ def create_strategy(user_id):
         if not name:
             return jsonify({'error': 'Name is required'}), 400
 
+        initial_cash = data.get('initial_cash', 100000.0)
+        try:
+            initial_cash = float(initial_cash)
+        except (ValueError, TypeError):
+            initial_cash = 100000.0
+
         # Handle Portfolio creation if needed
         portfolio_id = data.get('portfolio_id')
         if portfolio_id == 'new':
             # Create new portfolio with same name
-            # Defaulting to 100k cash as per standard practice
-            portfolio_id = deps.db.create_portfolio(user_id, name, initial_cash=100000.0)
+            portfolio_id = deps.db.create_portfolio(user_id, name, initial_cash=initial_cash)
 
         strategy_id = deps.db.create_strategy(
             user_id=user_id,

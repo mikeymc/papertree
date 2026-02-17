@@ -23,6 +23,9 @@ class BriefingGenerator:
         portfolio_id: int,
         performance: Dict[str, Any],
     ) -> Dict[str, Any]:
+        logger.info(f"[Briefing] Starting generation for run {run_id}...")
+        
+        # 1. Fetch relevant data
         """Generate a briefing for a completed strategy run.
 
         Pulls decisions from the DB, categorizes them, and generates an AI summary.
@@ -171,6 +174,7 @@ class BriefingGenerator:
         # Generate AI executive summary
         briefing['executive_summary'] = self._generate_executive_summary(briefing)
 
+        logger.info(f"[Briefing] Successfully generated briefing for run {run_id}")
         return briefing
 
     def _generate_executive_summary(self, briefing: Dict[str, Any]) -> str:
