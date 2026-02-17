@@ -87,32 +87,28 @@ class DatabaseCore(SchemaMixin):
             LOCK_ID = 8675309
             cursor = init_conn.cursor()
 
-            logger.info("Acquiring schema migration lock...")
-            cursor.execute("SELECT pg_advisory_lock(%s)", (LOCK_ID,))
+            logger.info("Acquiring schema migration lock (transaction-level)...")
+            # Use transaction-level advisory lock which automatically releases on commit/rollback
+            cursor.execute("SELECT pg_advisory_xact_lock(%s)", (LOCK_ID,))
 
+            logger.info("Schema migration lock acquired. Checking/Updating schema...")
+            self._init_schema_with_connection(init_conn)
+
+            # Migration: Drop unused screening tables (refactored to use on-demand scoring)
             try:
-                logger.info("Schema migration lock acquired. Checking/Updating schema...")
-                self._init_schema_with_connection(init_conn)
+                cursor.execute("""
+                    DROP TABLE IF EXISTS screening_results CASCADE;
+                    DROP TABLE IF EXISTS screening_sessions CASCADE;
+                """)
+                # We commit everything at the end of the block
+                logger.info("Migration: Dropped screening_sessions and screening_results tables")
+            except Exception as e:
+                logger.warning(f"Migration warning (drop screening tables): {e}")
+                # Don't rollback the whole thing just for this, but proceed
 
-                # Migration: Drop unused screening tables (refactored to use on-demand scoring)
-                try:
-                    cursor.execute("""
-                        DROP TABLE IF EXISTS screening_results CASCADE;
-                        DROP TABLE IF EXISTS screening_sessions CASCADE;
-                    """)
-                    # We commit everything at the end of the locked block
-                    logger.info("Migration: Dropped screening_sessions and screening_results tables")
-                except Exception as e:
-                    logger.warning(f"Migration warning (drop screening tables): {e}")
-                    # Don't rollback the whole thing just for this, but proceed
-
-                logger.info("Database schema initialized successfully")
-
-            finally:
-                # Always release the lock
-                logger.info("Releasing schema migration lock...")
-                cursor.execute("SELECT pg_advisory_unlock(%s)", (LOCK_ID,))
-                init_conn.commit()
+            # Commit the transaction which also releases the pg_advisory_xact_lock
+            init_conn.commit()
+            logger.info("Database schema initialized successfully (lock released)")
 
         except Exception as e:
             logger.error(f"Failed to initialize database schema: {e}", exc_info=True)

@@ -766,7 +766,7 @@ class SchemaMixin:
                 -- portfolio_id (target portfolio for the trade)
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                                WHERE table_name = 'alerts' AND column_name = 'portfolio_id') THEN
-                    ALTER TABLE alerts ADD COLUMN portfolio_id INTEGER REFERENCES portfolios(id);
+                    ALTER TABLE alerts ADD COLUMN portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE;
                 END IF;
 
                 -- action_note
@@ -776,6 +776,41 @@ class SchemaMixin:
                 END IF;
             END $$;
         """)
+
+        # Migration: Ensure existing portfolio_id reference has ON DELETE CASCADE
+        try:
+            logger.info("MIGRATION: Checking alerts portfolio_id constraint CASCADE status")
+            # We use a nested transaction (savepoint) to avoid aborting the whole schema init if this migration fails
+            with conn.transaction():
+                cursor.execute("""
+                    SELECT pgc.conname, pgc.confdeltype
+                    FROM pg_constraint pgc
+                    JOIN pg_class cls ON pgc.conrelid = cls.oid
+                    WHERE cls.relname = 'alerts'
+                      AND pgc.contype = 'f'
+                      AND pgc.confdeltype != 'c'
+                      AND EXISTS (
+                          SELECT 1 FROM pg_attribute attr
+                          WHERE attr.attrelid = cls.oid
+                            AND attr.attnum = pgc.conkey[1]
+                            AND attr.attname = 'portfolio_id'
+                      )
+                """)
+                res = cursor.fetchone()
+                if res:
+                    old_conname = res[0]
+                    old_deltype = res[1]
+                    logger.info(f"MIGRATING ALERTS: Found non-cascade constraint {old_conname} (type {old_deltype}) for portfolio_id. Updating to CASCADE...")
+                    cursor.execute(f"ALTER TABLE alerts DROP CONSTRAINT {old_conname}")
+                    cursor.execute("ALTER TABLE alerts ADD CONSTRAINT alerts_portfolio_id_fkey FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE")
+                    logger.info("MIGRATING ALERTS: Successfully updated portfolio_id to CASCADE")
+                else:
+                    logger.info("MIGRATION: alerts portfolio_id constraint already CASCADE or not found")
+        except Exception as e:
+            logger.warning(f"MIGRATION ERROR in alerts: {e}")
+            if hasattr(e, 'diag') and e.diag:
+                logger.warning(f"  SQL Detail: {e.diag.message_primary}")
+            pass
 
         # Initialize remaining schema (misplaced code wrapper)
         self._init_rest_of_schema(conn)
@@ -1839,7 +1874,7 @@ class SchemaMixin:
                 decision_reasoning TEXT,
 
                 -- If trade executed
-                transaction_id INTEGER REFERENCES portfolio_transactions(id),
+                transaction_id INTEGER REFERENCES portfolio_transactions(id) ON DELETE CASCADE,
                 shares_traded INTEGER,
                 trade_price REAL,
                 position_value REAL,
@@ -1968,9 +2003,9 @@ class SchemaMixin:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS strategy_briefings (
                 id SERIAL PRIMARY KEY,
-                run_id INTEGER REFERENCES strategy_runs(id) UNIQUE,
-                strategy_id INTEGER REFERENCES investment_strategies(id),
-                portfolio_id INTEGER REFERENCES portfolios(id),
+                run_id INTEGER REFERENCES strategy_runs(id) ON DELETE CASCADE UNIQUE,
+                strategy_id INTEGER REFERENCES investment_strategies(id) ON DELETE CASCADE,
+                portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
                 stocks_screened INTEGER,
                 stocks_scored INTEGER,
                 theses_generated INTEGER,
@@ -1987,6 +2022,66 @@ class SchemaMixin:
                 generated_at TIMESTAMP
             )
         """)
+
+        # Migration: Ensure existing briefings have CASCADE
+        for col in ['run_id', 'strategy_id', 'portfolio_id']:
+            try:
+                logger.info(f"MIGRATION: Checking strategy_briefings {col} constraint CASCADE status")
+                with conn.transaction():
+                    cursor.execute(f"""
+                        SELECT pgc.conname, pgc.confdeltype 
+                        FROM pg_constraint pgc 
+                        JOIN pg_class cls ON pgc.conrelid = cls.oid 
+                        WHERE cls.relname = 'strategy_briefings' AND pgc.contype = 'f' AND pgc.confdeltype != 'c'
+                        AND EXISTS (SELECT 1 FROM pg_attribute attr WHERE attr.attrelid = cls.oid AND attr.attnum = pgc.conkey[1] AND attr.attname = '{col}');
+                    """)
+                    res = cursor.fetchone()
+                    if res:
+                        old_conname = res[0]
+                        old_deltype = res[1]
+                        logger.info(f"MIGRATING BRIEFINGS: Found non-cascade constraint {old_conname} (type {old_deltype}) for {col}. Updating to CASCADE...")
+                        cursor.execute(f"ALTER TABLE strategy_briefings DROP CONSTRAINT {old_conname}")
+                        if col == 'run_id':
+                            cursor.execute("ALTER TABLE strategy_briefings ADD CONSTRAINT strategy_briefings_run_id_fkey FOREIGN KEY (run_id) REFERENCES strategy_runs(id) ON DELETE CASCADE")
+                        elif col == 'strategy_id':
+                            cursor.execute("ALTER TABLE strategy_briefings ADD CONSTRAINT strategy_briefings_strategy_id_fkey FOREIGN KEY (strategy_id) REFERENCES investment_strategies(id) ON DELETE CASCADE")
+                        elif col == 'portfolio_id':
+                            cursor.execute("ALTER TABLE strategy_briefings ADD CONSTRAINT strategy_briefings_portfolio_id_fkey FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE")
+                        logger.info(f"MIGRATING BRIEFINGS: Successfully updated {col} to CASCADE")
+                    else:
+                        logger.info(f"MIGRATION: strategy_briefings {col} already CASCADE or not found")
+            except Exception as e:
+                logger.warning(f"MIGRATION ERROR in briefings for {col}: {e}")
+                if hasattr(e, 'diag') and e.diag:
+                    logger.warning(f"  SQL Detail: {e.diag.message_primary}")
+                pass
+
+        # Migration: Ensure existing decisions have CASCADE for transactions
+        try:
+            logger.info("MIGRATION: Checking strategy_decisions transaction_id constraint CASCADE status")
+            with conn.transaction():
+                cursor.execute("""
+                    SELECT pgc.conname, pgc.confdeltype 
+                    FROM pg_constraint pgc 
+                    JOIN pg_class cls ON pgc.conrelid = cls.oid 
+                    WHERE cls.relname = 'strategy_decisions' AND pgc.contype = 'f' AND pgc.confdeltype != 'c'
+                    AND EXISTS (SELECT 1 FROM pg_attribute attr WHERE attr.attrelid = cls.oid AND attr.attnum = pgc.conkey[1] AND attr.attname = 'transaction_id');
+                """)
+                res = cursor.fetchone()
+                if res:
+                    old_conname = res[0]
+                    old_deltype = res[1]
+                    logger.info(f"MIGRATING DECISIONS: Found non-cascade constraint {old_conname} (type {old_deltype}) for transaction_id. Updating to CASCADE...")
+                    cursor.execute(f"ALTER TABLE strategy_decisions DROP CONSTRAINT {old_conname}")
+                    cursor.execute("ALTER TABLE strategy_decisions ADD CONSTRAINT strategy_decisions_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES portfolio_transactions(id) ON DELETE CASCADE")
+                    logger.info("MIGRATING DECISIONS: Successfully updated transaction_id to CASCADE")
+                else:
+                    logger.info("MIGRATION: strategy_decisions transaction_id already CASCADE or not found")
+        except Exception as e:
+            logger.warning(f"MIGRATION ERROR in strategy_decisions: {e}")
+            if hasattr(e, 'diag') and e.diag:
+                logger.warning(f"  SQL Detail: {e.diag.message_primary}")
+            pass
 
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_briefings_portfolio
