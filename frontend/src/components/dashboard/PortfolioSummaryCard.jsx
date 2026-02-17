@@ -48,15 +48,15 @@ export default function PortfolioSummaryCard({ onNavigate }) {
     const isPositive = totalGainLoss >= 0
 
     return (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
             <CardHeader className="p-3 sm:p-4 pb-2">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                        <Briefcase className="h-4 w-4" />
-                        Portfolios
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                    <CardTitle className="text-base font-medium flex items-center gap-2 min-w-0">
+                        <Briefcase className="h-4 w-4 shrink-0" />
+                        <span className="truncate">Portfolios</span>
                     </CardTitle>
-                    <Button variant="ghost" size="sm" onClick={onNavigate}>
-                        View all <ArrowRight className="h-4 w-4 ml-1" />
+                    <Button variant="ghost" size="sm" onClick={onNavigate} className="shrink-0 h-7 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm">
+                        Manage <ArrowRight className="h-4 w-4 ml-1" />
                     </Button>
                 </div>
             </CardHeader>
@@ -92,7 +92,7 @@ function PortfolioRow({ portfolio, onClick }) {
 
     return (
         <div
-            className="flex items-center justify-between py-1.5 px-0 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors min-w-0 overflow-hidden"
+            className="grid grid-cols-[1fr_auto] items-center py-1.5 px-0 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors min-w-0 overflow-hidden w-full"
             onClick={onClick}
         >
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -108,7 +108,7 @@ function PortfolioRow({ portfolio, onClick }) {
                     </div>
                 </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2">
                 <div className="flex flex-col items-end">
                     <div className={`flex items-center gap-1 text-[11px] sm:text-sm font-bold ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
                         {isPositive ? <ArrowUpRight className="h-2.5 w-2.5 sm:h-3 w-3" /> : <ArrowDownRight className="h-2.5 w-2.5 sm:h-3 w-3" />}

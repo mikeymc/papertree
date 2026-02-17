@@ -230,15 +230,15 @@ export default function IndexChart() {
     }), [selectedSymbols])
 
     return (
-        <Card className="h-full">
-            <CardHeader className="p-3 sm:p-4 pb-2 space-y-0">
-                <div className="flex items-center justify-between gap-1 sm:gap-2">
-                    <CardTitle className="text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2">
-                        <Activity className="h-4 w-4" />
-                        Markets
+        <Card className="h-full min-w-0 overflow-hidden">
+            <CardHeader className="p-3 sm:p-4 pb-2">
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                    <CardTitle className="text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 min-w-0">
+                        <Activity className="h-4 w-4 shrink-0" />
+                        <span className="truncate">Markets</span>
                     </CardTitle>
 
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 shrink-0 overflow-x-auto scrollbar-hide">
                         {PERIODS.map(p => (
                             <Button
                                 key={p.value}
@@ -263,7 +263,7 @@ export default function IndexChart() {
                         {error}
                     </div>
                 ) : chartData ? (
-                    <div className="h-48">
+                    <div className="h-48 min-w-0">
                         <Line data={chartData} options={chartOptions} plugins={[zeroLinePlugin]} />
                     </div>
                 ) : (
@@ -278,10 +278,10 @@ export default function IndexChart() {
                         const symbolData = data && !loading && !data.error ? data[idx.symbol] : null
 
                         return (
-                            <div key={idx.symbol} className="flex items-center justify-between h-5 sm:h-6 py-0 px-1 rounded-md hover:bg-accent/50 transition-colors gap-2 leading-none">
+                            <div key={idx.symbol} className="grid grid-cols-[1fr_auto] items-center h-5 sm:h-6 py-0 px-1 rounded-md hover:bg-accent/50 transition-colors gap-2 leading-none w-full">
                                 <button
                                     onClick={() => toggleSymbol(idx.symbol)}
-                                    className={`flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-medium transition-colors hover:text-foreground text-left ${isSelected ? 'text-foreground' : 'text-muted-foreground'} min-w-0`}
+                                    className={`flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-medium transition-colors hover:text-foreground text-left ${isSelected ? 'text-foreground' : 'text-muted-foreground'} min-w-0 flex-1`}
                                 >
                                     <div
                                         className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border flex items-center justify-center transition-all shrink-0 ${isSelected ? 'border-none' : 'border-muted'}`}
@@ -293,11 +293,11 @@ export default function IndexChart() {
                                 </button>
 
                                 {symbolData && !symbolData.error && (
-                                    <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-medium shrink-0">
-                                        <span className="text-foreground">
+                                    <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-medium shrink-0 ml-2">
+                                        <span className="text-foreground tabular-nums text-right">
                                             {symbolData.current_price?.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                         </span>
-                                        <span className={`flex items-center ${symbolData.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        <span className={`flex items-center justify-end ${symbolData.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                                             {symbolData.change >= 0 ? <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:h-3 mr-0.5" /> : <TrendingDown className="h-2.5 w-2.5 sm:h-3 sm:h-3 mr-0.5" />}
                                             {symbolData.change_pct}%
                                         </span>
