@@ -4,6 +4,7 @@
 from flask import Blueprint, jsonify, request, session
 from app import deps
 from auth import require_user_auth
+from fly_machines import get_fly_manager
 import logging
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,70 @@ def create_strategy(user_id):
 
     except Exception as e:
         logger.error(f"Error creating strategy: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@strategies_bp.route('/api/strategies/quick-start', methods=['POST'])
+@require_user_auth
+def quick_start_strategy(user_id):
+    """Create a strategy from a template and trigger its first run."""
+    from strategy_templates import QUICK_START_CONFIGS
+
+    try:
+        data = request.json
+        if not data or not data.get('template_id'):
+            return jsonify({'error': 'template_id is required'}), 400
+
+        template_id = data['template_id']
+        if template_id not in QUICK_START_CONFIGS:
+            return jsonify({'error': f'Unknown template: {template_id}'}), 400
+
+        config = QUICK_START_CONFIGS[template_id]
+
+        # Create portfolio
+        portfolio_id = deps.db.create_portfolio(
+            user_id, config['name'], initial_cash=config['initial_cash']
+        )
+
+        # Create strategy with template config
+        strategy_id = deps.db.create_strategy(
+            user_id=user_id,
+            portfolio_id=portfolio_id,
+            name=config['name'],
+            description=config['description'],
+            conditions=config['conditions'],
+            consensus_mode=config['consensus_mode'],
+            consensus_threshold=config['consensus_threshold'],
+            position_sizing=config['position_sizing'],
+            exit_conditions=config['exit_conditions'],
+            schedule_cron=config['schedule_cron']
+        )
+
+        # Enable for scheduled runs
+        deps.db.update_strategy(
+            user_id=user_id,
+            strategy_id=strategy_id,
+            enabled=True
+        )
+
+        # Trigger first run immediately
+        job_id = deps.db.create_background_job(
+            'strategy_execution',
+            {'strategy_ids': [strategy_id]},
+            tier='light'
+        )
+
+        fly_manager = get_fly_manager()
+        fly_manager.start_worker_for_job(tier='light', max_workers=4)
+
+        return jsonify({
+            'strategy_id': strategy_id,
+            'portfolio_id': portfolio_id,
+            'job_id': job_id
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Error in quick-start: {e}")
         return jsonify({'error': str(e)}), 500
 
 
