@@ -50,7 +50,7 @@ function AppShellContent({
     watchlistCount = 0,
     showAdvancedFilters, setShowAdvancedFilters,
     activeCharacter = 'lynch',
-    featureFlags = {}
+    featureFlags = {}, disableRightPanel = false
 }) {
     const { isMobile, setOpenMobile } = useSidebar()
     const { user } = useAuth()
@@ -145,7 +145,6 @@ function AppShellContent({
 
                     // Dispatch price updates if any
                     if (data.updates && data.updates.length > 0) {
-                        console.log(`Received ${data.updates.length} stock updates`)
                         window.dispatchEvent(new CustomEvent('price-updates', {
                             detail: { updates: data.updates }
                         }))
@@ -673,38 +672,50 @@ function AppShellContent({
                     </div>
                 </header>
 
-                {/* Page content - with resizable panels on large screens */}
-                <ResizablePanelGroup id="app-shell-layout-v8" direction="horizontal" className="flex-1 overflow-hidden">
-                    <ResizablePanel id="main-content-panel" defaultSize={60} order={1}>
-                        {/* Main content */}
+                {/* Page content - Conditional Layout */}
+                {disableRightPanel ? (
+                    /* Stable Flexbox Layout (No Resizable Panels) */
+                    <div className="flex-1 overflow-hidden flex flex-col">
                         <main className="h-full overflow-x-hidden overflow-y-auto p-2 sm:p-4 min-w-0 scrollbar-hide">
                             <div className="max-w-screen-lg mx-auto w-full overflow-x-hidden">
                                 <Outlet />
                             </div>
                         </main>
-                    </ResizablePanel>
+                    </div>
+                ) : (
+                    /* Interactive Resizable Layout */
+                    <ResizablePanelGroup id="app-shell-layout-v8" direction="horizontal" className="flex-1 overflow-hidden">
+                        <ResizablePanel id="main-content-panel" defaultSize={60} order={1}>
+                            {/* Main content */}
+                            <main className="h-full overflow-x-hidden overflow-y-auto p-2 sm:p-4 min-w-0 scrollbar-hide">
+                                <div className="max-w-screen-lg mx-auto w-full overflow-x-hidden">
+                                    <Outlet />
+                                </div>
+                            </main>
+                        </ResizablePanel>
 
-                    {isLargeScreen && (
-                        <>
-                            <ResizableHandle />
-                            <ResizablePanel id="chat-sidebar-panel" defaultSize={40} order={2}>
-                                <aside className="h-full border-l bg-background flex flex-col">
-                                    <div className="px-4 py-3 border-b flex items-center justify-between shrink-0">
-                                        <h2 className="font-semibold">{chatTitle}</h2>
-                                    </div>
-                                    <div className="flex-1 overflow-hidden">
-                                        <AnalysisChat
-                                            symbol={chatSymbol}
-                                            chatOnly={true}
-                                            contextType={chatContext}
-                                            activeCharacter={activeCharacter}
-                                        />
-                                    </div>
-                                </aside>
-                            </ResizablePanel>
-                        </>
-                    )}
-                </ResizablePanelGroup>
+                        {isLargeScreen && (
+                            <>
+                                <ResizableHandle />
+                                <ResizablePanel id="chat-sidebar-panel" defaultSize={40} order={2}>
+                                    <aside className="h-full border-l bg-background flex flex-col">
+                                        <div className="px-4 py-3 border-b flex items-center justify-between shrink-0">
+                                            <h2 className="font-semibold">{chatTitle}</h2>
+                                        </div>
+                                        <div className="flex-1 overflow-hidden">
+                                            <AnalysisChat
+                                                symbol={chatSymbol}
+                                                chatOnly={true}
+                                                contextType={chatContext}
+                                                activeCharacter={activeCharacter}
+                                            />
+                                        </div>
+                                    </aside>
+                                </ResizablePanel>
+                            </>
+                        )}
+                    </ResizablePanelGroup>
+                )}
                 <FeedbackWidget isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
             </SidebarInset>
         </div>

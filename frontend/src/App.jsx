@@ -1204,6 +1204,29 @@ function App() {
             usStocksOnly={usStocksOnly}
             setUsStocksOnly={setUsStocksOnly}
             activeCharacter={activeCharacter}
+            disableRightPanel={true}
+          />
+        }>
+          <Route path="/strategies/new" element={<StrategySettings />} />
+          <Route path="/strategies/:id/edit" element={<StrategySettings />} />
+        </Route>
+
+        <Route element={
+          <AppShell
+            filter={filter}
+            setFilter={setFilter}
+            algorithm={algorithm}
+            setAlgorithm={setAlgorithm}
+            summary={summary}
+            watchlistCount={watchlist.size}
+            featureFlags={featureFlags}
+            showAdvancedFilters={showAdvancedFilters}
+            setShowAdvancedFilters={setShowAdvancedFilters}
+            advancedFilters={advancedFilters}
+            setAdvancedFilters={setAdvancedFilters}
+            usStocksOnly={usStocksOnly}
+            setUsStocksOnly={setUsStocksOnly}
+            activeCharacter={activeCharacter}
           />
         }>
           <Route path="/" element={<Dashboard activeCharacter={activeCharacter} />} />
@@ -1259,8 +1282,6 @@ function App() {
           <Route path="/portfolios" element={<Portfolios />} />
           <Route path="/portfolios/:id" element={<Portfolios />} />
           <Route path="/strategies" element={<Strategies />} />
-          <Route path="/strategies/new" element={<StrategySettings />} />
-          <Route path="/strategies/:id/edit" element={<StrategySettings />} />
           <Route path="/strategies/:id/runs/:runId" element={<RunDecisions />} />
           <Route path="/economy" element={<Economy />} />
           <Route path="/help" element={<Help />} />

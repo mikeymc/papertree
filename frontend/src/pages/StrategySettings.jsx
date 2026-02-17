@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatLocal } from '@/utils/formatters';
@@ -70,6 +70,20 @@ const StrategySettings = () => {
     };
 
     const [formData, setFormData] = useState(defaults);
+
+    const handleConsensusChange = React.useCallback((val) => {
+        console.log('handleConsensusChange triggered:', val);
+        setFormData(prev => {
+            return { ...prev, consensus_mode: val };
+        });
+    }, []);
+
+    const handleSizingChange = React.useCallback((val) => {
+        setFormData(prev => ({
+            ...prev,
+            position_sizing: { ...prev.position_sizing, method: val }
+        }));
+    }, []);
     const [portfolios, setPortfolios] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -118,24 +132,25 @@ const StrategySettings = () => {
         }
     }, [id, mode]);
 
-    const handleTemplateSelect = (templateKey) => {
+    const handleTemplateSelect = React.useCallback((templateKey) => {
+        console.log('handleTemplateSelect triggered:', templateKey);
         setSelectedTemplate(templateKey);
 
         if (templateKey === 'custom') {
-            setFormData({
-                ...formData,
-                conditions: { ...formData.conditions, filters: [] }
-            });
+            setFormData(prev => ({
+                ...prev,
+                conditions: { ...prev.conditions, filters: [] }
+            }));
         } else {
             const template = templates[templateKey];
             if (template) {
-                setFormData({
-                    ...formData,
-                    conditions: { ...formData.conditions, filters: [...template.filters] }
-                });
+                setFormData(prev => ({
+                    ...prev,
+                    conditions: { ...prev.conditions, filters: [...template.filters] }
+                }));
             }
         }
-    };
+    }, [templates]);
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -312,11 +327,14 @@ const StrategySettings = () => {
                             {formData.conditions.filters.map((filter, idx) => (
                                 <div key={idx} className="flex flex-wrap sm:flex-nowrap gap-3 items-center bg-muted/30 p-3 rounded-lg border border-border">
                                     <Select
+                                        key={`${idx}-${filter.field}`}
                                         value={filter.field}
                                         onValueChange={val => {
-                                            const newFilters = [...formData.conditions.filters];
-                                            newFilters[idx] = { ...newFilters[idx], field: val };
-                                            setFormData({ ...formData, conditions: { ...formData.conditions, filters: newFilters } });
+                                            setFormData(prev => {
+                                                const newFilters = [...prev.conditions.filters];
+                                                newFilters[idx] = { ...newFilters[idx], field: val };
+                                                return { ...prev, conditions: { ...prev.conditions, filters: newFilters } };
+                                            });
                                         }}
                                     >
                                         <SelectTrigger className="w-full sm:w-48 bg-background">
@@ -335,32 +353,25 @@ const StrategySettings = () => {
                                     </Select>
 
                                     <Select
+                                        key={filter.field}
                                         value={filter.operator}
                                         onValueChange={val => {
-                                            const newFilters = [...formData.conditions.filters];
-                                            newFilters[idx] = { ...newFilters[idx], operator: val };
-                                            setFormData({ ...formData, conditions: { ...formData.conditions, filters: newFilters } });
+                                            setFormData(prev => {
+                                                const newFilters = [...prev.conditions.filters];
+                                                newFilters[idx] = { ...newFilters[idx], operator: val };
+                                                return { ...prev, conditions: { ...prev.conditions, filters: newFilters } };
+                                            });
                                         }}
                                     >
                                         <SelectTrigger className="w-24 bg-background">
                                             <SelectValue placeholder="Op" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {filter.field === 'sector' ? (
-                                                <>
-                                                    <SelectItem value="==">=</SelectItem>
-                                                    <SelectItem value="!=">≠</SelectItem>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <SelectItem value="<">&lt;</SelectItem>
-                                                    <SelectItem value=">">&gt;</SelectItem>
-                                                    <SelectItem value="<=">≤</SelectItem>
-                                                    <SelectItem value=">=">≥</SelectItem>
-                                                    <SelectItem value="==">=</SelectItem>
-                                                    <SelectItem value="!=">≠</SelectItem>
-                                                </>
-                                            )}
+                                            {(filter.field === 'sector' ? ['==', '!='] : ['<', '>', '<=', '>=', '==', '!=']).map(op => (
+                                                <SelectItem key={op} value={op}>
+                                                    {op === '!=' ? '≠' : op === '<=' ? '≤' : op === '>=' ? '≥' : op}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
 
@@ -381,8 +392,10 @@ const StrategySettings = () => {
                                         size="icon"
                                         className="text-destructive hover:bg-destructive/10"
                                         onClick={() => {
-                                            const newFilters = formData.conditions.filters.filter((_, i) => i !== idx);
-                                            setFormData({ ...formData, conditions: { ...formData.conditions, filters: newFilters } });
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                conditions: { ...prev.conditions, filters: prev.conditions.filters.filter((_, i) => i !== idx) }
+                                            }));
                                         }}
                                     >
                                         <Trash2 size={16} />
@@ -394,13 +407,13 @@ const StrategySettings = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                    setFormData({
-                                        ...formData,
+                                    setFormData(prev => ({
+                                        ...prev,
                                         conditions: {
-                                            ...formData.conditions,
-                                            filters: [...formData.conditions.filters, { field: 'pe_ratio', operator: '<', value: 25 }]
+                                            ...prev.conditions,
+                                            filters: [...prev.conditions.filters, { field: 'pe_ratio', operator: '<', value: 25 }]
                                         }
-                                    });
+                                    }));
                                 }}
                                 className="w-full border-dashed border-2 hover:border-primary hover:bg-primary/5 h-12"
                             >
@@ -435,10 +448,13 @@ const StrategySettings = () => {
                                             step="5"
                                             value={formData.conditions.scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}
                                             onChange={e => {
-                                                const newReqs = [...formData.conditions.scoring_requirements];
-                                                const idx = newReqs.findIndex(r => r.character === 'lynch');
-                                                newReqs[idx] = { ...newReqs[idx], min_score: parseInt(e.target.value) };
-                                                setFormData({ ...formData, conditions: { ...formData.conditions, scoring_requirements: newReqs } });
+                                                const val = parseInt(e.target.value);
+                                                setFormData(prev => {
+                                                    const newReqs = [...prev.conditions.scoring_requirements];
+                                                    const idx = newReqs.findIndex(r => r.character === 'lynch');
+                                                    newReqs[idx] = { ...newReqs[idx], min_score: val };
+                                                    return { ...prev, conditions: { ...prev.conditions, scoring_requirements: newReqs } };
+                                                });
                                             }}
                                             className="w-full accent-emerald-500"
                                         />
@@ -455,10 +471,13 @@ const StrategySettings = () => {
                                             step="5"
                                             value={formData.conditions.scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}
                                             onChange={e => {
-                                                const newReqs = [...formData.conditions.scoring_requirements];
-                                                const idx = newReqs.findIndex(r => r.character === 'buffett');
-                                                newReqs[idx] = { ...newReqs[idx], min_score: parseInt(e.target.value) };
-                                                setFormData({ ...formData, conditions: { ...formData.conditions, scoring_requirements: newReqs } });
+                                                const val = parseInt(e.target.value);
+                                                setFormData(prev => {
+                                                    const newReqs = [...prev.conditions.scoring_requirements];
+                                                    const idx = newReqs.findIndex(r => r.character === 'buffett');
+                                                    newReqs[idx] = { ...newReqs[idx], min_score: val };
+                                                    return { ...prev, conditions: { ...prev.conditions, scoring_requirements: newReqs } };
+                                                });
                                             }}
                                             className="w-full accent-amber-500"
                                         />
@@ -486,10 +505,13 @@ const StrategySettings = () => {
                                             step="5"
                                             value={formData.conditions.addition_scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}
                                             onChange={e => {
-                                                const newReqs = [...formData.conditions.addition_scoring_requirements];
-                                                const idx = newReqs.findIndex(r => r.character === 'lynch');
-                                                newReqs[idx] = { ...newReqs[idx], min_score: parseInt(e.target.value) };
-                                                setFormData({ ...formData, conditions: { ...formData.conditions, addition_scoring_requirements: newReqs } });
+                                                const val = parseInt(e.target.value);
+                                                setFormData(prev => {
+                                                    const newReqs = [...prev.conditions.addition_scoring_requirements];
+                                                    const idx = newReqs.findIndex(r => r.character === 'lynch');
+                                                    newReqs[idx] = { ...newReqs[idx], min_score: val };
+                                                    return { ...prev, conditions: { ...prev.conditions, addition_scoring_requirements: newReqs } };
+                                                });
                                             }}
                                             className="w-full accent-emerald-500/70"
                                         />
@@ -506,10 +528,13 @@ const StrategySettings = () => {
                                             step="5"
                                             value={formData.conditions.addition_scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}
                                             onChange={e => {
-                                                const newReqs = [...formData.conditions.addition_scoring_requirements];
-                                                const idx = newReqs.findIndex(r => r.character === 'buffett');
-                                                newReqs[idx] = { ...newReqs[idx], min_score: parseInt(e.target.value) };
-                                                setFormData({ ...formData, conditions: { ...formData.conditions, addition_scoring_requirements: newReqs } });
+                                                const val = parseInt(e.target.value);
+                                                setFormData(prev => {
+                                                    const newReqs = [...prev.conditions.addition_scoring_requirements];
+                                                    const idx = newReqs.findIndex(r => r.character === 'buffett');
+                                                    newReqs[idx] = { ...newReqs[idx], min_score: val };
+                                                    return { ...prev, conditions: { ...prev.conditions, addition_scoring_requirements: newReqs } };
+                                                });
                                             }}
                                             className="w-full accent-amber-500/70"
                                         />
@@ -537,10 +562,10 @@ const StrategySettings = () => {
                             </div>
                             <Switch
                                 checked={formData.conditions.require_thesis}
-                                onCheckedChange={checked => setFormData({
-                                    ...formData,
-                                    conditions: { ...formData.conditions, require_thesis: checked }
-                                })}
+                                onCheckedChange={checked => setFormData(prev => ({
+                                    ...prev,
+                                    conditions: { ...prev.conditions, require_thesis: checked }
+                                }))}
                             />
                         </div>
 
@@ -551,14 +576,14 @@ const StrategySettings = () => {
                                 <Label>Consensus Mode</Label>
                                 <Select
                                     value={formData.consensus_mode}
-                                    onValueChange={val => setFormData({ ...formData, consensus_mode: val })}
+                                    onValueChange={handleConsensusChange}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue />
+                                        <SelectValue placeholder="Select Consensus Mode" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="both_agree">Strict Agreement (Both must buy)</SelectItem>
                                         <SelectItem value="weighted_confidence">Weighted Confidence</SelectItem>
+                                        <SelectItem value="both_agree">Strict Agreement (Both must buy)</SelectItem>
                                         <SelectItem value="veto_power">Veto Power (Either can block)</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -576,7 +601,10 @@ const StrategySettings = () => {
                                         max="100"
                                         step="5"
                                         value={formData.consensus_threshold}
-                                        onChange={e => setFormData({ ...formData, consensus_threshold: parseInt(e.target.value) })}
+                                        onChange={e => {
+                                            const val = parseInt(e.target.value);
+                                            setFormData(prev => ({ ...prev, consensus_threshold: val }));
+                                        }}
                                         className="w-full accent-primary"
                                     />
                                 </div>
@@ -700,16 +728,14 @@ const StrategySettings = () => {
                                     <Label>Method</Label>
                                     <Select
                                         value={formData.position_sizing.method}
-                                        onValueChange={val => setFormData({
-                                            ...formData,
-                                            position_sizing: { ...formData.position_sizing, method: val }
-                                        })}
+                                        onValueChange={handleSizingChange}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue />
+                                            <SelectValue placeholder="Sizing Method" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="equal_weight">Equal Weight (Spread cash evenly)</SelectItem>
+                                            <SelectItem value="conviction_weighted">Weighted Confidence (Agent Scores)</SelectItem>
                                             <SelectItem value="fixed_pct">Fixed % (Fixed slice per trade)</SelectItem>
                                             <SelectItem value="kelly">Kelly Criterion (Risk optimization)</SelectItem>
                                         </SelectContent>
@@ -783,4 +809,4 @@ const StrategySettings = () => {
     );
 };
 
-export default StrategySettings;
+export default React.memo(StrategySettings);
