@@ -103,6 +103,7 @@ function AppShellContent({
     const onNavClick = () => {
         if (isMobile) {
             setOpenMobile(false)
+            setChatOpen(false)
         }
     }
     const location = useLocation()
@@ -180,6 +181,13 @@ function AppShellContent({
     const isEconomyPage = location.pathname === '/economy'
     const isDashboard = location.pathname === '/'
     const isStocksPage = location.pathname === '/stocks'
+
+    // Auto-close chat sidebar on mobile when navigating (fallback for location changes)
+    useEffect(() => {
+        if (chatOpen) {
+            setChatOpen(false)
+        }
+    }, [location.pathname])
 
     const getCount = (statusKey) => {
         if (!summary) return 0
@@ -616,7 +624,10 @@ function AppShellContent({
                     {/* Left side - Sidebar trigger, Search, and Filter */}
                     <div className="flex items-center gap-1 sm:gap-2">
                         <SidebarTrigger className="h-10 w-10 [&_svg]:size-[18px]" />
-                        <SearchPopover onSelect={(sym) => navigate(`/stock/${sym}`)} />
+                        <SearchPopover onSelect={(sym) => {
+                            navigate(`/stock/${sym}`)
+                            if (isMobile) setChatOpen(false)
+                        }} />
                         <Button
                             variant="ghost"
                             size="icon"
@@ -642,32 +653,35 @@ function AppShellContent({
                                 )}
                             </Button>
                         )}
-                        <Sheet open={chatOpen} onOpenChange={setChatOpen}>
-                            <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5">
-                                    <MessageSquare />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="right" className="w-full max-w-full sm:w-[540px] p-0" hideClose>
-                                <SheetHeader className="px-4 py-3 border-b flex-row items-center justify-between space-y-0">
-                                    <SheetTitle>{chatTitle}</SheetTitle>
-                                    <SheetClose asChild>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
-                                            <X className="h-4 w-4" />
-                                            <span className="sr-only">Close</span>
-                                        </Button>
-                                    </SheetClose>
-                                </SheetHeader>
-                                <div className="flex flex-col h-[calc(100%-60px)]">
-                                    <AnalysisChat
-                                        symbol={chatSymbol}
-                                        chatOnly={true}
-                                        contextType={chatContext}
-                                        activeCharacter={activeCharacter}
-                                    />
-                                </div>
-                            </SheetContent>
-                        </Sheet>
+                        {!(isLargeScreen && !disableRightPanel) && (
+                            <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+                                <SheetTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5">
+                                        <MessageSquare />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="right" className="w-full max-w-full sm:w-[540px] p-0" hideClose>
+                                    <SheetHeader className="px-4 py-3 border-b flex-row items-center justify-between space-y-0">
+                                        <SheetTitle>{chatTitle}</SheetTitle>
+                                        <SheetClose asChild>
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                                                <X className="h-4 w-4" />
+                                                <span className="sr-only">Close</span>
+                                            </Button>
+                                        </SheetClose>
+                                    </SheetHeader>
+                                    <div className="flex flex-col h-[calc(100%-60px)]">
+                                        <AnalysisChat
+                                            symbol={chatSymbol}
+                                            chatOnly={true}
+                                            contextType={chatContext}
+                                            activeCharacter={activeCharacter}
+                                            onNavigate={() => setChatOpen(false)}
+                                        />
+                                    </div>
+                                </SheetContent>
+                            </Sheet>
+                        )}
                         <UserAvatar />
                     </div>
                 </header>

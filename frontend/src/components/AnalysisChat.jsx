@@ -83,7 +83,7 @@ const TOOL_DESCRIPTIONS = {
 
 // Custom markdown hook
 // isStreaming: when true, show placeholders for charts to avoid dimension measurement issues
-const useMarkdownComponents = ({ navigate, isStreaming = false }) => useMemo(() => ({
+const useMarkdownComponents = ({ navigate, onNavigate, isStreaming = false }) => useMemo(() => ({
   h1: (props) => (
     <h1 className="scroll-m-20 text-2xl font-semibold tracking-tight mb-4" {...props} />
   ),
@@ -154,12 +154,23 @@ const useMarkdownComponents = ({ navigate, isStreaming = false }) => useMemo(() 
   a({ href, children, ...props }) {
     const handleClick = (e) => {
       // Check if it's an internal link
-      if (href && (href.startsWith('/') || href.startsWith(window.location.origin))) {
+      const isInternal = href && (
+        href.startsWith('/') ||
+        href.startsWith(window.location.origin) ||
+        !href.includes('://') // Catch relative paths that might not start with /
+      )
+
+      if (isInternal) {
         e.preventDefault()
-        const path = href.startsWith(window.location.origin)
+        let path = href.startsWith(window.location.origin)
           ? href.substring(window.location.origin.length)
           : href
+
+        // Ensure path starts with /
+        if (!path.startsWith('/')) path = '/' + path
+
         navigate(path)
+        if (onNavigate) onNavigate()
       }
     }
 
@@ -169,7 +180,7 @@ const useMarkdownComponents = ({ navigate, isStreaming = false }) => useMemo(() 
       </a>
     )
   }
-}), [navigate, isStreaming])
+}), [navigate, onNavigate, isStreaming])
 
 
 const parseMessage = (msg) => {
@@ -188,7 +199,7 @@ const parseMessage = (msg) => {
 }
 
 // AnalysisChat Component
-const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatOnly = false, hideChat = false, contextType = 'brief', activeCharacter }, ref) {
+const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatOnly = false, hideChat = false, contextType = 'brief', activeCharacter, onNavigate }, ref) {
   const [searchParams] = useSearchParams()
   const queryCharacter = searchParams.get('character')
   const [selectedCharacter, setSelectedCharacter] = useState(queryCharacter || activeCharacter || 'lynch')
@@ -205,9 +216,9 @@ const AnalysisChat = forwardRef(function AnalysisChat({ symbol, stockName, chatO
   // Navigation for internal links
   const navigate = useNavigate()
   // Components for finalized messages (charts render normally)
-  const components = useMarkdownComponents({ navigate, isStreaming: false })
+  const components = useMarkdownComponents({ navigate, onNavigate, isStreaming: false })
   // Components for streaming messages (charts show placeholder)
-  const streamingComponents = useMarkdownComponents({ navigate, isStreaming: true })
+  const streamingComponents = useMarkdownComponents({ navigate, onNavigate, isStreaming: true })
 
   // Shared chat context for sidebar integration
   const {
