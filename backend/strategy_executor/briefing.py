@@ -142,6 +142,32 @@ class BriefingGenerator:
             'watchlist_json': json.dumps(watchlist),
         }
 
+        # Collect all symbols to provide a name mapping for the AI
+        all_symbols = set()
+        for s in buys + sells + holds + watchlist:
+            if s.get('symbol'):
+                all_symbols.add(s['symbol'])
+        
+        # Get names from DB if possible
+        stock_ref_map = {}
+        if all_symbols:
+            try:
+                # We can use search_stocks or similar, but simpler to just use get_stock_metrics or raw SQL
+                # Actually BriefingGenerator has self.db which is expected to have these methods.
+                # Let's try to get them in a batch if the DB supports it, or individual lookups as a fallback.
+                for symbol in all_symbols:
+                    m = self.db.get_stock_metrics(symbol)
+                    if m and m.get('company_name'):
+                        stock_ref_map[symbol] = m['company_name']
+                    else:
+                        stock_ref_map[symbol] = symbol
+            except Exception as e:
+                logger.warning(f"Failed to fetch stock names for briefing: {e}")
+
+        # Format stock reference for prompt
+        stock_ref_str = "\n".join([f"- {sym}: {name}" for sym, name in stock_ref_map.items()])
+        briefing['stock_reference'] = stock_ref_str
+
         # Generate AI executive summary
         briefing['executive_summary'] = self._generate_executive_summary(briefing)
 
@@ -169,6 +195,7 @@ class BriefingGenerator:
                 sells=briefing.get('sells_json', '[]'),
                 holds=briefing.get('holds_json', '[]'),
                 watchlist=briefing.get('watchlist_json', '[]'),
+                stock_reference=briefing.get('stock_reference', ''),
             )
 
             from google.genai.types import GenerateContentConfig

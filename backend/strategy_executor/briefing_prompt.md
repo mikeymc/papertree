@@ -27,6 +27,11 @@ You are a portfolio strategist writing a daily briefing for an autonomous invest
 
 {watchlist}
 
+## Stock Reference (Mapping)
+
+Use this mapping to identify stocks and their tickers:
+{stock_reference}
+
 ## Instructions
 
 Write a detailed daily briefing in markdown format. Each stock entry above includes Lynch and Buffett scores, a consensus verdict, DCF valuation data, and a "deliberation" field containing the actual Lynch vs Buffett debate about the stock. Draw heavily from these deliberations — they contain the specific reasoning that drove each decision.
@@ -51,6 +56,9 @@ For held positions, explain why we're staying the course. What did Lynch and Buf
 If there are watchlist stocks, briefly note 1-2 of the most interesting near-misses — stocks that almost qualified and why they fell short. What would need to change for them to earn a spot?
 
 ### Guidelines
+- **Stock Linking**: Every time you mention a stock by name or ticker, you MUST use a markdown link to its details page. 
+  - Format: `[TICKER](/stock/TICKER)` or `[Company Name](/stock/TICKER)`. 
+  - Example: if mentioning Apple, use `[Apple](/stock/AAPL)` or `[AAPL](/stock/AAPL)`.
 - Be specific: use ticker symbols, scores, prices, and percentages
 - Be honest about uncertainty — if a position is borderline, say so
 - Use a professional but conversational tone, as if briefing a sophisticated individual investor

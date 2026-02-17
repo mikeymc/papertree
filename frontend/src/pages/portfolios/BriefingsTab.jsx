@@ -104,7 +104,21 @@ function BriefingCard({ briefing }) {
                 {/* Executive Summary (markdown) */}
                 {briefing.executive_summary && (
                     <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                                a: ({ href, children, ...props }) => {
+                                    if (href && href.startsWith('/')) {
+                                        return (
+                                            <Link to={href} {...props} className="text-primary hover:underline">
+                                                {children}
+                                            </Link>
+                                        )
+                                    }
+                                    return <a href={href} {...props}>{children}</a>
+                                }
+                            }}
+                        >
                             {briefing.executive_summary}
                         </ReactMarkdown>
                     </div>
