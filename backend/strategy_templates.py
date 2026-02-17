@@ -22,10 +22,10 @@ FILTER_TEMPLATES = {
     },
     "growth_at_reasonable_price": {
         "name": "Growth at Reasonable Price (GARP)",
-        "description": "GARP strategy: PEG < 1 indicates growth trading below its rate. Peter Lynch's preferred approach.",
+        "description": "GARP strategy: PEG < 1.5 indicates growth trading below its rate. Peter Lynch's preferred approach.",
         "use_case": "Growth stocks at reasonable valuations",
         "filters": [
-            {"field": "peg_ratio", "operator": "<=", "value": 1.0},
+            {"field": "peg_ratio", "operator": "<=", "value": 1.5},
             {"field": "pe_ratio", "operator": ">=", "value": 5},
             {"field": "pe_ratio", "operator": "<=", "value": 30}
         ]
