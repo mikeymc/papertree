@@ -166,19 +166,19 @@ class TestVectorizedScoring:
         buffett_config = {
             'weight_roe': 0.40,
             'weight_consistency': 0.30,
-            'weight_debt_earnings': 0.30,
+            'weight_debt_to_earnings': 0.30,
             'roe_excellent': 20.0,
             'roe_good': 15.0,
             'roe_fair': 10.0,
-            'de_excellent': 2.0,
-            'de_good': 4.0,
-            'de_fair': 7.0,
+            'debt_to_earnings_excellent': 2.0,
+            'debt_to_earnings_good': 4.0,
+            'debt_to_earnings_fair': 7.0,
         }
         
         result = criteria.evaluate_batch(df, buffett_config)
         
         # Check output columns
-        expected_cols = ['roe', 'debt_to_earnings', 'roe_score', 'debt_earnings_score']
+        expected_cols = ['roe', 'debt_to_earnings', 'roe_score', 'debt_to_earnings_score']
         for col in expected_cols:
             if col not in result.columns:
                 print(f"Warning: {col} missing (might be empty/None if no data)")
@@ -196,7 +196,7 @@ class TestVectorizedScoring:
         buffett_config = {
             'weight_roe': 0.40,
             'weight_consistency': 0.30,
-            'weight_debt_earnings': 0.30,
+            'weight_debt_to_earnings': 0.30,
         }
         
         start = time.time()

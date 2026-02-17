@@ -205,6 +205,9 @@ class DeliberationMixin:
                     'min_score': strategy.get('consensus_threshold', 70) # For both_agree
                 }
             )
+            stock['consensus_score'] = consensus_res.score
+            stock['consensus_verdict'] = consensus_res.verdict
+            stock['consensus_reasoning'] = consensus_res.reasoning
             
             # If explicit VETO, we can stop here
             if consensus_res.verdict == 'VETO':
@@ -295,7 +298,7 @@ class DeliberationMixin:
                     lynch_status=stock.get('lynch_status'),
                     buffett_score=stock.get('buffett_score'),
                     buffett_status=stock.get('buffett_status'),
-                    consensus_score=None,
+                    consensus_score=stock.get('consensus_score'),
                     consensus_verdict=stock.get('final_verdict'),
                     thesis_verdict=stock.get('final_verdict'),
                     thesis_summary=stock.get('deliberation', '')[:500] if stock.get('deliberation') else None,
@@ -312,6 +315,7 @@ class DeliberationMixin:
                                 'symbol': symbol,
                                 'lynch_score': stock.get('lynch_score'),
                                 'buffett_score': stock.get('buffett_score'),
+                                'consensus_score': stock.get('consensus_score'),
                                 'final_verdict': 'BUY',
                             })
                         return None
@@ -336,6 +340,7 @@ class DeliberationMixin:
                             'symbol': symbol,
                             'lynch_score': stock.get('lynch_score'),
                             'buffett_score': stock.get('buffett_score'),
+                            'consensus_score': stock.get('consensus_score'),
                             'final_verdict': stock.get('final_verdict', 'WATCH'),
                         })
 

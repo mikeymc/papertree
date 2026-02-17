@@ -85,14 +85,22 @@ class PositionSizer:
         
         elif method == 'conviction_weighted':
             total_score = sum(c.get('conviction', 0) for c in selected_candidates)
+            logger.info(f"[PositionSizer] Sizing Method: conviction_weighted")
+            logger.info(f"[PositionSizer] Portfolio Value: ${portfolio_value:,.2f}")
+            logger.info(f"[PositionSizer] Candidate Count: {len(selected_candidates)}")
+            logger.info(f"[PositionSizer] Total Conviction Score Sum: {total_score}")
+
             if total_score == 0:
                 target_per_stock = portfolio_value / num_positions
+                logger.warning(f"[PositionSizer] Total conviction score is 0. Falling back to equal weight: ${target_per_stock:,.2f} per stock.")
                 for cand in selected_candidates:
                     allocations.append(self._create_allocation(cand, target_per_stock))
             else:
                 for cand in selected_candidates:
-                    share = cand.get('conviction', 0) / total_score
+                    conv_score = cand.get('conviction', 0)
+                    share = conv_score / total_score
                     target_val = portfolio_value * share
+                    logger.info(f"[PositionSizer] {cand['symbol']}: Conviction={conv_score}, Share={share:.2%}, Target=${target_val:,.2f}")
                     allocations.append(self._create_allocation(cand, target_val))
                     
         elif method == 'fixed_pct':
@@ -121,6 +129,7 @@ class PositionSizer:
             max_val = portfolio_value * (max_pos_pct / 100.0)
             for alloc in allocations:
                 if alloc.target_value > max_val:
+                    logger.info(f"[PositionSizer] CAPPING {alloc.symbol}: Target ${alloc.target_value:,.2f} exceeds max ${max_val:,.2f} ({max_pos_pct}%)")
                     alloc.target_value = max_val
                     # Recalculate drift
                     alloc.drift = alloc.target_value - alloc.current_value

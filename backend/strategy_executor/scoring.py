@@ -144,15 +144,18 @@ class ScoringMixin:
                 buffett_config['roe_good'] = sw.threshold.good
                 buffett_config['roe_fair'] = sw.threshold.fair
             elif sw.metric == 'debt_to_earnings':
-                buffett_config['weight_debt_earnings'] = sw.weight
-                buffett_config['de_excellent'] = sw.threshold.excellent
-                buffett_config['de_good'] = sw.threshold.good
-                buffett_config['de_fair'] = sw.threshold.fair
+                buffett_config['weight_debt_to_earnings'] = sw.weight
+                buffett_config['debt_to_earnings_excellent'] = sw.threshold.excellent
+                buffett_config['debt_to_earnings_good'] = sw.threshold.good
+                buffett_config['debt_to_earnings_fair'] = sw.threshold.fair
             elif sw.metric == 'gross_margin':
                 buffett_config['weight_gross_margin'] = sw.weight
-                buffett_config['gm_excellent'] = sw.threshold.excellent
-                buffett_config['gm_good'] = sw.threshold.good
-                buffett_config['gm_fair'] = sw.threshold.fair
+                buffett_config['gross_margin_excellent'] = sw.threshold.excellent
+                buffett_config['gross_margin_good'] = sw.threshold.good
+                buffett_config['gross_margin_fair'] = sw.threshold.fair
+            elif sw.metric == 'earnings_consistency':
+                buffett_config['weight_consistency'] = sw.weight
+                buffett_config['consistency_null_default'] = 0.0  # Buffett is harsher on missing data
 
         df_buffett = self.lynch_criteria.evaluate_batch(df, buffett_config)
 
