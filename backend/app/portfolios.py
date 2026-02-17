@@ -167,6 +167,23 @@ def execute_portfolio_trade(portfolio_id, user_id):
         return jsonify({'error': str(e), 'success': False}), 500
 
 
+@portfolios_bp.route('/api/portfolios/<int:portfolio_id>/trade-stats', methods=['GET'])
+@require_user_auth
+def get_portfolio_trade_stats(portfolio_id, user_id):
+    """Get trade statistics for a portfolio (win rate, best/worst trade, etc.)."""
+    try:
+        portfolio = deps.db.get_portfolio(portfolio_id)
+        is_admin = session.get('user_type') == 'admin'
+        if not portfolio or (portfolio['user_id'] != user_id and not is_admin):
+            return jsonify({'error': 'Portfolio not found'}), 404
+
+        stats = deps.db.get_portfolio_trade_stats(portfolio_id)
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Error getting trade stats for portfolio {portfolio_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @portfolios_bp.route('/api/portfolios/<int:portfolio_id>/value-history', methods=['GET'])
 @require_user_auth
 def get_portfolio_value_history(portfolio_id, user_id):

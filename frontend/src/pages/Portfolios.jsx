@@ -641,6 +641,15 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                         loading={loadingTransactions}
                     />
                 </TabsContent>
+
+                <TabsContent value="performance">
+                    <PerformanceTab
+                        snapshots={valueHistory}
+                        loading={loadingHistory}
+                        initialCash={initialCash}
+                        portfolioId={portfolio.id}
+                    />
+                </TabsContent>
             </Tabs>
         </div>
     )
@@ -929,3 +938,226 @@ function TransactionsTab({ transactions, loading }) {
     )
 }
 
+const PERIODS = [
+    { label: '1W', days: 7 },
+    { label: '1M', days: 30 },
+    { label: '3M', days: 90 },
+    { label: '6M', days: 180 },
+    { label: 'YTD', days: null, ytd: true },
+    { label: '1Y', days: 365 },
+    { label: 'ALL', days: null },
+]
+
+function filterSnapshotsByPeriod(snapshots, period) {
+    if (!period || period.label === 'ALL') return snapshots
+    const now = new Date()
+    let cutoff
+    if (period.ytd) {
+        cutoff = new Date(now.getFullYear(), 0, 1)
+    } else {
+        cutoff = new Date(now.getTime() - period.days * 24 * 60 * 60 * 1000)
+    }
+    return snapshots.filter(s => new Date(s.snapshot_at) >= cutoff)
+}
+
+function PerformanceTab({ snapshots, loading, initialCash, portfolioId }) {
+    const [period, setPeriod] = useState(PERIODS[PERIODS.length - 1]) // ALL
+    const [tradeStats, setTradeStats] = useState(null)
+
+    useEffect(() => {
+        if (!portfolioId) return
+        fetch(`/api/portfolios/${portfolioId}/trade-stats`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => setTradeStats(data))
+            .catch(() => { })
+    }, [portfolioId])
+
+    const filtered = filterSnapshotsByPeriod(snapshots, period)
+
+    if (loading) {
+        return (
+            <Card>
+                <CardContent className="py-8">
+                    <Skeleton className="h-64 w-full" />
+                </CardContent>
+            </Card>
+        )
+    }
+
+    if (snapshots.length === 0) {
+        return (
+            <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                    <LineChart className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                    <p>No performance data yet.</p>
+                    <p className="text-sm mt-1">Portfolio snapshots are taken every 15 minutes during market hours.</p>
+                </CardContent>
+            </Card>
+        )
+    }
+
+    const display = filtered.length > 0 ? filtered : snapshots
+
+    // Prepare chart data
+    const chartData = {
+        labels: display.map(s => format(new Date(s.snapshot_at), 'MMM d, h:mm a')),
+        datasets: [
+            {
+                label: 'Portfolio Return',
+                data: display.map(s => s.portfolio_return_pct),
+                borderColor: 'rgb(34, 197, 94)', // Green
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                fill: true,
+                tension: 0.3
+            },
+            {
+                label: 'S&P 500',
+                data: display.map(s => s.spy_return_pct),
+                borderColor: 'rgb(148, 163, 184)', // Slate
+                borderDash: [5, 5],
+                fill: false,
+                tension: 0.3
+            }
+        ]
+    }
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function (context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += context.parsed.y.toFixed(2) + '%';
+                        }
+                        return label;
+                    }
+                }
+            },
+        },
+        scales: {
+            y: {
+                title: {
+                    display: true,
+                    text: 'Return (%)'
+                },
+                ticks: {
+                    callback: function (value) {
+                        return value.toFixed(1) + '%';
+                    }
+                }
+            }
+        }
+    }
+
+    const latest = display[display.length - 1];
+    const currentReturn = latest?.portfolio_return_pct || 0;
+    const currentSpyReturn = latest?.spy_return_pct || 0;
+    const alpha = latest?.alpha || 0;
+
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <CardTitle className="text-lg">Performance vs Benchmark</CardTitle>
+                        <CardDescription>
+                            Comparing returns against S&P 500 (SPY)
+                        </CardDescription>
+                    </div>
+                    {/* Period selector */}
+                    <div className="flex gap-1 flex-wrap">
+                        {PERIODS.map(p => (
+                            <button
+                                key={p.label}
+                                onClick={() => setPeriod(p)}
+                                className={`px-2 py-1 text-xs rounded font-medium transition-colors ${period.label === p.label
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    }`}
+                            >
+                                {p.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="h-[400px] w-full mb-8">
+                    <Line data={chartData} options={chartOptions} />
+                </div>
+
+                <Separator className="my-6" />
+
+                {/* Return stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-6">
+                    <div>
+                        <p className="text-sm text-muted-foreground">Portfolio Return</p>
+                        <p className={`text-xl font-bold ${currentReturn >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {formatPercent(currentReturn)}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground">SPY Return</p>
+                        <p className="text-xl font-bold text-slate-400">{formatPercent(currentSpyReturn)}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground">Alpha vs SPY</p>
+                        <p className={`text-xl font-bold ${alpha >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {formatPercent(alpha)}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground">Current Value</p>
+                        <p className="text-xl font-bold">{formatCurrency(latest?.total_value)}</p>
+                    </div>
+                </div>
+
+                {/* Trade stats (shown if available) */}
+                {tradeStats && tradeStats.total_trades > 0 && (
+                    <>
+                        <Separator className="my-6" />
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Total Trades</p>
+                                <p className="text-xl font-bold">{tradeStats.total_trades}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Win Rate</p>
+                                <p className={`text-xl font-bold ${tradeStats.win_rate >= 50 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                    {tradeStats.win_rate}%
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Best Trade</p>
+                                <p className="text-xl font-bold text-emerald-500">
+                                    {tradeStats.best_trade
+                                        ? `${tradeStats.best_trade.symbol} +${tradeStats.best_trade.return_pct}%`
+                                        : '–'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Worst Trade</p>
+                                <p className="text-xl font-bold text-red-500">
+                                    {tradeStats.worst_trade
+                                        ? `${tradeStats.worst_trade.symbol} ${tradeStats.worst_trade.return_pct}%`
+                                        : '–'}
+                                </p>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </CardContent>
+        </Card>
+    )
+}
