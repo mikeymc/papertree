@@ -423,11 +423,11 @@ const StrategySettings = () => {
                     </CardContent>
                 </Card>
 
-                {/* 3. Scoring Thresholds */}
+                {/* 3. Screening Thresholds */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Scoring Thresholds</CardTitle>
-                        <CardDescription>Minimum scores required for agents to consider a stock</CardDescription>
+                        <CardTitle>Screening Thresholds</CardTitle>
+                        <CardDescription>Minimum scores required for agents to consider a stock. A passing score on either will be considered a pass for both.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-8">
