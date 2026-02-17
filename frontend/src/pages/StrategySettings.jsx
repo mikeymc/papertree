@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     X, ChevronRight, ChevronLeft, Check, Plus, Trash2,
-    HelpCircle, AlertCircle, Info, Eye, Save, Activity, Bot, TrendingDown
+    HelpCircle, AlertCircle, Info, Save, Activity, Bot, TrendingDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,8 +74,6 @@ const StrategySettings = () => {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(mode === 'edit');
-    const [previewing, setPreviewing] = useState(false);
-    const [previewResults, setPreviewResults] = useState(null);
 
     // Fetch data on mount
     useEffect(() => {
@@ -210,25 +208,6 @@ const StrategySettings = () => {
         }
     };
 
-    const handlePreview = async () => {
-        setPreviewing(true);
-        setError(null);
-        try {
-            const response = await fetch('/api/strategies/preview', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ conditions: formData.conditions })
-            });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Preview failed');
-            setPreviewResults(result);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setPreviewing(false);
-        }
-    };
 
     if (fetching) {
         return <div className="p-8 text-center">Loading strategy details...</div>;
@@ -247,11 +226,6 @@ const StrategySettings = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" onClick={handlePreview} disabled={previewing}>
-                        {previewing ? 'Previewing...' : (
-                            <><Eye className="mr-2 h-4 w-4" /> Preview</>
-                        )}
-                    </Button>
                     <Button onClick={handleSubmit} disabled={loading} className="px-6">
                         {loading ? 'Saving...' : (
                             <><Save className="mr-2 h-4 w-4" /> Save Strategy</>
@@ -805,67 +779,6 @@ const StrategySettings = () => {
                 </Card>
             </div>
 
-            {/* Preview Modal/Overlay */}
-            {
-                previewResults && (
-                    <div className="fixed inset-0 bg-background/95 z-50 overflow-y-auto p-4 sm:p-8">
-                        <div className="max-w-4xl mx-auto space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-2xl font-bold">Strategy Preview</h2>
-                                    <p className="text-muted-foreground">Current screening results for these filters</p>
-                                </div>
-                                <Button variant="ghost" size="icon" onClick={() => setPreviewResults(null)}>
-                                    <X size={24} />
-                                </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <Card>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle className="text-lg">Stats</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex justify-between items-center text-sm py-1">
-                                            <span>Total Stocks Screened</span>
-                                            <span className="font-mono">{previewResults.total_scanned}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm py-1">
-                                            <span>Matches Found</span>
-                                            <span className="font-mono text-primary font-bold">{previewResults.total_passed}</span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg">Matched Stocks</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {previewResults.passed_stocks && previewResults.passed_stocks.length > 0 ? (
-                                        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2">
-                                            {previewResults.passed_stocks.map(symbol => (
-                                                <Badge key={symbol} variant="secondary" className="justify-center h-8 text-sm">
-                                                    {symbol}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="py-8 text-center text-muted-foreground italic">
-                                            No stocks matched your current screening filters.
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                            <div className="flex justify-center pt-4">
-                                <Button onClick={() => setPreviewResults(null)} className="px-12">Close Preview</Button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
         </div >
     );
 };
