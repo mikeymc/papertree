@@ -240,7 +240,7 @@ def get_run_decisions(user_id, run_id):
 @strategies_bp.route('/api/strategy-templates', methods=['GET'])
 def get_strategy_templates():
     """Get available strategy templates for wizard and chat."""
-    from strategy_templates import FILTER_TEMPLATES
+    from strategy_templates import FILTER_TEMPLATES, CHARACTER_RECOMMENDATIONS
     return jsonify({
         'templates': {
             k: {
@@ -249,5 +249,6 @@ def get_strategy_templates():
                 'filters': v['filters']
             }
             for k, v in FILTER_TEMPLATES.items()
-        }
+        },
+        'character_recommendations': CHARACTER_RECOMMENDATIONS
     })

@@ -1,5 +1,5 @@
 // ABOUTME: Multi-step onboarding wizard for new users
-// ABOUTME: Collects expertise level, character preference, and theme settings
+// ABOUTME: Collects expertise level, character preference, theme, and optionally launches a quick-start strategy
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -15,13 +15,17 @@ import {
 import { Button } from './ui/button'
 import { RadioGroup, RadioGroupItem } from './ui/radio-group'
 import { Label } from './ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 
 const STEPS = {
     EXPERTISE: 1,
     CHARACTER: 2,
     THEME: 3,
     CONFIRMATION: 4,
+    LAUNCH_STRATEGY: 5,
 }
+
+const TOTAL_STEPS = 5
 
 const EXPERTISE_LEVELS = [
     {
@@ -69,6 +73,9 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
     const [characters, setCharacters] = useState([])
     const [loading, setLoading] = useState(false)
     const [charactersLoading, setCharactersLoading] = useState(true)
+    const [templates, setTemplates] = useState({})
+    const [recommendations, setRecommendations] = useState({})
+    const [launchingTemplate, setLaunchingTemplate] = useState(null)
 
     const navigate = useNavigate()
     const { user, checkAuth } = useAuth()
@@ -93,11 +100,32 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
         }
     }, [open])
 
+    // Fetch strategy templates when reaching the launch step
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            try {
+                const response = await fetch('/api/strategy-templates')
+                const data = await response.json()
+                setTemplates(data.templates || {})
+                setRecommendations(data.character_recommendations || {})
+            } catch (error) {
+                console.error('Failed to fetch templates:', error)
+            }
+        }
+
+        if (currentStep === STEPS.LAUNCH_STRATEGY) {
+            fetchTemplates()
+        }
+    }, [currentStep])
+
     const handleNext = () => {
-        if (currentStep < STEPS.CONFIRMATION) {
+        if (currentStep === STEPS.CONFIRMATION) {
+            // Save settings then advance to launch step
+            saveSettings().then(() => {
+                setCurrentStep(STEPS.LAUNCH_STRATEGY)
+            })
+        } else if (currentStep < STEPS.LAUNCH_STRATEGY) {
             setCurrentStep(currentStep + 1)
-        } else {
-            handleComplete()
         }
     }
 
@@ -107,7 +135,7 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
         }
     }
 
-    const handleComplete = async (goToHelp = false) => {
+    const saveSettings = async () => {
         setLoading(true)
         try {
             // Save expertise level
@@ -140,7 +168,16 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
                 body: JSON.stringify({ theme: selections.theme }),
             })
             setTheme(selections.theme)
+        } catch (error) {
+            console.error('Failed to save settings:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
+    const finishOnboarding = async (navigateTo = null) => {
+        setLoading(true)
+        try {
             // Mark onboarding as complete
             await fetch('/api/user/complete_onboarding', {
                 method: 'POST',
@@ -150,12 +187,10 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
             // Refresh auth state
             await checkAuth()
 
-            // Navigate to help page if requested
-            if (goToHelp) {
-                navigate('/help')
+            if (navigateTo) {
+                navigate(navigateTo)
             }
 
-            // Call completion callback
             if (onComplete) {
                 onComplete()
             }
@@ -163,6 +198,35 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
             console.error('Failed to complete onboarding:', error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleComplete = async (goToHelp = false) => {
+        await saveSettings()
+        await finishOnboarding(goToHelp ? '/help' : null)
+    }
+
+    const handleQuickStart = async (templateId) => {
+        setLaunchingTemplate(templateId)
+        try {
+            const response = await fetch('/api/strategies/quick-start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ template_id: templateId }),
+            })
+
+            if (!response.ok) {
+                throw new Error('Failed to create strategy')
+            }
+
+            const data = await response.json()
+
+            // Finish onboarding and navigate to the new portfolio with job tracking
+            await finishOnboarding(`/portfolios/${data.portfolio_id}?job=${data.job_id}`)
+        } catch (error) {
+            console.error('Failed to quick-start strategy:', error)
+            setLaunchingTemplate(null)
         }
     }
 
@@ -205,12 +269,22 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
         return theme ? theme.name : id
     }
 
+    // Get recommended template IDs for the selected character
+    const getRecommendedTemplates = () => {
+        const charRecs = recommendations[selections.character] || []
+        // Show character-specific recommendations, fall back to first 3 templates
+        if (charRecs.length > 0) {
+            return charRecs.filter(id => templates[id])
+        }
+        return Object.keys(templates).slice(0, 3)
+    }
+
     return (
         <Dialog open={open} onOpenChange={() => { }}>
             <DialogContent className="sm:max-w-[600px]" hideClose>
                 {/* Progress dots */}
                 <div className="flex justify-center gap-2 mb-4">
-                    {[1, 2, 3, 4].map((step) => (
+                    {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
                         <div
                             key={step}
                             className={`h-2 w-2 rounded-full transition-colors ${step === currentStep
@@ -397,36 +471,92 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
                             </ul>
                         </div>
                         <p className="text-sm text-muted-foreground mt-3">
-                            Check out the quickstart guide to get started!
+                            Next, you can launch an AI-managed strategy or explore on your own.
                         </p>
-
 
                         <div className="flex justify-between mt-6">
                             <Button variant="outline" onClick={handleBack} disabled={loading}>
                                 Back
                             </Button>
                             <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => handleComplete(false)} disabled={loading}>
-                                    {loading ? (
-                                        <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                                            Setting up...
-                                        </>
-                                    ) : (
-                                        'Let me explore'
-                                    )}
+                                <Button variant="ghost" onClick={() => handleComplete(false)} disabled={loading}>
+                                    {loading ? 'Saving...' : "I'll set up my own"}
                                 </Button>
-                                <Button onClick={() => handleComplete(true)} disabled={loading}>
+                                <Button onClick={handleNext} disabled={loading}>
                                     {loading ? (
                                         <>
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                            Setting up...
+                                            Saving...
                                         </>
                                     ) : (
-                                        'Show Quick Start Guide'
+                                        'Next'
                                     )}
                                 </Button>
                             </div>
+                        </div>
+                    </>
+                )}
+
+                {/* Step 5: Launch Strategy */}
+                {currentStep === STEPS.LAUNCH_STRATEGY && (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle>Launch your first strategy</DialogTitle>
+                            <DialogDescription>
+                                Pick a strategy and we'll start analyzing stocks for you right away.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid gap-3 mt-4">
+                            {getRecommendedTemplates().map((templateId) => {
+                                const template = templates[templateId]
+                                if (!template) return null
+                                const isLaunching = launchingTemplate === templateId
+                                return (
+                                    <Card
+                                        key={templateId}
+                                        className="cursor-pointer hover:border-primary transition-colors"
+                                        onClick={() => !launchingTemplate && handleQuickStart(templateId)}
+                                    >
+                                        <CardHeader className="pb-2">
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="text-base">{template.name}</CardTitle>
+                                                <Button
+                                                    size="sm"
+                                                    disabled={!!launchingTemplate}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleQuickStart(templateId)
+                                                    }}
+                                                >
+                                                    {isLaunching ? (
+                                                        <>
+                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                            Launching...
+                                                        </>
+                                                    ) : (
+                                                        'Launch'
+                                                    )}
+                                                </Button>
+                                            </div>
+                                            <CardDescription>{template.description}</CardDescription>
+                                        </CardHeader>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+
+                        <div className="flex justify-between mt-6">
+                            <Button variant="outline" onClick={handleBack} disabled={!!launchingTemplate}>
+                                Back
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={() => finishOnboarding()}
+                                disabled={!!launchingTemplate}
+                            >
+                                I'll set up my own
+                            </Button>
                         </div>
                     </>
                 )}

@@ -2,7 +2,7 @@
 // ABOUTME: Displays portfolio cards, holdings, transactions, and performance charts
 
 import { useState, useEffect, useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import PortfolioCard from '@/components/PortfolioCard'
 import { Button } from "@/components/ui/button"
@@ -34,7 +34,8 @@ import {
     Bot,
     User,
     Play,
-    Settings
+    Settings,
+    Loader2
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { Line } from 'react-chartjs-2'
@@ -384,11 +385,45 @@ export default function Portfolios() {
 
 function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
     const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
     const [activeTab, setActiveTab] = useState(portfolio.strategy_id ? 'briefings' : 'holdings')
     const [transactions, setTransactions] = useState([])
     const [valueHistory, setValueHistory] = useState([])
     const [loadingTransactions, setLoadingTransactions] = useState(false)
     const [loadingHistory, setLoadingHistory] = useState(false)
+    const [runningJob, setRunningJob] = useState(null)
+
+    // Poll job status when arriving from quick-start
+    useEffect(() => {
+        const jobId = searchParams.get('job')
+        if (!jobId) return
+
+        setRunningJob({ id: jobId, status: 'pending', progress: 0 })
+
+        const pollInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/jobs/${jobId}`)
+                if (!response.ok) return
+                const job = await response.json()
+                setRunningJob({ id: jobId, status: job.status, progress: job.progress || 0 })
+
+                if (job.status === 'completed' || job.status === 'failed') {
+                    clearInterval(pollInterval)
+                    // Clear the job param from URL
+                    searchParams.delete('job')
+                    setSearchParams(searchParams, { replace: true })
+                    if (job.status === 'completed') {
+                        setActiveTab('briefings')
+                        onRefresh()
+                    }
+                }
+            } catch (err) {
+                console.error('Error polling job status:', err)
+            }
+        }, 5000)
+
+        return () => clearInterval(pollInterval)
+    }, [searchParams.get('job')])
 
     const totalValue = portfolio.total_value || 0
     const initialCash = portfolio.initial_cash || 100000
@@ -485,6 +520,35 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                     </Button>
                 </div>
             </div>
+
+            {/* Strategy run in progress banner */}
+            {runningJob && runningJob.status !== 'completed' && (
+                <Card className="mb-6 border-primary/30 bg-primary/5">
+                    <CardContent className="py-4">
+                        <div className="flex items-center gap-3">
+                            {runningJob.status === 'failed' ? (
+                                <>
+                                    <AlertCircle className="h-5 w-5 text-destructive" />
+                                    <div>
+                                        <p className="font-medium text-destructive">Strategy run failed</p>
+                                        <p className="text-sm text-muted-foreground">You can retry from the strategy settings.</p>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                    <div>
+                                        <p className="font-medium">Your strategy is running...</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Screening stocks and building your first briefing. This may take a few minutes.
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Summary Cards */}
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6 w-full">
