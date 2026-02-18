@@ -44,8 +44,8 @@ FILTER_TEMPLATES = {
         "description": "Small, fast-growing companies. Higher risk, higher potential reward.",
         "use_case": "Higher risk/reward with smaller companies",
         "filters": [
-            {"field": "market_cap", "operator": ">=", "value": 300000000},
-            {"field": "market_cap", "operator": "<=", "value": 2000000000},
+            {"field": "market_cap", "operator": "<=", "value": 3000000000},
+            {"field": "market_cap", "operator": ">=", "value": 1000000000},
             {"field": "pe_ratio", "operator": ">=", "value": 10},
             {"field": "pe_ratio", "operator": "<=", "value": 40}
         ]
