@@ -174,7 +174,6 @@ function TradesTable({ trades }) {
                         <TableHead className="text-right">Value</TableHead>
                         <TableHead className="text-right">Lynch</TableHead>
                         <TableHead className="text-right">Buffett</TableHead>
-                        <TableHead className="text-right">DCF Upside</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -212,9 +211,6 @@ function TradesTable({ trades }) {
                             </TableCell>
                             <TableCell className="text-right">
                                 <ScoreBadge score={trade.buffett_score} status={trade.buffett_status} />
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <UpsideBadge pct={trade.dcf_upside_pct} />
                             </TableCell>
                         </TableRow>
                     ))}
