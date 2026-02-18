@@ -20,7 +20,7 @@ class UsersMixin:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO users (google_id, email, name, picture, created_at, last_login, theme)
-                VALUES (%s, %s, %s, %s, %s, %s, 'midnight')
+                VALUES (%s, %s, %s, %s, %s, %s, 'light')
                 ON CONFLICT (google_id) DO UPDATE SET
                     email = EXCLUDED.email,
                     name = EXCLUDED.name,
@@ -44,7 +44,7 @@ class UsersMixin:
 
             cursor.execute("""
                 INSERT INTO users (email, password_hash, name, created_at, last_login, is_verified, verification_code, code_expires_at, theme)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'midnight')
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'light')
                 RETURNING id
             """, (email, password_hash, name, datetime.now(timezone.utc), datetime.now(timezone.utc), is_verified, verification_code, code_expires_at))
             user_id = cursor.fetchone()[0]
