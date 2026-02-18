@@ -1786,6 +1786,30 @@ class SchemaMixin:
             ON investment_strategies(enabled, schedule_cron)
         """)
 
+        # Migration: Ensure 'either_approves' is NOT in the consensus_mode check constraint
+        try:
+            logger.info("CLEANUP: Checking investment_strategies_consensus_mode_check for 'either_approves'")
+            with conn.transaction():
+                cursor.execute("""
+                    SELECT 1 FROM pg_constraint 
+                    WHERE conname = 'investment_strategies_consensus_mode_check'
+                    AND pg_get_constraintdef(oid) LIKE '%either_approves%'
+                """)
+                if cursor.fetchone():
+                    logger.info("CLEANUP: Removing 'either_approves' from investment_strategies consensus_mode check...")
+                    cursor.execute("ALTER TABLE investment_strategies DROP CONSTRAINT IF EXISTS investment_strategies_consensus_mode_check")
+                    cursor.execute("""
+                        ALTER TABLE investment_strategies 
+                        ADD CONSTRAINT investment_strategies_consensus_mode_check 
+                        CHECK (consensus_mode IN ('both_agree', 'weighted_confidence', 'veto_power'))
+                    """)
+                    logger.info("CLEANUP: Successfully removed 'either_approves' from consensus_mode check constraint")
+        except Exception as e:
+            logger.warning(f"CLEANUP ERROR in consensus_mode check: {e}")
+            if hasattr(e, 'diag') and e.diag:
+                logger.warning(f"  SQL Detail: {e.diag.message_primary}")
+            pass
+
         # Strategy execution runs (one per scheduled execution)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS strategy_runs (

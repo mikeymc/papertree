@@ -63,10 +63,20 @@ FILTER_TEMPLATES = {
 }
 
 STRATEGY_DEFAULTS = {
+    "require_thesis": True,
+    "scoring_requirements": [
+        {"character": "lynch", "min_score": 60},
+        {"character": "buffett", "min_score": 60}
+    ],
+    "thesis_verdict_required": ["BUY"],
+    "exit_conditions": {
+        "stop_loss_pct": -15.0,
+        "take_profit_pct": 40.0
+    },
     "position_sizing": {
-        "method": "equal_weight",
+        "method": "conviction_weighted",
         "max_position_pct": 10.0,
-        "max_positions": 50
+        "max_positions": 20
     },
     "consensus_mode": "both_agree",
     "consensus_threshold": 70.0,
@@ -88,155 +98,96 @@ QUICK_START_CONFIGS = {
         "name": "Beaten Down Large Caps",
         "description": "Contrarian strategy targeting large caps down 20%+ from highs",
         "conditions": {
-            "filters": FILTER_TEMPLATES["beaten_down_large_caps"]["filters"]},
-            "require_thesis": True,
-            "scoring_requirements": [
-                {"character":"lynch","min_score":70},
-                {"character":"buffett","min_score":70}
-            ],
-            "thesis_verdict_required":["BUY"],
-        "consensus_mode": "both_agree",
-        "consensus_threshold": 70.0,
-        "position_sizing": {
-            "method": "conviction_weighted",
-            "max_position_pct": 8.0,
-            "max_positions": 15
+            "filters": FILTER_TEMPLATES["beaten_down_large_caps"]["filters"],
+            "require_thesis": STRATEGY_DEFAULTS["require_thesis"],
+            "scoring_requirements": STRATEGY_DEFAULTS["scoring_requirements"],
+            "thesis_verdict_required": STRATEGY_DEFAULTS["thesis_verdict_required"]
         },
-        "exit_conditions": {
-            "stop_loss_pct": -15.0,
-            "take_profit_pct": 40.0
-        },
-        "schedule_cron": "0 14 * * 1-5",
-        "initial_cash": 100000.0
+        "consensus_mode": STRATEGY_DEFAULTS["consensus_mode"],
+        "consensus_threshold": STRATEGY_DEFAULTS["consensus_threshold"],
+        "position_sizing": STRATEGY_DEFAULTS["position_sizing"],
+        "exit_conditions": STRATEGY_DEFAULTS["exit_conditions"],
+        "schedule_cron": STRATEGY_DEFAULTS["schedule_cron"],
+        "initial_cash": STRATEGY_DEFAULTS["initial_cash"]
     },
     "value_stocks": {
         "name": "Value Stocks",
         "description": "Traditional value investing with low P/E and PEG ratios",
         "conditions": {
             "filters": FILTER_TEMPLATES["value_stocks"]["filters"],
-            "require_thesis": True,
-            "scoring_requirements": [
-                {"character": "lynch", "min_score": 60},
-                {"character": "buffett", "min_score": 60}
-            ],
-            "thesis_verdict_required": ["BUY"],
+            "require_thesis": STRATEGY_DEFAULTS["require_thesis"],
+            "scoring_requirements": STRATEGY_DEFAULTS["scoring_requirements"],
+            "thesis_verdict_required": STRATEGY_DEFAULTS["thesis_verdict_required"]
         },
-        "consensus_mode": "both_agree",
-        "consensus_threshold": 70.0,
-        "position_sizing": {
-            "method": "equal_weight",
-            "max_position_pct": 8.0,
-            "max_positions": 20
-        },
-        "exit_conditions": {
-            "stop_loss_pct": -12.0,
-            "take_profit_pct": 30.0
-        },
-        "schedule_cron": "0 14 * * 1-5",
-        "initial_cash": 100000.0
+        "consensus_mode": STRATEGY_DEFAULTS["consensus_mode"],
+        "consensus_threshold": STRATEGY_DEFAULTS["consensus_threshold"],
+        "position_sizing": STRATEGY_DEFAULTS["position_sizing"],
+        "exit_conditions": STRATEGY_DEFAULTS["exit_conditions"],
+        "schedule_cron": STRATEGY_DEFAULTS["schedule_cron"],
+        "initial_cash": STRATEGY_DEFAULTS["initial_cash"]
     },
     "growth_at_reasonable_price": {
         "name": "Growth at Reasonable Price",
         "description": "Peter Lynch's GARP approach — growth stocks at fair valuations",
         "conditions": {
             "filters": FILTER_TEMPLATES["growth_at_reasonable_price"]["filters"],
-            "require_thesis": True,
-            "scoring_requirements": [
-                {"character":"lynch","min_score":60},
-                {"character":"buffett","min_score":60}
-            ],
-            "thesis_verdict_required":["BUY"],
+            "require_thesis": STRATEGY_DEFAULTS["require_thesis"],
+            "scoring_requirements": STRATEGY_DEFAULTS["scoring_requirements"],
+            "thesis_verdict_required": STRATEGY_DEFAULTS["thesis_verdict_required"]
         },
-        "consensus_mode": "both_agree",
-        "consensus_threshold": 70.0,
-        "position_sizing": {
-            "method": "equal_weight",
-            "max_position_pct": 10.0,
-            "max_positions": 15
-        },
-        "exit_conditions": {
-            "stop_loss_pct": -15.0,
-            "take_profit_pct": 50.0
-        },
-        "schedule_cron": "0 14 * * 1-5",
-        "initial_cash": 100000.0
+        "consensus_mode": STRATEGY_DEFAULTS["consensus_mode"],
+        "consensus_threshold": STRATEGY_DEFAULTS["consensus_threshold"],
+        "position_sizing": STRATEGY_DEFAULTS["position_sizing"],
+        "exit_conditions": STRATEGY_DEFAULTS["exit_conditions"],
+        "schedule_cron": STRATEGY_DEFAULTS["schedule_cron"],
+        "initial_cash": STRATEGY_DEFAULTS["initial_cash"]
     },
     "low_debt_stable": {
         "name": "Low Debt, Stable Companies",
         "description": "Conservative picks with low leverage — safer during downturns",
         "conditions": {
             "filters": FILTER_TEMPLATES["low_debt_stable"]["filters"],
-            "require_thesis": True,
-            "scoring_requirements": [
-                {"character":"lynch","min_score":60},
-                {"character":"buffett","min_score":60}
-            ],
-            "thesis_verdict_required":["BUY"],
+            "require_thesis": STRATEGY_DEFAULTS["require_thesis"],
+            "scoring_requirements": STRATEGY_DEFAULTS["scoring_requirements"],
+            "thesis_verdict_required": STRATEGY_DEFAULTS["thesis_verdict_required"]
         },
-        "consensus_mode": "both_agree",
-        "consensus_threshold": 75.0,
-        "position_sizing": {
-            "method": "equal_weight",
-            "max_position_pct": 6.0,
-            "max_positions": 25
-        },
-        "exit_conditions": {
-            "stop_loss_pct": -10.0,
-            "take_profit_pct": 25.0
-        },
-        "schedule_cron": "0 14 * * 1-5",
-        "initial_cash": 100000.0
+        "consensus_mode": STRATEGY_DEFAULTS["consensus_mode"],
+        "consensus_threshold": STRATEGY_DEFAULTS["consensus_threshold"],
+        "position_sizing": STRATEGY_DEFAULTS["position_sizing"],
+        "exit_conditions": STRATEGY_DEFAULTS["exit_conditions"],
+        "schedule_cron": STRATEGY_DEFAULTS["schedule_cron"],
+        "initial_cash": STRATEGY_DEFAULTS["initial_cash"]
     },
     "small_cap_growth": {
         "name": "Small Cap Growth",
         "description": "Higher risk/reward with $300M-$2B market cap growth stocks",
         "conditions": {
             "filters": FILTER_TEMPLATES["small_cap_growth"]["filters"],
-            "require_thesis": True,
-            "scoring_requirements": [
-                {"character":"lynch","min_score":60},
-                {"character":"buffett","min_score":60}
-            ],
-            "thesis_verdict_required":["BUY"],
+            "require_thesis": STRATEGY_DEFAULTS["require_thesis"],
+            "scoring_requirements": STRATEGY_DEFAULTS["scoring_requirements"],
+            "thesis_verdict_required": STRATEGY_DEFAULTS["thesis_verdict_required"]
         },
-        "consensus_mode": "either_approves",
-        "consensus_threshold": 65.0,
-        "position_sizing": {
-            "method": "equal_weight",
-            "max_position_pct": 5.0,
-            "max_positions": 25
-        },
-        "exit_conditions": {
-            "stop_loss_pct": -20.0,
-            "take_profit_pct": 60.0
-        },
-        "schedule_cron": "0 14 * * 1-5",
-        "initial_cash": 100000.0
+        "consensus_mode": STRATEGY_DEFAULTS["consensus_mode"],
+        "consensus_threshold": STRATEGY_DEFAULTS["consensus_threshold"],
+        "position_sizing": STRATEGY_DEFAULTS["position_sizing"],
+        "exit_conditions": STRATEGY_DEFAULTS["exit_conditions"],
+        "schedule_cron": STRATEGY_DEFAULTS["schedule_cron"],
+        "initial_cash": STRATEGY_DEFAULTS["initial_cash"]
     },
     "dividend_value": {
         "name": "Dividend Value Plays",
         "description": "Income-focused value investing with larger, stable companies",
         "conditions": {
             "filters": FILTER_TEMPLATES["dividend_value"]["filters"],
-            "require_thesis": True,
-            "scoring_requirements": [
-                {"character":"lynch","min_score":60},
-                {"character":"buffett","min_score":60}
-            ],
-            "thesis_verdict_required":["BUY"],
+            "require_thesis": STRATEGY_DEFAULTS["require_thesis"],
+            "scoring_requirements": STRATEGY_DEFAULTS["scoring_requirements"],
+            "thesis_verdict_required": STRATEGY_DEFAULTS["thesis_verdict_required"]
         },
-        "consensus_mode": "both_agree",
-        "consensus_threshold": 70.0,
-        "position_sizing": {
-            "method": "equal_weight",
-            "max_position_pct": 7.0,
-            "max_positions": 20
-        },
-        "exit_conditions": {
-            "stop_loss_pct": -10.0,
-            "take_profit_pct": 30.0
-        },
-        "schedule_cron": "0 14 * * 1-5",
-        "initial_cash": 100000.0
+        "consensus_mode": STRATEGY_DEFAULTS["consensus_mode"],
+        "consensus_threshold": STRATEGY_DEFAULTS["consensus_threshold"],
+        "position_sizing": STRATEGY_DEFAULTS["position_sizing"],
+        "exit_conditions": STRATEGY_DEFAULTS["exit_conditions"],
+        "schedule_cron": STRATEGY_DEFAULTS["schedule_cron"],
+        "initial_cash": STRATEGY_DEFAULTS["initial_cash"]
     }
 }
