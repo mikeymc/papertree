@@ -32,6 +32,11 @@ class ConsensusEngine:
             return self.weighted_confidence(lynch_result, buffett_result, config)
         elif mode == 'veto_power':
             return self.veto_power(lynch_result, buffett_result, config)
+        elif mode == 'single_analyst':
+            # In single analyst mode, we just pass through the active analyst's score
+            # The caller handles knowing WHICH analyst logic to pass as 'lynch_result'
+            # (or we could make this more explicit, but for now we treat lynch_result as 'the analyst')
+            return self.single_analyst(lynch_result, config)
         else:
             raise ValueError(f"Unknown consensus mode: {mode}")
 
@@ -159,4 +164,29 @@ class ConsensusEngine:
             reasoning=f"No veto: Lynch {lynch_score:.0f}, Buffett {buffett_score:.0f}, avg {avg_score:.1f}",
             lynch_contributed=True,
             buffett_contributed=True
+        )
+
+    def single_analyst(
+        self,
+        analyst_result: Dict[str, Any],
+        config: Dict[str, Any]
+    ) -> ConsensusResult:
+        """Single analyst evaluation."""
+        min_score = config.get('min_score', 70)
+        score = analyst_result.get('score', 0)
+        
+        # Simple threshold check
+        if score >= min_score:
+            verdict = 'BUY'
+        elif score >= (min_score - 10): # Slight buffer for WATCH
+            verdict = 'WATCH'
+        else:
+            verdict = 'AVOID'
+            
+        return ConsensusResult(
+            verdict=verdict,
+            score=score,
+            reasoning=f"Single Analyst Score: {score:.0f} (Threshold: {min_score})",
+            lynch_contributed=True, # We'll mark both true so downstream doesn't break, or we can make this more specific
+            buffett_contributed=False
         )

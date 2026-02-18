@@ -151,7 +151,8 @@ class DeliberationMixin:
         job_id: Optional[int] = None,
         held_symbols: set = None,
         holdings: Dict[str, Any] = None,
-        symbols_of_held_stocks_with_failing_scores: set = None
+        symbols_of_held_stocks_with_failing_scores: set = None,
+        analysts: List[str] = None
     ) -> tuple[List[Dict[str, Any]], List, List[Dict[str, Any]]]:
         """Apply consensus logic to determine final decisions (Parallelized).
 
@@ -185,8 +186,12 @@ class DeliberationMixin:
         held_symbols = held_symbols or set()
         holdings = holdings or {}
         conditions = conditions or {}
+        strategy = strategy or {}
         symbols_of_held_stocks_with_failing_scores = symbols_of_held_stocks_with_failing_scores or set()
         thesis_verdicts_required = conditions.get('thesis_verdict_required', [])
+
+        if analysts is None:
+            analysts = ['lynch', 'buffett']
         
         total = len(enriched)
         
@@ -195,45 +200,171 @@ class DeliberationMixin:
             symbol = stock['symbol']
             
             # 1. Preliminary Score-based Consensus Check
-            consensus_res = self.consensus_engine.evaluate(
-                lynch_result={'score': stock.get('lynch_score', 0), 'status': stock.get('lynch_status', 'N/A')},
-                buffett_result={'score': stock.get('buffett_score', 0), 'status': stock.get('buffett_status', 'N/A')},
-                mode=strategy.get('consensus_mode', 'both_agree'),
-                config={
-                    'threshold': strategy.get('consensus_threshold', 70),
-                    'veto_score_threshold': conditions.get('veto_score_threshold', 30),
-                    'min_score': strategy.get('consensus_threshold', 70) # For both_agree
+            if len(analysts) == 1:
+                # Single analyst path - no debate needed
+                analyst = analysts[0]
+                # Prepare analyst result for consensus engine
+                # e.g. lynch_result or buffett_result
+                analyst_score_key = f"{analyst}_score"
+                analyst_status_key = f"{analyst}_status"
+                
+                analyst_result = {
+                    'score': stock.get(analyst_score_key, 0),
+                    'status': stock.get(analyst_status_key, 'N/A')
                 }
-            )
-            stock['consensus_score'] = consensus_res.score
-            stock['consensus_verdict'] = consensus_res.verdict
-            stock['consensus_reasoning'] = consensus_res.reasoning
+                
+                # Single analyst evaluation
+                consensus_res = self.consensus_engine.evaluate(
+                    lynch_result=analyst_result, # repurposed as generic input
+                    buffett_result={}, 
+                    mode='single_analyst',
+                    config={
+                        'min_score': strategy.get('consensus_threshold', 70)
+                    }
+                )
+                
+                # Assign to stock
+                stock['consensus_score'] = consensus_res.score
+                stock['consensus_verdict'] = consensus_res.verdict
+                stock['consensus_reasoning'] = consensus_res.reasoning
+                
+                # For single analyst, thesis verdict = final verdict = analyst verdict (if present)
+                # BUT, we might not have a thesis if it failed generation.
+                thesis_key = f"{analyst}_thesis"
+                thesis_verdict_key = f"{analyst}_thesis_verdict"
+                
+                thesis_text = stock.get(thesis_key)
+                thesis_verdict = stock.get(thesis_verdict_key, 'UNKNOWN')
+                
+                stock['deliberation'] = thesis_text # The "deliberation" is just the thesis
+                stock['final_verdict'] = thesis_verdict
+                
+            else:
+                # Multi-analyst path - Debate needed
+                consensus_res = self.consensus_engine.evaluate(
+                    lynch_result={'score': stock.get('lynch_score', 0), 'status': stock.get('lynch_status', 'N/A')},
+                    buffett_result={'score': stock.get('buffett_score', 0), 'status': stock.get('buffett_status', 'N/A')},
+                    mode=strategy.get('consensus_mode', 'both_agree'),
+                    config={
+                        'threshold': strategy.get('consensus_threshold', 70),
+                        'veto_score_threshold': conditions.get('veto_score_threshold', 30),
+                        'min_score': strategy.get('consensus_threshold', 70) # For both_agree
+                    }
+                )
+                stock['consensus_score'] = consensus_res.score
+                stock['consensus_verdict'] = consensus_res.verdict
+                stock['consensus_reasoning'] = consensus_res.reasoning
             
-            # If explicit VETO, we can stop here
-            if consensus_res.verdict == 'VETO':
-                self.db.create_strategy_decision(
+                # If explicit VETO, we can stop here
+                if consensus_res.verdict == 'VETO':
+                    self.db.create_strategy_decision(
+                        run_id=run_id,
+                        symbol=symbol,
+                        lynch_score=stock.get('lynch_score'),
+                        lynch_status=stock.get('lynch_status'),
+                        buffett_score=stock.get('buffett_score'),
+                        buffett_status=stock.get('buffett_status'),
+                        consensus_score=consensus_res.score,
+                        consensus_verdict='VETO',
+                        final_decision='SKIP',
+                        decision_reasoning=f"Automatic VETO: {consensus_res.reasoning}"
+                    )
+                    
+                    if symbol in held_symbols:
+                        quantity = holdings.get(symbol, 0)
+                        return {'_exit_signal': ExitSignal(
+                            symbol=symbol,
+                            quantity=quantity,
+                            reason=f"Consensus VETO: {consensus_res.reasoning}",
+                        )}
+                    return None
+
+            # 2. Proceed to AI Deliberation (or Finalize Single Analyst)
+            
+            # Single Analyst Finalization
+            if len(analysts) == 1:
+                # Check requirements
+                if thesis_verdicts_required:
+                    final_verdict = stock.get('final_verdict')
+                    if final_verdict not in thesis_verdicts_required:
+                         # Record as SKIP
+                        self.db.create_strategy_decision(
+                            run_id=run_id,
+                            symbol=symbol,
+                            lynch_score=stock.get('lynch_score'),
+                            lynch_status=stock.get('lynch_status'),
+                            buffett_score=stock.get('buffett_score'),
+                            buffett_status=stock.get('buffett_status'),
+                            consensus_score=stock.get('consensus_score'),
+                            consensus_verdict=stock.get('final_verdict'),  
+                            thesis_verdict=stock.get('final_verdict'),
+                            thesis_summary=stock.get('deliberation', '')[:500] if stock.get('deliberation') else None,
+                            thesis_full=stock.get('deliberation'),
+                            final_decision='SKIP',
+                            decision_reasoning=f"Veridict '{final_verdict}' not in required: {thesis_verdicts_required}"
+                        )
+                        return None
+
+                # Decision Logic
+                final_decision = 'SKIP'
+                if stock.get('final_verdict') == 'BUY':
+                    final_decision = 'BUY'
+                
+                # Record decision
+                decision_id = self.db.create_strategy_decision(
                     run_id=run_id,
                     symbol=symbol,
                     lynch_score=stock.get('lynch_score'),
                     lynch_status=stock.get('lynch_status'),
                     buffett_score=stock.get('buffett_score'),
                     buffett_status=stock.get('buffett_status'),
-                    consensus_score=consensus_res.score,
-                    consensus_verdict='VETO',
-                    final_decision='SKIP',
-                    decision_reasoning=f"Automatic VETO: {consensus_res.reasoning}"
+                    consensus_score=stock.get('consensus_score'),
+                    consensus_verdict=stock.get('final_verdict'),
+                    thesis_verdict=stock.get('final_verdict'),
+                    thesis_summary=stock.get('deliberation', '')[:500] if stock.get('deliberation') else None,
+                    thesis_full=stock.get('deliberation'),
+                    final_decision=final_decision,
+                    decision_reasoning=f"Single Analyst Result: {stock.get('final_verdict')}"
                 )
                 
-                if symbol in held_symbols:
+                if final_decision == 'BUY':
+                    if symbol in symbols_of_held_stocks_with_failing_scores:
+                        with held_verdicts_lock:
+                            held_verdicts.append({
+                                'symbol': symbol,
+                                'lynch_score': stock.get('lynch_score'),
+                                'buffett_score': stock.get('buffett_score'),
+                                'consensus_score': stock.get('consensus_score'),
+                                'final_verdict': 'BUY',
+                            })
+                        return None
+                    stock['id'] = decision_id
+                    stock['decision_id'] = decision_id
+                    return stock
+
+                # Exit Logic for Single Analyst
+                if stock.get('final_verdict') == 'AVOID' and symbol in held_symbols:
                     quantity = holdings.get(symbol, 0)
                     return {'_exit_signal': ExitSignal(
                         symbol=symbol,
                         quantity=quantity,
-                        reason=f"Consensus VETO: {consensus_res.reasoning}",
+                        reason=f"Analyst AVOID: {stock.get('deliberation', '')[:200]}",
                     )}
+                    
+                # Watch Logic for Single Analyst
+                if symbol in held_symbols:
+                    with held_verdicts_lock:
+                        held_verdicts.append({
+                            'symbol': symbol,
+                            'lynch_score': stock.get('lynch_score'),
+                            'buffett_score': stock.get('buffett_score'),
+                            'consensus_score': stock.get('consensus_score'),
+                            'final_verdict': stock.get('final_verdict', 'WATCH'),
+                        })
                 return None
 
-            # 2. Proceed to AI Deliberation if theses are available
+
+            # Multi-Analyst Deliberation (Existing Logic)
             # If we have both theses, conduct deliberation
             lynch_thesis = stock.get('lynch_thesis')
             buffett_thesis = stock.get('buffett_thesis')

@@ -12,6 +12,10 @@ from strategy_executor.universe_filter import UniverseFilter
 from strategy_executor.consensus import ConsensusEngine
 from strategy_executor.position_sizing import PositionSizer
 from strategy_executor.exit_conditions import ExitConditionChecker
+from strategy_executor.scoring import ScoringMixin
+from strategy_executor.thesis import ThesisMixin
+from strategy_executor.deliberation import DeliberationMixin
+from strategy_executor.trading import TradingMixin
 from benchmark_tracker import BenchmarkTracker
 from strategy_executor.utils import log_event, get_spy_price
 from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
@@ -20,7 +24,7 @@ from characters.buffett import BUFFETT
 logger = logging.getLogger(__name__)
 
 
-class StrategyExecutorCore:
+class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, TradingMixin):
     """Main orchestrator for autonomous strategy execution."""
 
     def __init__(self, db, analyst=None, lynch_criteria=None):
@@ -98,6 +102,11 @@ class StrategyExecutorCore:
             log_event(self.db, run_id, "Starting universe filtering phase")
             conditions = strategy.get('conditions', {})
             filtered_candidates = self.universe_filter.filter_universe(conditions)
+            
+            # Determine active analysts
+            # We store this in conditions for now to avoid schema migration
+            analysts = conditions.get('analysts', ['lynch', 'buffett'])
+            print(f"  Active Analysts: {', '.join(analysts)}")
 
             # Apply limit if requested
             if limit and limit > 0:
@@ -128,7 +137,10 @@ class StrategyExecutorCore:
             new_stocks_with_passing_scores = []
             if new_candidates:
                 print(f"  Scoring {len(new_candidates)} new position candidates...")
-                new_stocks_with_passing_scores, _ = self._score_candidates(new_candidates, conditions, run_id, is_addition=False)
+                new_stocks_with_passing_scores, _ = self._score_candidates(
+                    new_candidates, conditions, run_id, 
+                    is_addition=False, analysts=analysts
+                )
                 print(f"  ✓ {len(new_stocks_with_passing_scores)} new positions passed requirements\n")
 
             # Score additions with higher thresholds; capture held stocks that declined
@@ -136,7 +148,10 @@ class StrategyExecutorCore:
             held_stocks_with_failing_scores = []
             if held_candidates:
                 print(f"  Scoring {len(held_candidates)} position addition candidates (higher thresholds)...")
-                held_stocks_with_passing_scores, held_stocks_with_failing_scores = self._score_candidates(held_candidates, conditions, run_id, is_addition=True)
+                held_stocks_with_passing_scores, held_stocks_with_failing_scores = self._score_candidates(
+                    held_candidates, conditions, run_id, 
+                    is_addition=True, analysts=analysts
+                )
                 print(f"  ✓ {len(held_stocks_with_passing_scores)} additions passed requirements\n")
                 if held_stocks_with_failing_scores:
                     print(f"  {len(held_stocks_with_failing_scores)} held stocks with failing scores routing to deliberation for evaluation")
@@ -153,7 +168,9 @@ class StrategyExecutorCore:
             print("=" * 60)
             all_for_deliberation = new_and_held_stocks_with_passing_scores + held_stocks_with_failing_scores
             if conditions.get('require_thesis', False):
-                enriched = self._generate_theses(all_for_deliberation, run_id, job_id=job_id)
+                enriched = self._generate_theses(
+                    all_for_deliberation, run_id, job_id=job_id, analysts=analysts
+                )
                 self.db.update_strategy_run(run_id, theses_generated=len(enriched))
                 print(f"✓ Generated {len(enriched)} theses\\n")
             else:
@@ -168,7 +185,8 @@ class StrategyExecutorCore:
             buy_decisions, deliberation_exit_decisions, held_verdicts = self._deliberate(
                 enriched, run_id, conditions, strategy=strategy, job_id=job_id,
                 held_symbols=current_portfolio_holdings_symbols, holdings=current_portfolio_holdings,
-                symbols_of_held_stocks_with_failing_scores=symbols_of_held_stocks_with_failing_scores
+                symbols_of_held_stocks_with_failing_scores=symbols_of_held_stocks_with_failing_scores,
+                analysts=analysts
             )
             print(f"✓ {len(buy_decisions)} BUY decisions made in deliberation")
             print(f"  {len(deliberation_exit_decisions)} EXIT decisions made in deliberation")

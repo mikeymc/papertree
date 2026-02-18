@@ -17,7 +17,8 @@ class ThesisMixin:
         self,
         scored: List[Dict[str, Any]],
         run_id: int,
-        job_id: Optional[int] = None
+        job_id: Optional[int] = None,
+        analysts: List[str] = None
     ) -> List[Dict[str, Any]]:
         """Generate investment theses for scored stocks (Parallelized).
 
@@ -36,6 +37,9 @@ class ThesisMixin:
         log_event(self.db, run_id, f"Generating theses for {total} stocks")
         enriched = []
 
+        if analysts is None:
+            analysts = ['lynch', 'buffett']
+            
         if not scored:
             return []
             
@@ -55,46 +59,56 @@ class ThesisMixin:
                 history = self.db.get_earnings_history(symbol)
 
                 # Generate Lynch thesis (Force System User 0)
-                lynch_thesis_text = ""
-                for chunk in self.analyst.get_or_generate_analysis(
-                    user_id=0, # Force System User for shared cache
-                    symbol=symbol,
-                    stock_data=stock_metrics,
-                    history=history or [],
-                    use_cache=True,
-                    character_id='lynch'
-                ):
-                    lynch_thesis_text += chunk
+                if 'lynch' in analysts:
+                    lynch_thesis_text = ""
+                    for chunk in self.analyst.get_or_generate_analysis(
+                        user_id=0, # Force System User for shared cache
+                        symbol=symbol,
+                        stock_data=stock_metrics,
+                        history=history or [],
+                        use_cache=True,
+                        character_id='lynch'
+                    ):
+                        lynch_thesis_text += chunk
 
-                lynch_verdict = self._extract_thesis_verdict(lynch_thesis_text)
-                stock['lynch_thesis'] = lynch_thesis_text
-                stock['lynch_thesis_verdict'] = lynch_verdict
+                    lynch_verdict = self._extract_thesis_verdict(lynch_thesis_text)
+                    stock['lynch_thesis'] = lynch_thesis_text
+                    stock['lynch_thesis_verdict'] = lynch_verdict
 
-                # Fetch timestamp for cache invalidation (Force System User 0)
-                lynch_meta = self.db.get_lynch_analysis(0, symbol, character_id='lynch')
-                stock['lynch_thesis_timestamp'] = lynch_meta.get('generated_at') if lynch_meta else None
+                    # Fetch timestamp for cache invalidation (Force System User 0)
+                    lynch_meta = self.db.get_lynch_analysis(0, symbol, character_id='lynch')
+                    stock['lynch_thesis_timestamp'] = lynch_meta.get('generated_at') if lynch_meta else None
+                else:
+                    stock['lynch_thesis_verdict'] = None
+                    stock['lynch_thesis'] = None
 
                 # Generate Buffett thesis (Force System User 0)
-                buffett_thesis_text = ""
-                for chunk in self.analyst.get_or_generate_analysis(
-                    user_id=0, # Force System User for shared cache
-                    symbol=symbol,
-                    stock_data=stock_metrics,
-                    history=history or [],
-                    use_cache=True,
-                    character_id='buffett'
-                ):
-                    buffett_thesis_text += chunk
+                if 'buffett' in analysts:
+                    buffett_thesis_text = ""
+                    for chunk in self.analyst.get_or_generate_analysis(
+                        user_id=0, # Force System User for shared cache
+                        symbol=symbol,
+                        stock_data=stock_metrics,
+                        history=history or [],
+                        use_cache=True,
+                        character_id='buffett'
+                    ):
+                        buffett_thesis_text += chunk
 
-                buffett_verdict = self._extract_thesis_verdict(buffett_thesis_text)
-                stock['buffett_thesis'] = buffett_thesis_text
-                stock['buffett_thesis_verdict'] = buffett_verdict
+                    buffett_verdict = self._extract_thesis_verdict(buffett_thesis_text)
+                    stock['buffett_thesis'] = buffett_thesis_text
+                    stock['buffett_thesis_verdict'] = buffett_verdict
 
-                # Fetch timestamp for cache invalidation (Force System User 0)
-                buffett_meta = self.db.get_lynch_analysis(0, symbol, character_id='buffett')
-                stock['buffett_thesis_timestamp'] = buffett_meta.get('generated_at') if buffett_meta else None
+                    # Fetch timestamp for cache invalidation (Force System User 0)
+                    buffett_meta = self.db.get_lynch_analysis(0, symbol, character_id='buffett')
+                    stock['buffett_thesis_timestamp'] = buffett_meta.get('generated_at') if buffett_meta else None
+                else:
+                    stock['buffett_thesis_verdict'] = None
+                    stock['buffett_thesis'] = None
 
-                logger.debug(f"{symbol}: Lynch={lynch_verdict}, Buffett={buffett_verdict}")
+                l_verdict = stock.get('lynch_thesis_verdict', 'N/A')
+                b_verdict = stock.get('buffett_thesis_verdict', 'N/A')
+                logger.debug(f"{symbol}: Lynch={l_verdict}, Buffett={b_verdict}")
                 return stock
 
             except Exception as e:

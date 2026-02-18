@@ -17,7 +17,8 @@ class ScoringMixin:
         candidates: List[str],
         conditions: Dict[str, Any],
         run_id: int,
-        is_addition: bool = False
+        is_addition: bool = False,
+        analysts: List[str] = None
     ) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Score candidates with Lynch and Buffett scoring.
 
@@ -36,11 +37,18 @@ class ScoringMixin:
         if not candidates:
             return [], []
 
+        if analysts is None:
+            analysts = ['lynch', 'buffett']
+
         # 1. Determine thresholds
-        lynch_req, buffett_req = self._get_scoring_thresholds(conditions, is_addition)
+        # This now returns a dict {analyst: threshold}
+        scoring_thresholds = self._get_scoring_thresholds(conditions, is_addition, analysts)
 
         position_type = "addition" if is_addition else "new position"
-        log_event(self.db, run_id, f"Scoring {len(candidates)} {position_type} candidates (Lynch: {lynch_req}, Buffett: {buffett_req})")
+        
+        analyst_str = ", ".join(analysts)
+        threshold_str = ", ".join([f"{a.capitalize()}: {scoring_thresholds.get(a)}" for a in analysts])
+        log_event(self.db, run_id, f"Scoring {len(candidates)} {position_type} candidates with {analyst_str} ({threshold_str})")
 
         try:
             # 2. Load Data
@@ -49,10 +57,10 @@ class ScoringMixin:
                 return [], []
 
             # 3. Calculate Scores
-            df_scores = self._calculate_batch_scores(df)
+            df_scores = self._calculate_batch_scores(df, analysts)
 
             # 4. Evaluate Candidates
-            scored, declined = self._evaluate_candidates(df_scores, lynch_req, buffett_req, is_addition, run_id)
+            scored, declined = self._evaluate_candidates(df_scores, scoring_thresholds, is_addition, run_id, analysts)
 
             log_event(self.db, run_id, f"Scoring complete: {len(scored)}/{len(candidates)} {position_type}s passed requirements")
             return scored, declined
@@ -64,42 +72,41 @@ class ScoringMixin:
             log_event(self.db, run_id, f"ERROR: Vectorized scoring failed: {e}")
             return [], []
 
-    def _get_scoring_thresholds(self, conditions: Dict[str, Any], is_addition: bool) -> tuple[int, int]:
-        """Determine Lynch and Buffett score thresholds based on conditions."""
+    def _get_scoring_thresholds(self, conditions: Dict[str, Any], is_addition: bool, analysts: List[str]) -> Dict[str, int]:
+        """Determine score thresholds for active analysts."""
         from scoring.core import SCORE_THRESHOLDS
 
         scoring_reqs = conditions.get('scoring_requirements', [])
         default_min = SCORE_THRESHOLDS.get('BUY', 60)
-        lynch_req = default_min
-        buffett_req = default_min
+        
+        thresholds = {a: default_min for a in analysts}
 
         if is_addition:
             addition_reqs = conditions.get('addition_scoring_requirements', [])
             if addition_reqs:
                 for req in addition_reqs:
-                    if req.get('character') == 'lynch':
-                        lynch_req = int(req.get('min_score', default_min))
-                    elif req.get('character') == 'buffett':
-                        buffett_req = int(req.get('min_score', default_min))
+                    char = req.get('character')
+                    if char in thresholds:
+                         thresholds[char] = int(req.get('min_score', default_min))
             else:
                 # Default: +10 higher than base requirements
+                # First get base reqs
+                base_thresholds = {a: default_min for a in analysts}
                 for req in scoring_reqs:
-                    if req.get('character') == 'lynch':
-                        lynch_req = int(req.get('min_score', default_min)) + 10
-                    elif req.get('character') == 'buffett':
-                        buffett_req = int(req.get('min_score', default_min)) + 10
-
-                if not scoring_reqs:
-                    lynch_req = default_min + 10
-                    buffett_req = default_min + 10
+                    char = req.get('character')
+                    if char in base_thresholds:
+                         base_thresholds[char] = int(req.get('min_score', default_min))
+                
+                # Apply +10
+                for a in analysts:
+                    thresholds[a] = base_thresholds[a] + 10
         else:
             for req in scoring_reqs:
-                if req.get('character') == 'lynch':
-                    lynch_req = int(req.get('min_score', default_min))
-                elif req.get('character') == 'buffett':
-                    buffett_req = int(req.get('min_score', default_min))
+                char = req.get('character')
+                if char in thresholds:
+                    thresholds[char] = int(req.get('min_score', default_min))
 
-        return int(lynch_req), int(buffett_req)
+        return thresholds
 
     def _load_candidate_data(self, candidates: List[str], run_id: int):
         """Load vectorized stock data for candidates."""
@@ -125,57 +132,66 @@ class ScoringMixin:
         print(f"  Found data for {len(df)} stocks")
         return df
 
-    def _calculate_batch_scores(self, df):
-        """Calculate Lynch and Buffett scores for the dataframe."""
+    def _calculate_batch_scores(self, df, analysts: List[str]):
+        """Calculate scores for the dataframe for specified analysts."""
         from scoring.vectors import DEFAULT_ALGORITHM_CONFIG
         from characters.buffett import BUFFETT
+        import pandas as pd
 
-        # Score with Lynch
-        print(f"  Scoring with Lynch criteria...")
-        df_lynch = self.lynch_criteria.evaluate_batch(df, DEFAULT_ALGORITHM_CONFIG)
+        dfs_to_merge = []
+        
+        # Always start with symbol column
+        df_base = df[['symbol']].copy()
+        dfs_to_merge.append(df_base)
 
-        # Score with Buffett
-        print(f"  Scoring with Buffett criteria...")
-        buffett_config = {}
-        for sw in BUFFETT.scoring_weights:
-            if sw.metric == 'roe':
-                buffett_config['weight_roe'] = sw.weight
-                buffett_config['roe_excellent'] = sw.threshold.excellent
-                buffett_config['roe_good'] = sw.threshold.good
-                buffett_config['roe_fair'] = sw.threshold.fair
-            elif sw.metric == 'debt_to_earnings':
-                buffett_config['weight_debt_to_earnings'] = sw.weight
-                buffett_config['debt_to_earnings_excellent'] = sw.threshold.excellent
-                buffett_config['debt_to_earnings_good'] = sw.threshold.good
-                buffett_config['debt_to_earnings_fair'] = sw.threshold.fair
-            elif sw.metric == 'gross_margin':
-                buffett_config['weight_gross_margin'] = sw.weight
-                buffett_config['gross_margin_excellent'] = sw.threshold.excellent
-                buffett_config['gross_margin_good'] = sw.threshold.good
-                buffett_config['gross_margin_fair'] = sw.threshold.fair
-            elif sw.metric == 'earnings_consistency':
-                buffett_config['weight_consistency'] = sw.weight
-                buffett_config['consistency_null_default'] = 0.0  # Buffett is harsher on missing data
+        if 'lynch' in analysts:
+            # Score with Lynch
+            print(f"  Scoring with Lynch criteria...")
+            df_lynch = self.lynch_criteria.evaluate_batch(df, DEFAULT_ALGORITHM_CONFIG)
+            df_lynch_scores = df_lynch[['symbol', 'overall_score', 'overall_status']].rename(
+                columns={'overall_score': 'lynch_score', 'overall_status': 'lynch_status'}
+            )
+            dfs_to_merge.append(df_lynch_scores)
 
-        df_buffett = self.lynch_criteria.evaluate_batch(df, buffett_config)
+        if 'buffett' in analysts:
+            # Score with Buffett
+            print(f"  Scoring with Buffett criteria...")
+            buffett_config = {}
+            for sw in BUFFETT.scoring_weights:
+                if sw.metric == 'roe':
+                    buffett_config['weight_roe'] = sw.weight
+                    buffett_config['roe_excellent'] = sw.threshold.excellent
+                    buffett_config['roe_good'] = sw.threshold.good
+                    buffett_config['roe_fair'] = sw.threshold.fair
+                elif sw.metric == 'debt_to_earnings':
+                    buffett_config['weight_debt_to_earnings'] = sw.weight
+                    buffett_config['debt_to_earnings_excellent'] = sw.threshold.excellent
+                    buffett_config['debt_to_earnings_good'] = sw.threshold.good
+                    buffett_config['debt_to_earnings_fair'] = sw.threshold.fair
+                elif sw.metric == 'gross_margin':
+                    buffett_config['weight_gross_margin'] = sw.weight
+                    buffett_config['gross_margin_excellent'] = sw.threshold.excellent
+                    buffett_config['gross_margin_good'] = sw.threshold.good
+                    buffett_config['gross_margin_fair'] = sw.threshold.fair
+                elif sw.metric == 'earnings_consistency':
+                    buffett_config['weight_consistency'] = sw.weight
+                    buffett_config['consistency_null_default'] = 0.0  # Buffett is harsher on missing data
 
-        # Merge scores
-        df_merged = df_lynch[['symbol', 'overall_score', 'overall_status']].rename(
-            columns={'overall_score': 'lynch_score', 'overall_status': 'lynch_status'}
-        )
-        df_buffett_scores = df_buffett[['symbol', 'overall_score', 'overall_status']].rename(
-            columns={'overall_score': 'buffett_score', 'overall_status': 'buffett_status'}
-        )
+            df_buffett = self.lynch_criteria.evaluate_batch(df, buffett_config)
+            df_buffett_scores = df_buffett[['symbol', 'overall_score', 'overall_status']].rename(
+                columns={'overall_score': 'buffett_score', 'overall_status': 'buffett_status'}
+            )
+            dfs_to_merge.append(df_buffett_scores)
 
-        return df_merged.merge(df_buffett_scores, on='symbol', how='inner')
+        # Merge all score dataframes
+        df_merged = dfs_to_merge[0]
+        for i in range(1, len(dfs_to_merge)):
+            df_merged = df_merged.merge(dfs_to_merge[i], on='symbol', how='inner')
+            
+        return df_merged
 
-    def _evaluate_candidates(self, df_scores, lynch_req, buffett_req, is_addition, run_id):
-        """Evaluate scored candidates against requirements.
-
-        Returns:
-            Tuple of (passing, declined). declined is populated only when is_addition=True
-            and contains held stocks that have score data but failed addition thresholds.
-        """
+    def _evaluate_candidates(self, df_scores, scoring_thresholds, is_addition, run_id, analysts):
+        """Evaluate scored candidates against requirements."""
         scored = []
         declined = []
         df_scores['position_type'] = 'addition' if is_addition else 'new'
@@ -185,40 +201,54 @@ class ScoringMixin:
             symbol = row['symbol']
             stock_data = {
                 'symbol': symbol,
-                'lynch_score': row['lynch_score'],
-                'lynch_status': row['lynch_status'],
-                'buffett_score': row['buffett_score'],
-                'buffett_status': row['buffett_status'],
                 'position_type': row['position_type']
             }
+            
+            # Populate scores
+            log_parts = []
+            if 'lynch' in analysts:
+                stock_data['lynch_score'] = row['lynch_score']
+                stock_data['lynch_status'] = row['lynch_status']
+                log_parts.append(f"Lynch {row['lynch_score']:.0f}")
+            else:
+                 stock_data['lynch_score'] = 0 # Default/Null
+                 stock_data['lynch_status'] = 'N/A'
 
-            print(f"  {symbol} ({type_label}): Lynch {stock_data['lynch_score']:.0f}, Buffett {stock_data['buffett_score']:.0f}")
+            if 'buffett' in analysts:
+                stock_data['buffett_score'] = row['buffett_score']
+                stock_data['buffett_status'] = row['buffett_status']
+                log_parts.append(f"Buffett {row['buffett_score']:.0f}")
+            else:
+                 stock_data['buffett_score'] = 0
+                 stock_data['buffett_status'] = 'N/A'
+
+            score_str = ", ".join(log_parts)
+            print(f"  {symbol} ({type_label}): {score_str}")
 
             # Check if passes scoring requirements (OR Logic)
-            lynch_pass = stock_data['lynch_score'] >= lynch_req
-            buffett_pass = stock_data['buffett_score'] >= buffett_req
-            passes = lynch_pass or buffett_pass
+            passes = False
+            pass_reasons = []
+            fail_reasons = []
+
+            for analyst in analysts:
+                score_key = f"{analyst}_score"
+                score = row.get(score_key, 0)
+                threshold = scoring_thresholds.get(analyst, 60)
+                
+                if score >= threshold:
+                    passes = True
+                    pass_reasons.append(f"{analyst.capitalize()} {score:.0f} >= {threshold}")
+                else:
+                    fail_reasons.append(f"{analyst.capitalize()} {score:.0f} < {threshold}")
 
             if passes:
                 scored.append(stock_data)
-                reason_parts = []
-                if lynch_pass:
-                    reason_parts.append(f"Lynch {stock_data['lynch_score']:.0f} >= {lynch_req}")
-                if buffett_pass:
-                    reason_parts.append(f"Buffett {stock_data['buffett_score']:.0f} >= {buffett_req}")
-
-                reason_str = ", ".join(reason_parts)
+                reason_str = ", ".join(pass_reasons)
                 threshold_note = " (higher bar for additions)" if is_addition else ""
 
                 print(f"    ✓ PASSED requirements ({reason_str}){threshold_note}")
                 logger.debug(f"{symbol}: PASSED as {type_label} ({reason_str})")
             else:
-                fail_reasons = []
-                if not lynch_pass:
-                    fail_reasons.append(f"Lynch {stock_data['lynch_score']:.0f} < {lynch_req}")
-                if not buffett_pass:
-                    fail_reasons.append(f"Buffett {stock_data['buffett_score']:.0f} < {buffett_req}")
-
                 fail_str = ", ".join(fail_reasons)
                 threshold_note = " (higher bar for additions)" if is_addition else ""
                 print(f"    ✗ FAILED requirements ({fail_str}){threshold_note}")

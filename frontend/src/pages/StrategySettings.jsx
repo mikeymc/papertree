@@ -29,6 +29,7 @@ const StrategySettings = () => {
     const defaults = {
         name: '',
         description: '',
+        analysts: ['lynch', 'buffett'],
         conditions: {
             filters: [],
             require_thesis: true,
@@ -83,6 +84,24 @@ const StrategySettings = () => {
             position_sizing: { ...prev.position_sizing, method: val }
         }));
     }, []);
+
+    const isAnalystActive = (id) => formData.analysts?.includes(id);
+
+    const toggleAnalyst = (id) => {
+        const current = formData.analysts || ['lynch', 'buffett'];
+        let updated;
+        if (current.includes(id)) {
+            updated = current.filter(a => a !== id);
+        } else {
+            updated = [...current, id];
+        }
+
+        // Ensure at least one is selected
+        if (updated.length === 0) return;
+
+        setFormData({ ...formData, analysts: updated });
+    };
+
     const [portfolios, setPortfolios] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -119,6 +138,7 @@ const StrategySettings = () => {
                     setFormData(prev => ({
                         ...defaults,
                         ...strategy,
+                        analysts: strategy.conditions?.analysts || ['lynch', 'buffett'],
                         conditions: { ...defaults.conditions, ...strategy.conditions },
                         exit_conditions: { ...defaults.exit_conditions, ...strategy.exit_conditions },
                         position_sizing: { ...defaults.position_sizing, ...strategy.position_sizing }
@@ -288,6 +308,43 @@ const StrategySettings = () => {
                                 {mode === 'edit' && <p className="text-[10px] text-muted-foreground italic">Balance cannot be changed after creation</p>}
                             </div>
                         </div>
+
+                        {/* Analyst Selection */}
+                        <div className="space-y-2">
+                            <Label>Select Analysts</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div
+                                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${isAnalystActive('lynch') ? 'bg-primary/5 border-primary' : 'bg-background border-input hover:border-primary/50'}`}
+                                    onClick={() => toggleAnalyst('lynch')}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center ${isAnalystActive('lynch') ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'}`}>
+                                            {isAnalystActive('lynch') && <Check size={14} />}
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-foreground">Peter Lynch</div>
+                                            <div className="text-xs text-muted-foreground">GARP & Growth</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div
+                                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${isAnalystActive('buffett') ? 'bg-primary/5 border-primary' : 'bg-background border-input hover:border-primary/50'}`}
+                                    onClick={() => toggleAnalyst('buffett')}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center ${isAnalystActive('buffett') ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'}`}>
+                                            {isAnalystActive('buffett') && <Check size={14} />}
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-foreground">Warren Buffett</div>
+                                            <div className="text-xs text-muted-foreground">Value & Quality</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
                             <Textarea
@@ -436,52 +493,56 @@ const StrategySettings = () => {
                                     <Activity className="h-4 w-4" /> Initial Evaluation
                                 </Label>
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between">
-                                            <Label>Lynch Min Score</Label>
-                                            <Badge variant="secondary">{formData.conditions.scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}</Badge>
+                                    {isAnalystActive('lynch') && (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <Label>Lynch Min Score</Label>
+                                                <Badge variant="secondary">{formData.conditions.scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}</Badge>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="100"
+                                                step="5"
+                                                value={formData.conditions.scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}
+                                                onChange={e => {
+                                                    const val = parseInt(e.target.value);
+                                                    setFormData(prev => {
+                                                        const newReqs = [...prev.conditions.scoring_requirements];
+                                                        const idx = newReqs.findIndex(r => r.character === 'lynch');
+                                                        newReqs[idx] = { ...newReqs[idx], min_score: val };
+                                                        return { ...prev, conditions: { ...prev.conditions, scoring_requirements: newReqs } };
+                                                    });
+                                                }}
+                                                className="w-full accent-emerald-500"
+                                            />
                                         </div>
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            step="5"
-                                            value={formData.conditions.scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}
-                                            onChange={e => {
-                                                const val = parseInt(e.target.value);
-                                                setFormData(prev => {
-                                                    const newReqs = [...prev.conditions.scoring_requirements];
-                                                    const idx = newReqs.findIndex(r => r.character === 'lynch');
-                                                    newReqs[idx] = { ...newReqs[idx], min_score: val };
-                                                    return { ...prev, conditions: { ...prev.conditions, scoring_requirements: newReqs } };
-                                                });
-                                            }}
-                                            className="w-full accent-emerald-500"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between">
-                                            <Label>Buffett Min Score</Label>
-                                            <Badge variant="secondary">{formData.conditions.scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}</Badge>
+                                    )}
+                                    {isAnalystActive('buffett') && (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <Label>Buffett Min Score</Label>
+                                                <Badge variant="secondary">{formData.conditions.scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}</Badge>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="100"
+                                                step="5"
+                                                value={formData.conditions.scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}
+                                                onChange={e => {
+                                                    const val = parseInt(e.target.value);
+                                                    setFormData(prev => {
+                                                        const newReqs = [...prev.conditions.scoring_requirements];
+                                                        const idx = newReqs.findIndex(r => r.character === 'buffett');
+                                                        newReqs[idx] = { ...newReqs[idx], min_score: val };
+                                                        return { ...prev, conditions: { ...prev.conditions, scoring_requirements: newReqs } };
+                                                    });
+                                                }}
+                                                className="w-full accent-amber-500"
+                                            />
                                         </div>
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            step="5"
-                                            value={formData.conditions.scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}
-                                            onChange={e => {
-                                                const val = parseInt(e.target.value);
-                                                setFormData(prev => {
-                                                    const newReqs = [...prev.conditions.scoring_requirements];
-                                                    const idx = newReqs.findIndex(r => r.character === 'buffett');
-                                                    newReqs[idx] = { ...newReqs[idx], min_score: val };
-                                                    return { ...prev, conditions: { ...prev.conditions, scoring_requirements: newReqs } };
-                                                });
-                                            }}
-                                            className="w-full accent-amber-500"
-                                        />
-                                    </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -493,52 +554,56 @@ const StrategySettings = () => {
                                 </Label>
                                 <p className="text-[10px] text-muted-foreground italic">Higher scores required to buy more of an existing holding.</p>
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between">
-                                            <Label>Lynch Add Score</Label>
-                                            <Badge variant="outline">{formData.conditions.addition_scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}</Badge>
+                                    {isAnalystActive('lynch') && (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <Label>Lynch Add Score</Label>
+                                                <Badge variant="outline">{formData.conditions.addition_scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}</Badge>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="100"
+                                                step="5"
+                                                value={formData.conditions.addition_scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}
+                                                onChange={e => {
+                                                    const val = parseInt(e.target.value);
+                                                    setFormData(prev => {
+                                                        const newReqs = [...prev.conditions.addition_scoring_requirements];
+                                                        const idx = newReqs.findIndex(r => r.character === 'lynch');
+                                                        newReqs[idx] = { ...newReqs[idx], min_score: val };
+                                                        return { ...prev, conditions: { ...prev.conditions, addition_scoring_requirements: newReqs } };
+                                                    });
+                                                }}
+                                                className="w-full accent-emerald-500/70"
+                                            />
                                         </div>
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            step="5"
-                                            value={formData.conditions.addition_scoring_requirements.find(r => r.character === 'lynch')?.min_score || 0}
-                                            onChange={e => {
-                                                const val = parseInt(e.target.value);
-                                                setFormData(prev => {
-                                                    const newReqs = [...prev.conditions.addition_scoring_requirements];
-                                                    const idx = newReqs.findIndex(r => r.character === 'lynch');
-                                                    newReqs[idx] = { ...newReqs[idx], min_score: val };
-                                                    return { ...prev, conditions: { ...prev.conditions, addition_scoring_requirements: newReqs } };
-                                                });
-                                            }}
-                                            className="w-full accent-emerald-500/70"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between">
-                                            <Label>Buffett Add Score</Label>
-                                            <Badge variant="outline">{formData.conditions.addition_scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}</Badge>
+                                    )}
+                                    {isAnalystActive('buffett') && (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <Label>Buffett Add Score</Label>
+                                                <Badge variant="outline">{formData.conditions.addition_scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}</Badge>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="100"
+                                                step="5"
+                                                value={formData.conditions.addition_scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}
+                                                onChange={e => {
+                                                    const val = parseInt(e.target.value);
+                                                    setFormData(prev => {
+                                                        const newReqs = [...prev.conditions.addition_scoring_requirements];
+                                                        const idx = newReqs.findIndex(r => r.character === 'buffett');
+                                                        newReqs[idx] = { ...newReqs[idx], min_score: val };
+                                                        return { ...prev, conditions: { ...prev.conditions, addition_scoring_requirements: newReqs } };
+                                                    });
+                                                }}
+                                                className="w-full accent-amber-500/70"
+                                            />
                                         </div>
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            step="5"
-                                            value={formData.conditions.addition_scoring_requirements.find(r => r.character === 'buffett')?.min_score || 0}
-                                            onChange={e => {
-                                                const val = parseInt(e.target.value);
-                                                setFormData(prev => {
-                                                    const newReqs = [...prev.conditions.addition_scoring_requirements];
-                                                    const idx = newReqs.findIndex(r => r.character === 'buffett');
-                                                    newReqs[idx] = { ...newReqs[idx], min_score: val };
-                                                    return { ...prev, conditions: { ...prev.conditions, addition_scoring_requirements: newReqs } };
-                                                });
-                                            }}
-                                            className="w-full accent-amber-500/70"
-                                        />
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -555,61 +620,76 @@ const StrategySettings = () => {
                         <CardDescription>Manage how agents debate and reach consensus</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="space-y-1">
-                                <Label className="text-base">Enable AI Deliberation</Label>
-                                <p className="text-xs text-muted-foreground">Agents Lynch & Buffett will debate before every trade.</p>
+                        {(!formData.analysts || formData.analysts.length < 2) ? (
+                            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 flex items-center gap-3 text-blue-400">
+                                <Info size={20} />
+                                <div>
+                                    <h4 className="font-medium">Single Analyst Mode</h4>
+                                    <p className="text-sm opacity-90">
+                                        Since only one analyst is selected, no consensus or debate is needed.
+                                        The strategy will follow the single analyst's recommendations.
+                                    </p>
+                                </div>
                             </div>
-                            <Switch
-                                checked={formData.conditions.require_thesis}
-                                onCheckedChange={checked => setFormData(prev => ({
-                                    ...prev,
-                                    conditions: { ...prev.conditions, require_thesis: checked }
-                                }))}
-                            />
-                        </div>
-
-                        <Separator />
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                            <div className="space-y-2">
-                                <Label>Consensus Mode</Label>
-                                <Select
-                                    value={formData.consensus_mode}
-                                    onValueChange={handleConsensusChange}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Consensus Mode" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="weighted_confidence">Weighted Confidence</SelectItem>
-                                        <SelectItem value="both_agree">Strict Agreement (Both must buy)</SelectItem>
-                                        <SelectItem value="veto_power">Veto Power (Either can block)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {formData.consensus_mode === 'weighted_confidence' && (
-                                <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                        <Label>Consensus Threshold</Label>
-                                        <span className="text-sm font-mono text-primary font-bold">{formData.consensus_threshold}%</span>
+                        ) : (
+                            <>
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <Label className="text-base">Enable AI Deliberation</Label>
+                                        <p className="text-xs text-muted-foreground">Agents Lynch & Buffett will debate before every trade.</p>
                                     </div>
-                                    <input
-                                        type="range"
-                                        min="50"
-                                        max="100"
-                                        step="5"
-                                        value={formData.consensus_threshold}
-                                        onChange={e => {
-                                            const val = parseInt(e.target.value);
-                                            setFormData(prev => ({ ...prev, consensus_threshold: val }));
-                                        }}
-                                        className="w-full accent-primary"
+                                    <Switch
+                                        checked={formData.conditions.require_thesis}
+                                        onCheckedChange={checked => setFormData(prev => ({
+                                            ...prev,
+                                            conditions: { ...prev.conditions, require_thesis: checked }
+                                        }))}
                                     />
                                 </div>
-                            )}
-                        </div>
+
+                                <Separator />
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                    <div className="space-y-2">
+                                        <Label>Consensus Mode</Label>
+                                        <Select
+                                            value={formData.consensus_mode}
+                                            onValueChange={handleConsensusChange}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Consensus Mode" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="weighted_confidence">Weighted Confidence</SelectItem>
+                                                <SelectItem value="both_agree">Strict Agreement (Both must buy)</SelectItem>
+                                                <SelectItem value="veto_power">Veto Power (Either can block)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {formData.consensus_mode === 'weighted_confidence' && (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <Label>Consensus Threshold</Label>
+                                                <span className="text-sm font-mono text-primary font-bold">{formData.consensus_threshold}%</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="50"
+                                                max="100"
+                                                step="5"
+                                                value={formData.consensus_threshold}
+                                                onChange={e => {
+                                                    const val = parseInt(e.target.value);
+                                                    setFormData(prev => ({ ...prev, consensus_threshold: val }));
+                                                }}
+                                                className="w-full accent-primary"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -668,48 +748,52 @@ const StrategySettings = () => {
                             </h4>
                             <p className="text-xs text-muted-foreground">Automatically sell if re-evaluated scores fall below these thresholds.</p>
                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                        <Label>Lynch Score Below</Label>
-                                        <Badge variant="outline" className="font-mono">{formData.exit_conditions.score_degradation.lynch_below || 'Off'}</Badge>
+                                {isAnalystActive('lynch') && (
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                            <Label>Lynch Score Below</Label>
+                                            <Badge variant="outline" className="font-mono">{formData.exit_conditions.score_degradation.lynch_below || 'Off'}</Badge>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            step="5"
+                                            value={formData.exit_conditions.score_degradation.lynch_below || 0}
+                                            onChange={e => setFormData({
+                                                ...formData,
+                                                exit_conditions: {
+                                                    ...formData.exit_conditions,
+                                                    score_degradation: { ...formData.exit_conditions.score_degradation, lynch_below: parseInt(e.target.value) }
+                                                }
+                                            })}
+                                            className="w-full accent-destructive/70"
+                                        />
                                     </div>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        step="5"
-                                        value={formData.exit_conditions.score_degradation.lynch_below || 0}
-                                        onChange={e => setFormData({
-                                            ...formData,
-                                            exit_conditions: {
-                                                ...formData.exit_conditions,
-                                                score_degradation: { ...formData.exit_conditions.score_degradation, lynch_below: parseInt(e.target.value) }
-                                            }
-                                        })}
-                                        className="w-full accent-destructive/70"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                        <Label>Buffett Score Below</Label>
-                                        <Badge variant="outline" className="font-mono">{formData.exit_conditions.score_degradation.buffett_below || 'Off'}</Badge>
+                                )}
+                                {isAnalystActive('buffett') && (
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                            <Label>Buffett Score Below</Label>
+                                            <Badge variant="outline" className="font-mono">{formData.exit_conditions.score_degradation.buffett_below || 'Off'}</Badge>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            step="5"
+                                            value={formData.exit_conditions.score_degradation.buffett_below || 0}
+                                            onChange={e => setFormData({
+                                                ...formData,
+                                                exit_conditions: {
+                                                    ...formData.exit_conditions,
+                                                    score_degradation: { ...formData.exit_conditions.score_degradation, buffett_below: parseInt(e.target.value) }
+                                                }
+                                            })}
+                                            className="w-full accent-destructive/70"
+                                        />
                                     </div>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        step="5"
-                                        value={formData.exit_conditions.score_degradation.buffett_below || 0}
-                                        onChange={e => setFormData({
-                                            ...formData,
-                                            exit_conditions: {
-                                                ...formData.exit_conditions,
-                                                score_degradation: { ...formData.exit_conditions.score_degradation, buffett_below: parseInt(e.target.value) }
-                                            }
-                                        })}
-                                        className="w-full accent-destructive/70"
-                                    />
-                                </div>
+                                )}
                             </div>
                         </div>
                     </CardContent>
