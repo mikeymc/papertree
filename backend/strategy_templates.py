@@ -4,7 +4,7 @@
 FILTER_TEMPLATES = {
     "beaten_down_large_caps": {
         "name": "Beaten Down Large Caps",
-        "description": "Large cap companies down 20%+ from their 52-week highs. Good for contrarian value investing.",
+        "description": "Large companies down 20%+ from their 52-week highs. Contrarian value investing.",
         "use_case": "Find large established companies that have been unfairly beaten down",
         "filters": [
             {"field": "price_vs_52wk_high", "operator": "<=", "value": -20},
@@ -13,16 +13,16 @@ FILTER_TEMPLATES = {
     },
     "value_stocks": {
         "name": "Value Stocks",
-        "description": "Traditional value stocks with low P/E and PEG ratios. Favors mature, profitable companies.",
-        "use_case": "Traditional value investing approach",
+        "description": "Value stocks with low P/E and PEG ratios. Favors mature, profitable companies.",
+        "use_case": "Value investing approach",
         "filters": [
             {"field": "pe_ratio", "operator": "<=", "value": 15},
             {"field": "peg_ratio", "operator": "<=", "value": 1.0}
         ]
     },
     "growth_at_reasonable_price": {
-        "name": "Growth at Reasonable Price (GARP)",
-        "description": "GARP strategy: PEG < 1.5 indicates growth trading below its rate. Peter Lynch's preferred approach.",
+        "name": "GARP",
+        "description": "Peter Lynch's signature approach. Growth stocks at reasonable prices.",
         "use_case": "Growth stocks at reasonable valuations",
         "filters": [
             {"field": "peg_ratio", "operator": "<=", "value": 1.5},
@@ -31,8 +31,8 @@ FILTER_TEMPLATES = {
         ]
     },
     "low_debt_stable": {
-        "name": "Low Debt, Stable Companies",
-        "description": "Conservative companies with low leverage. Safer during economic downturns.",
+        "name": "Stable Companies with Low Debt",
+        "description": "Conservative strategy to weather economic downturns.",
         "use_case": "Conservative investing with lower risk",
         "filters": [
             {"field": "debt_to_equity", "operator": "<=", "value": 0.5},
@@ -41,7 +41,7 @@ FILTER_TEMPLATES = {
     },
     "small_cap_growth": {
         "name": "Small Cap Growth",
-        "description": "Small cap companies ($300M-$2B) with growth characteristics. Higher risk, higher potential reward.",
+        "description": "Small, fast-growing companies. Higher risk, higher potential reward.",
         "use_case": "Higher risk/reward with smaller companies",
         "filters": [
             {"field": "market_cap", "operator": ">=", "value": 300000000},
@@ -87,11 +87,18 @@ QUICK_START_CONFIGS = {
     "beaten_down_large_caps": {
         "name": "Beaten Down Large Caps",
         "description": "Contrarian strategy targeting large caps down 20%+ from highs",
-        "conditions": {"filters": FILTER_TEMPLATES["beaten_down_large_caps"]["filters"]},
-        "consensus_mode": "either_approves",
-        "consensus_threshold": 65.0,
+        "conditions": {
+            "filters": FILTER_TEMPLATES["beaten_down_large_caps"]["filters"]},
+            "require_thesis": True,
+            "scoring_requirements": [
+                {"character":"lynch","min_score":70},
+                {"character":"buffett","min_score":70}
+            ],
+            "thesis_verdict_required":["BUY"],
+        "consensus_mode": "both_agree",
+        "consensus_threshold": 70.0,
         "position_sizing": {
-            "method": "equal_weight",
+            "method": "conviction_weighted",
             "max_position_pct": 8.0,
             "max_positions": 15
         },
@@ -105,7 +112,15 @@ QUICK_START_CONFIGS = {
     "value_stocks": {
         "name": "Value Stocks",
         "description": "Traditional value investing with low P/E and PEG ratios",
-        "conditions": {"filters": FILTER_TEMPLATES["value_stocks"]["filters"]},
+        "conditions": {
+            "filters": FILTER_TEMPLATES["value_stocks"]["filters"],
+            "require_thesis": True,
+            "scoring_requirements": [
+                {"character": "lynch", "min_score": 60},
+                {"character": "buffett", "min_score": 60}
+            ],
+            "thesis_verdict_required": ["BUY"],
+        },
         "consensus_mode": "both_agree",
         "consensus_threshold": 70.0,
         "position_sizing": {
@@ -123,13 +138,21 @@ QUICK_START_CONFIGS = {
     "growth_at_reasonable_price": {
         "name": "Growth at Reasonable Price",
         "description": "Peter Lynch's GARP approach — growth stocks at fair valuations",
-        "conditions": {"filters": FILTER_TEMPLATES["growth_at_reasonable_price"]["filters"]},
+        "conditions": {
+            "filters": FILTER_TEMPLATES["growth_at_reasonable_price"]["filters"],
+            "require_thesis": True,
+            "scoring_requirements": [
+                {"character":"lynch","min_score":60},
+                {"character":"buffett","min_score":60}
+            ],
+            "thesis_verdict_required":["BUY"],
+        },
         "consensus_mode": "both_agree",
         "consensus_threshold": 70.0,
         "position_sizing": {
             "method": "equal_weight",
-            "max_position_pct": 7.0,
-            "max_positions": 20
+            "max_position_pct": 10.0,
+            "max_positions": 15
         },
         "exit_conditions": {
             "stop_loss_pct": -15.0,
@@ -141,7 +164,15 @@ QUICK_START_CONFIGS = {
     "low_debt_stable": {
         "name": "Low Debt, Stable Companies",
         "description": "Conservative picks with low leverage — safer during downturns",
-        "conditions": {"filters": FILTER_TEMPLATES["low_debt_stable"]["filters"]},
+        "conditions": {
+            "filters": FILTER_TEMPLATES["low_debt_stable"]["filters"],
+            "require_thesis": True,
+            "scoring_requirements": [
+                {"character":"lynch","min_score":60},
+                {"character":"buffett","min_score":60}
+            ],
+            "thesis_verdict_required":["BUY"],
+        },
         "consensus_mode": "both_agree",
         "consensus_threshold": 75.0,
         "position_sizing": {
@@ -159,7 +190,15 @@ QUICK_START_CONFIGS = {
     "small_cap_growth": {
         "name": "Small Cap Growth",
         "description": "Higher risk/reward with $300M-$2B market cap growth stocks",
-        "conditions": {"filters": FILTER_TEMPLATES["small_cap_growth"]["filters"]},
+        "conditions": {
+            "filters": FILTER_TEMPLATES["small_cap_growth"]["filters"],
+            "require_thesis": True,
+            "scoring_requirements": [
+                {"character":"lynch","min_score":60},
+                {"character":"buffett","min_score":60}
+            ],
+            "thesis_verdict_required":["BUY"],
+        },
         "consensus_mode": "either_approves",
         "consensus_threshold": 65.0,
         "position_sizing": {
@@ -177,7 +216,15 @@ QUICK_START_CONFIGS = {
     "dividend_value": {
         "name": "Dividend Value Plays",
         "description": "Income-focused value investing with larger, stable companies",
-        "conditions": {"filters": FILTER_TEMPLATES["dividend_value"]["filters"]},
+        "conditions": {
+            "filters": FILTER_TEMPLATES["dividend_value"]["filters"],
+            "require_thesis": True,
+            "scoring_requirements": [
+                {"character":"lynch","min_score":60},
+                {"character":"buffett","min_score":60}
+            ],
+            "thesis_verdict_required":["BUY"],
+        },
         "consensus_mode": "both_agree",
         "consensus_threshold": 70.0,
         "position_sizing": {
