@@ -176,7 +176,7 @@ class FlyMachineManager:
             guest_config = {
                 'cpu_kind': 'shared',
                 'cpus': 1,
-                'memory_mb': 512           # Scale down light workers to save money
+                'memory_mb': 2048           # Scale down light workers to save money
             }
 
         try:
