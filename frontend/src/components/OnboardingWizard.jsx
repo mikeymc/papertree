@@ -20,12 +20,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 const STEPS = {
     EXPERTISE: 1,
     CHARACTER: 2,
-    THEME: 3,
-    CONFIRMATION: 4,
-    LAUNCH_STRATEGY: 5,
+    LAUNCH_STRATEGY: 3,
 }
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 3
 
 const EXPERTISE_LEVELS = [
     {
@@ -45,30 +43,13 @@ const EXPERTISE_LEVELS = [
     },
 ]
 
-const THEME_OPTIONS = [
-    {
-        id: 'light',
-        name: 'Light',
-        description: 'Clean, bright interface',
-    },
-    {
-        id: 'dark',
-        name: 'Dark',
-        description: 'Good for low-light environments',
-    },
-    {
-        id: 'system',
-        name: 'System',
-        description: 'Match your device settings',
-    },
-]
+
 
 export function OnboardingWizard({ open, onComplete, onSkip }) {
     const [currentStep, setCurrentStep] = useState(STEPS.EXPERTISE)
     const [selections, setSelections] = useState({
         expertise: 'practicing', // default
         character: 'lynch', // default
-        theme: 'system', // default
     })
     const [characters, setCharacters] = useState([])
     const [loading, setLoading] = useState(false)
@@ -119,7 +100,7 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
     }, [currentStep])
 
     const handleNext = () => {
-        if (currentStep === STEPS.CONFIRMATION) {
+        if (currentStep === STEPS.CHARACTER) {
             // Save settings then advance to launch step
             saveSettings().then(() => {
                 setCurrentStep(STEPS.LAUNCH_STRATEGY)
@@ -159,15 +140,6 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
             window.dispatchEvent(new CustomEvent('characterChanged', {
                 detail: { character: selections.character }
             }))
-
-            // Save theme
-            await fetch('/api/settings/theme', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ theme: selections.theme }),
-            })
-            setTheme(selections.theme)
         } catch (error) {
             console.error('Failed to save settings:', error)
         } finally {
@@ -262,11 +234,6 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
     const getExpertiseName = (id) => {
         const level = EXPERTISE_LEVELS.find(l => l.id === id)
         return level ? level.name : id
-    }
-
-    const getThemeName = (id) => {
-        const theme = THEME_OPTIONS.find(t => t.id === id)
-        return theme ? theme.name : id
     }
 
     // Get recommended template IDs for the selected character
@@ -400,110 +367,17 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
                     </>
                 )}
 
-                {/* Step 3: Theme Selection */}
-                {currentStep === STEPS.THEME && (
-                    <>
-                        <DialogHeader>
-                            <DialogTitle>Choose your theme</DialogTitle>
-                            <DialogDescription>
-                                Select your preferred theme.
-                            </DialogDescription>
-                        </DialogHeader>
 
-                        <RadioGroup
-                            value={selections.theme}
-                            onValueChange={(value) => updateSelection('theme', value)}
-                            className="gap-4 mt-4"
-                        >
-                            {THEME_OPTIONS.map((theme) => (
-                                <div key={theme.id} className="flex items-start gap-3 space-x-0">
-                                    <RadioGroupItem
-                                        value={theme.id}
-                                        id={`theme-${theme.id}`}
-                                        className="mt-1"
-                                    />
-                                    <div className="flex flex-col">
-                                        <Label htmlFor={`theme-${theme.id}`} className="font-medium cursor-pointer">
-                                            {theme.name}
-                                        </Label>
-                                        <span className="text-sm text-muted-foreground">
-                                            {theme.description}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </RadioGroup>
 
-                        <div className="flex justify-between mt-6">
-                            <Button variant="outline" onClick={handleBack} disabled={loading}>
-                                Back
-                            </Button>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" onClick={handleSkip} disabled={loading}>
-                                    Skip for now
-                                </Button>
-                                <Button onClick={handleNext} disabled={loading}>
-                                    Next
-                                </Button>
-                            </div>
-                        </div>
-                    </>
-                )}
 
-                {/* Step 4: Confirmation */}
-                {currentStep === STEPS.CONFIRMATION && (
-                    <>
-                        <DialogHeader>
-                            <DialogTitle>Settings</DialogTitle>
-                        </DialogHeader>
-
-                        <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
-                            <ul className="text-sm text-muted-foreground space-y-1">
-                                <li>
-                                    <span className="font-medium">Expertise Level:</span> {getExpertiseName(selections.expertise)}
-                                </li>
-                                <li>
-                                    <span className="font-medium">Investment Philosophy:</span> {getCharacterName(selections.character)}
-                                </li>
-                                <li>
-                                    <span className="font-medium">Theme:</span> {getThemeName(selections.theme)}
-                                </li>
-                            </ul>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-3">
-                            Next, you can launch an AI-managed strategy or explore on your own.
-                        </p>
-
-                        <div className="flex justify-between mt-6">
-                            <Button variant="outline" onClick={handleBack} disabled={loading}>
-                                Back
-                            </Button>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" onClick={() => handleComplete(false)} disabled={loading}>
-                                    {loading ? 'Saving...' : "I'll set up my own"}
-                                </Button>
-                                <Button onClick={handleNext} disabled={loading}>
-                                    {loading ? (
-                                        <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                            Saving...
-                                        </>
-                                    ) : (
-                                        'Next'
-                                    )}
-                                </Button>
-                            </div>
-                        </div>
-                    </>
-                )}
 
                 {/* Step 5: Launch Strategy */}
                 {currentStep === STEPS.LAUNCH_STRATEGY && (
                     <>
                         <DialogHeader>
-                            <DialogTitle>Launch your first strategy</DialogTitle>
+                            <DialogTitle>Launch your first AI-managed portfolio</DialogTitle>
                             <DialogDescription>
-                                Pick a strategy and we'll start analyzing stocks for you right away.
+                                Pick a strategy below and we'll start right away.
                             </DialogDescription>
                         </DialogHeader>
 
