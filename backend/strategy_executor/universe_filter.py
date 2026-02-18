@@ -22,7 +22,7 @@ class UniverseFilter:
         Returns:
             List of symbols that match all filters
         """
-        filters = conditions.get('universe', {}).get('filters', [])
+        filters = conditions.get('filters', [])
         if not filters:
             # No filters = return all screened stocks
             return self._get_all_screened_symbols()
