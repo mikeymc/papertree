@@ -1,8 +1,10 @@
 # ABOUTME: Parses and evaluates strategy conditions against stock data
-# ABOUTME: Applies universe filters to return candidate symbols
+# ABOUTME: Applies universe filters to return candidate symbols using vectorized data
 
 import logging
+import pandas as pd
 from typing import Dict, Any, List
+from scoring.vectors import StockVectors
 
 logger = logging.getLogger(__name__)
 
@@ -12,88 +14,106 @@ class UniverseFilter:
 
     def __init__(self, db):
         self.db = db
+        self.stock_vectors = StockVectors(db)
 
     def filter_universe(self, conditions: Dict[str, Any]) -> List[str]:
         """Apply universe filters to return candidate symbols.
 
         Args:
-            conditions: Strategy conditions with 'universe' key containing filters
+            conditions: Strategy conditions with 'filters' key containing filters
 
         Returns:
             List of symbols that match all filters
         """
         filters = conditions.get('filters', [])
+
+        # Load all stock data via vectorized engine (handles growth/Buffett metrics)
+        # Use US filter by default as per production settings
+        df = self.stock_vectors.load_vectors(country_filter='US')
+
         if not filters:
-            # No filters = return all screened stocks
-            return self._get_all_screened_symbols()
+            # No filters = return all symbols in the universe
+            return df['symbol'].tolist()
 
-        symbols = self._get_all_screened_symbols()
+        # Apply each filter sequentially to the DataFrame
         for filter_spec in filters:
-            symbols = self._apply_filter(symbols, filter_spec)
+            df = self._apply_filter(df, filter_spec)
 
-        return symbols
+        return df['symbol'].tolist()
 
-    def _get_all_screened_symbols(self) -> List[str]:
-        """Get all symbols from the screening results."""
-        conn = self.db.get_connection()
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT DISTINCT symbol FROM stock_metrics
-                WHERE price IS NOT NULL
-            """)
-            return [row[0] for row in cursor.fetchall()]
-        finally:
-            self.db.return_connection(conn)
-
-    def _apply_filter(self, symbols: List[str], filter_spec: Dict[str, Any]) -> List[str]:
-        """Apply a single filter to the symbol list.
+    def _apply_filter(self, df: pd.DataFrame, filter_spec: Dict[str, Any]) -> pd.DataFrame:
+        """Apply a single filter to the DataFrame.
 
         Filter spec format:
         {
-            "field": "price_vs_52wk_high",  # or market_cap, pe_ratio, etc.
-            "operator": "<=",  # <, >, <=, >=, ==, !=
-            "value": -20
+            "field": "roe",
+            "operator": ">=",
+            "value": 15
         }
         """
         field = filter_spec.get('field')
         operator = filter_spec.get('operator')
         value = filter_spec.get('value')
 
-        if not all([field, operator, value is not None]):
-            return symbols
+        if not all([field, operator, value is not None]) or df.empty:
+            return df
 
-        # Mapping of user-friendly field names to database columns
+        # Mapping of user-facing field names to StockVectors columns
         field_mapping = {
             'pe_ratio': 'pe_ratio',
-            'forward_pe': 'forward_pe',
             'market_cap': 'market_cap',
             'debt_to_equity': 'debt_to_equity',
             'dividend_yield': 'dividend_yield',
-            'peg_ratio': 'forward_peg_ratio',
+            'peg_ratio': 'peg_ratio',
             'price': 'price',
-            'price_vs_52wk_high': 'price_change_pct'  # Fallback: using price_change_pct as proxy
+            'roe': 'roe',
+            'debt_to_earnings': 'debt_to_earnings',
+            'gross_margin': 'gross_margin',
+            'institutional_ownership': 'institutional_ownership',
+            'earnings_growth': 'earnings_cagr',
+            'revenue_growth': 'revenue_cagr'
         }
 
-        db_field = field_mapping.get(field, field)
+        col = field_mapping.get(field, field)
 
-        # Build SQL operator
-        op_mapping = {
-            '<': '<', '>': '>', '<=': '<=', '>=': '>=',
-            '==': '=', '!=': '<>'
-        }
-        sql_op = op_mapping.get(operator, '=')
+        if col not in df.columns:
+            logger.warning(f"[UniverseFilter] Unsupported filter field: {field} (mapped to {col})")
+            return df
 
-        conn = self.db.get_connection()
         try:
-            cursor = conn.cursor()
-            placeholders = ', '.join(['%s'] * len(symbols))
-            query = f"""
-                SELECT symbol FROM stock_metrics
-                WHERE symbol IN ({placeholders})
-                AND {db_field} {sql_op} %s
-            """
-            cursor.execute(query, symbols + [value])
-            return [row[0] for row in cursor.fetchall()]
-        finally:
-            self.db.return_connection(conn)
+            # Convert value to float for numeric comparison if possible
+            if isinstance(value, (str, int)):
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass
+
+            # Normalize institutional_ownership (UI sends percentage 0-100, DB stores decimal 0-1)
+            if col == 'institutional_ownership':
+                # If the value is > 2, it's definitely a percentage. 
+                # If it's 0-2, it could be either, but we'll assume percentage based on UI labels.
+                # Note: Some stocks have > 100% inst ownership due to shorts/reporting lags, so we use a high threshold.
+                value = value / 100.0
+
+            # Apply operator
+            if operator == '<':
+                mask = df[col] < value
+            elif operator == '>':
+                mask = df[col] > value
+            elif operator == '<=':
+                mask = df[col] <= value
+            elif operator == '>=':
+                mask = df[col] >= value
+            elif operator == '==':
+                mask = df[col] == value
+            elif operator == '!=':
+                mask = df[col] != value
+            else:
+                logger.warning(f"[UniverseFilter] Unsupported operator: {operator}")
+                return df
+
+            # Apply mask to DataFrame
+            return df[mask]
+        except Exception as e:
+            logger.error(f"[UniverseFilter] Error applying filter {field} {operator} {value}: {e}")
+            return df

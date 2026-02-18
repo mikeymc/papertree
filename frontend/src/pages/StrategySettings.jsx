@@ -404,6 +404,12 @@ const StrategySettings = () => {
                                             <SelectItem value="peg_ratio">PEG Ratio</SelectItem>
                                             <SelectItem value="dividend_yield">Dividend Yield (%)</SelectItem>
                                             <SelectItem value="debt_to_equity">Debt/Equity</SelectItem>
+                                            <SelectItem value="roe">Return on Equity (%)</SelectItem>
+                                            <SelectItem value="debt_to_earnings">Debt to Earnings (Years)</SelectItem>
+                                            <SelectItem value="gross_margin">Gross Margin (%)</SelectItem>
+                                            <SelectItem value="institutional_ownership">Institutional Ownership (%)</SelectItem>
+                                            <SelectItem value="earnings_growth">Earnings Growth (5Y CAGR)</SelectItem>
+                                            <SelectItem value="revenue_growth">Revenue Growth (5Y CAGR)</SelectItem>
                                             <SelectItem value="price">Price ($)</SelectItem>
                                             <SelectItem value="sector">Sector</SelectItem>
                                         </SelectContent>
