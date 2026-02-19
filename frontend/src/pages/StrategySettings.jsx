@@ -192,6 +192,8 @@ const StrategySettings = () => {
 
         setFormData(prev => ({
             ...prev,
+            // Pre-fill name from template only if the user hasn't typed one yet
+            name: prev.name.trim() ? prev.name : (t.name || ''),
             analysts: t.analysts?.length ? t.analysts : prev.analysts,
             consensus_mode: t.consensus_mode || prev.consensus_mode,
             conditions: {
@@ -283,7 +285,8 @@ const StrategySettings = () => {
             }
 
             if (mode === 'create' && result.portfolio_id) {
-                navigate(`/portfolios/${result.portfolio_id}`);
+                const jobParam = result.job_id ? `?job=${result.job_id}` : '';
+                navigate(`/portfolios/${result.portfolio_id}${jobParam}`);
             } else {
                 navigate(-1);
             }
