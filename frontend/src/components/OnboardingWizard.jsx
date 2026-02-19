@@ -189,9 +189,9 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
     }
 
 
-    // Get all available template IDs
+    // Get hardcoded template IDs for onboarding
     const getRecommendedTemplates = () => {
-        return Object.keys(templates)
+        return ['warren_buffett_classic', 'peter_lynch_classic', 'lynch_buffett_pair']
     }
 
     return (
