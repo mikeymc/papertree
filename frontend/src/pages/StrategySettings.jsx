@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
     X, ChevronRight, ChevronLeft, Check, Plus, Trash2,
-    HelpCircle, AlertCircle, Info, Save, Activity, Bot, TrendingDown
+    HelpCircle, AlertCircle, Info, Save, Activity, Bot, TrendingDown,
+    Sparkles, Sliders, ArrowRight, Globe, TrendingUp, Shield, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,12 +16,31 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatLocal } from '@/utils/formatters';
 
+// Analyst avatar chips for marketplace cards
+const analystIcon = (id) => id === 'lynch'
+    ? <span key={id} className="inline-flex items-center gap-1 text-[11px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-full px-2 py-0.5 font-medium">Lynch</span>
+    : <span key={id} className="inline-flex items-center gap-1 text-[11px] bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-full px-2 py-0.5 font-medium">Buffett</span>;
+
+const STRATEGY_ICONS = {
+    warren_buffett_classic: Shield,
+    peter_lynch_classic: TrendingUp,
+    lynch_buffett_pair: Users,
+    small_cap_growth: Sparkles,
+    global_growth: Globe,
+    dividend_value: Activity,
+    beaten_down_contrarian: TrendingDown,
+    conservative_quality: Shield,
+};
+
 const StrategySettings = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const mode = id ? 'edit' : 'create';
+    const showMarketplace = mode === 'create' && searchParams.get('marketplace') === 'true';
 
-    const [step, setStep] = useState(1); // Keep internal step for highlighting sections if needed, but display all
+    // 'marketplace' | 'form'
+    const [view, setView] = useState(showMarketplace ? 'marketplace' : 'form');
     const [selectedTemplate, setSelectedTemplate] = useState('');
     const [templates, setTemplates] = useState({});
     const [templatesLoaded, setTemplatesLoaded] = useState(false);
@@ -152,8 +172,8 @@ const StrategySettings = () => {
         }
     }, [id, mode]);
 
-    const handleTemplateSelect = React.useCallback((templateKey) => {
-        console.log('handleTemplateSelect triggered:', templateKey);
+    // Apply ALL settings from a template to formData (filters, analysts, scoring, consensus, sizing, exit)
+    const applyFullTemplate = React.useCallback((templateKey) => {
         setSelectedTemplate(templateKey);
 
         if (templateKey === 'custom') {
@@ -161,15 +181,46 @@ const StrategySettings = () => {
                 ...prev,
                 conditions: { ...prev.conditions, filters: [] }
             }));
-        } else {
-            const template = templates[templateKey];
-            if (template) {
-                setFormData(prev => ({
-                    ...prev,
-                    conditions: { ...prev.conditions, filters: [...template.filters] }
-                }));
-            }
+            return;
         }
+
+        const t = templates[templateKey];
+        if (!t) return;
+
+        const exitRules = t.exit_rules || {};
+        const sizing = t.position_sizing || {};
+
+        setFormData(prev => ({
+            ...prev,
+            analysts: t.analysts?.length ? t.analysts : prev.analysts,
+            consensus_mode: t.consensus_mode || prev.consensus_mode,
+            conditions: {
+                ...prev.conditions,
+                filters: [...(t.filters || [])],
+                require_thesis: true,
+                scoring_requirements: t.scoring_requirements?.length
+                    ? [...t.scoring_requirements]
+                    : prev.conditions.scoring_requirements,
+                addition_scoring_requirements: t.addition_scoring_requirements?.length
+                    ? [...t.addition_scoring_requirements]
+                    : prev.conditions.addition_scoring_requirements,
+                thesis_verdict_required: ['BUY'],
+            },
+            position_sizing: sizing.method ? {
+                method: sizing.method,
+                max_positions: sizing.max_positions ?? prev.position_sizing.max_positions,
+                max_position_pct: sizing.max_position_pct ?? prev.position_sizing.max_position_pct,
+                min_position_value: sizing.min_position_value ?? prev.position_sizing.min_position_value,
+                fixed_position_pct: sizing.fixed_position_pct ?? prev.position_sizing.fixed_position_pct,
+                kelly_fraction: sizing.kelly_fraction ?? prev.position_sizing.kelly_fraction,
+            } : prev.position_sizing,
+            exit_conditions: {
+                ...prev.exit_conditions,
+                stop_loss_pct: exitRules.stop_loss_pct ?? prev.exit_conditions.stop_loss_pct,
+                profit_target_pct: exitRules.profit_target_pct ?? prev.exit_conditions.profit_target_pct,
+                max_hold_days: exitRules.max_hold_days ?? prev.exit_conditions.max_hold_days,
+            },
+        }));
     }, [templates]);
 
     const handleSubmit = async () => {
@@ -248,16 +299,46 @@ const StrategySettings = () => {
         return <div className="p-8 text-center">Loading strategy details...</div>;
     }
 
+    // ── MARKETPLACE VIEW ─────────────────────────────────────────────────────
+    if (view === 'marketplace') {
+        return (
+            <StrategyMarketplace
+                templates={templates}
+                templatesLoaded={templatesLoaded}
+                onSelectTemplate={(key) => {
+                    applyFullTemplate(key);
+                    setView('form');
+                }}
+                onCustom={() => {
+                    setSelectedTemplate('custom');
+                    setView('form');
+                }}
+                onBack={() => navigate(-1)}
+            />
+        );
+    }
+
+    // ── FORM VIEW ────────────────────────────────────────────────────────────
     return (
         <div className="max-w-6xl mx-auto p-4 sm:p-8 space-y-8">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
+                    {showMarketplace && (
+                        <button
+                            onClick={() => setView('marketplace')}
+                            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2"
+                        >
+                            <ChevronLeft className="h-4 w-4" /> Back to Marketplace
+                        </button>
+                    )}
                     <h1 className="text-3xl font-bold tracking-tight">
                         {mode === 'edit' ? 'Edit Strategy Configuration' : 'Create Autonomous Strategy'}
                     </h1>
                     <p className="text-muted-foreground">
-                        {mode === 'edit' ? `` : 'Define the rules for your AI-managed portfolio'}
+                        {mode === 'edit' ? '' : selectedTemplate && selectedTemplate !== 'custom'
+                            ? `Based on: ${templates[selectedTemplate]?.name || selectedTemplate}`
+                            : 'Define the rules for your AI-managed portfolio'}
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -279,6 +360,34 @@ const StrategySettings = () => {
             }
 
             <div className="max-w-3xl mx-auto space-y-8">
+
+                {/* 0. Strategy Template selector (applies ALL settings) */}
+                <Card className="border-primary/20 bg-primary/5">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            Strategy Template
+                        </CardTitle>
+                        <CardDescription>Apply a preset to fill in all settings at once — or build fully custom below.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Select value={selectedTemplate} onValueChange={applyFullTemplate}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Choose a template..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="custom">🛠 Custom (Build Your Own)</SelectItem>
+                                {Object.entries(templates).map(([key, t]) => (
+                                    <SelectItem key={key} value={key}>{t.name || key}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {selectedTemplate && selectedTemplate !== 'custom' && templates[selectedTemplate] && (
+                            <p className="text-xs text-muted-foreground mt-2 italic">{templates[selectedTemplate].use_case}</p>
+                        )}
+                    </CardContent>
+                </Card>
+
                 {/* 1. Basics */}
                 <Card>
                     <CardHeader>
@@ -360,24 +469,9 @@ const StrategySettings = () => {
 
                 {/* 2. Universe & Filtering */}
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>Universe & Filtering</CardTitle>
-                            <CardDescription>Define which stocks the agents should evaluate</CardDescription>
-                        </div>
-                        <div className="w-64">
-                            <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Apply Template" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="custom">Custom (Build Your Own)</SelectItem>
-                                    {Object.entries(templates).map(([key, t]) => (
-                                        <SelectItem key={key} value={key}>{t.name || key}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    <CardHeader>
+                        <CardTitle>Universe & Filtering</CardTitle>
+                        <CardDescription>Define which stocks the agents should evaluate</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-4">
@@ -910,3 +1004,110 @@ const StrategySettings = () => {
 };
 
 export default React.memo(StrategySettings);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Strategy Marketplace — full-page picker shown before the form
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CONSENSUS_LABELS = {
+    both_agree: 'Both must agree',
+    weighted_confidence: 'Weighted confidence',
+    veto_power: 'Either can veto',
+};
+
+function StrategyMarketplace({ templates, templatesLoaded, onSelectTemplate, onCustom, onBack }) {
+    const entries = Object.entries(templates);
+
+    return (
+        <div className="max-w-5xl mx-auto p-4 sm:p-8 space-y-8">
+            {/* Header */}
+            <div className="space-y-1">
+                <button
+                    onClick={onBack}
+                    className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4"
+                >
+                    <ChevronLeft className="h-4 w-4" /> Back
+                </button>
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+                    <Sparkles className="h-7 w-7 text-primary" />
+                    Strategy Marketplace
+                </h1>
+                <p className="text-muted-foreground max-w-xl">
+                    Choose a curated investment strategy or build your own from scratch.
+                    Each preset configures all analyst, scoring, and portfolio settings for you.
+                </p>
+            </div>
+
+            {/* Custom option */}
+            <div
+                onClick={onCustom}
+                className="group cursor-pointer rounded-xl border-2 border-dashed border-muted hover:border-primary/50 hover:bg-primary/5 transition-all px-6 py-5 flex items-center justify-between gap-4"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                        <Sliders className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <div>
+                        <p className="font-semibold text-foreground">Fully Custom</p>
+                        <p className="text-sm text-muted-foreground">Configure every setting yourself from a blank slate.</p>
+                    </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary flex-shrink-0 transition-colors" />
+            </div>
+
+            <Separator />
+
+            {/* Strategy cards grid */}
+            {!templatesLoaded ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="h-48 rounded-xl bg-muted/40 animate-pulse" />
+                    ))}
+                </div>
+            ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {entries.map(([key, t]) => {
+                        const Icon = STRATEGY_ICONS[key] || Sparkles;
+                        const analysts = t.analysts || [];
+                        const maxPositions = t.position_sizing?.max_positions;
+                        const consensusLabel = CONSENSUS_LABELS[t.consensus_mode] || t.consensus_mode;
+                        return (
+                            <div
+                                key={key}
+                                onClick={() => onSelectTemplate(key)}
+                                className="group cursor-pointer rounded-xl border-2 border-muted hover:border-primary/60 hover:shadow-md hover:shadow-primary/10 transition-all bg-card p-5 flex flex-col gap-3"
+                            >
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                                        <Icon className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 justify-end">
+                                        {analysts.map(a => analystIcon(a))}
+                                    </div>
+                                </div>
+
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-foreground leading-tight mb-1">{t.name}</h3>
+                                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{t.use_case || t.description}</p>
+                                </div>
+
+                                <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/50">
+                                    {maxPositions && (
+                                        <span className="text-[10px] bg-muted text-muted-foreground rounded-full px-2 py-0.5 font-medium">
+                                            Max {maxPositions} positions
+                                        </span>
+                                    )}
+                                    {consensusLabel && analysts.length > 1 && (
+                                        <span className="text-[10px] bg-muted text-muted-foreground rounded-full px-2 py-0.5 font-medium capitalize">
+                                            {consensusLabel}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}

@@ -282,7 +282,7 @@ export default function Portfolios() {
                             <div className="grid grid-cols-2 gap-4 py-6">
                                 <Card
                                     className="cursor-pointer hover:border-primary transition-colors border-2 border-muted"
-                                    onClick={() => navigate('/strategies/new')}
+                                    onClick={() => navigate('/strategies/new?marketplace=true')}
                                 >
                                     <CardContent className="pt-6 flex flex-col items-center text-center">
                                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -392,6 +392,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
     const [loadingTransactions, setLoadingTransactions] = useState(false)
     const [loadingHistory, setLoadingHistory] = useState(false)
     const [runningJob, setRunningJob] = useState(null)
+    const [briefingsRefreshKey, setBriefingsRefreshKey] = useState(0)
 
     // Poll job status when arriving from quick-start
     useEffect(() => {
@@ -414,6 +415,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                     setSearchParams(searchParams, { replace: true })
                     if (job.status === 'completed') {
                         setActiveTab('briefings')
+                        setBriefingsRefreshKey(k => k + 1)
                         onRefresh()
                     }
                 }
@@ -625,7 +627,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
 
                 {portfolio.strategy_id && (
                     <TabsContent value="briefings">
-                        <BriefingsTab portfolioId={portfolio.id} />
+                        <BriefingsTab portfolioId={portfolio.id} refreshKey={briefingsRefreshKey} />
                     </TabsContent>
                 )}
 

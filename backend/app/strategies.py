@@ -246,7 +246,14 @@ def get_strategy_templates():
             k: {
                 'name': v['name'],
                 'description': v['description'],
-                'filters': v['filters']
+                'use_case': v.get('use_case', ''),
+                'analysts': v.get('analysts', []),
+                'filters': v['filters'],
+                'consensus_mode': v.get('consensus_mode'),
+                'scoring_requirements': v.get('scoring_requirements', []),
+                'addition_scoring_requirements': v.get('addition_scoring_requirements', []),
+                'position_sizing': v.get('position_sizing', {}),
+                'exit_rules': v.get('exit_rules', {}),
             }
             for k, v in FILTER_TEMPLATES.items()
         },
