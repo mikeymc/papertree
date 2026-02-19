@@ -29,7 +29,7 @@ import {
 
 const API_BASE = '/api'
 
-export default function BriefingsTab({ portfolioId }) {
+export default function BriefingsTab({ portfolioId, refreshKey = 0 }) {
     const [briefings, setBriefings] = useState([])
     const [loading, setLoading] = useState(true)
 
@@ -44,7 +44,7 @@ export default function BriefingsTab({ portfolioId }) {
                 setLoading(false)
             })
             .catch(() => setLoading(false))
-    }, [portfolioId])
+    }, [portfolioId, refreshKey])
 
     if (loading) {
         return (
