@@ -231,8 +231,9 @@ class StrategiesMixin:
             cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
             cursor.execute("""
                 SELECT id, strategy_id, started_at, completed_at, status,
-                       stocks_screened, stocks_scored, theses_generated,
-                       trades_executed, spy_price, portfolio_value,
+                       universe_size, candidates, qualifiers, 
+                       theses, targets, trades, 
+                       spy_price, portfolio_value,
                        error_message, run_log
                 FROM strategy_runs
                 WHERE id = %s
@@ -248,8 +249,9 @@ class StrategiesMixin:
             cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
             cursor.execute("""
                 SELECT id, strategy_id, started_at, completed_at, status,
-                       stocks_screened, stocks_scored, theses_generated,
-                       trades_executed, spy_price, portfolio_value, error_message
+                       universe_size, candidates, qualifiers,
+                       theses, targets, trades,
+                       spy_price, portfolio_value, error_message
                 FROM strategy_runs
                 WHERE strategy_id = %s
                 ORDER BY started_at DESC
@@ -262,8 +264,9 @@ class StrategiesMixin:
     def update_strategy_run(self, run_id: int, **kwargs) -> bool:
         """Update strategy run fields."""
         allowed_fields = {
-            'status', 'completed_at', 'stocks_screened', 'stocks_scored',
-            'theses_generated', 'trades_executed', 'spy_price',
+            'status', 'completed_at', 'universe_size', 'candidates',
+            'qualifiers', 'theses', 'targets',
+            'trades', 'spy_price',
             'portfolio_value', 'error_message', 'run_log'
         }
         updates = {k: v for k, v in kwargs.items() if k in allowed_fields}

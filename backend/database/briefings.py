@@ -19,20 +19,23 @@ class BriefingsMixin:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO strategy_briefings
-                (run_id, strategy_id, portfolio_id, stocks_screened, stocks_scored,
-                 theses_generated, trades_executed, portfolio_value, portfolio_return_pct,
+                (run_id, strategy_id, portfolio_id, universe_size, candidates,
+                 qualifiers, theses, targets,
+                 trades, portfolio_value, portfolio_return_pct,
                  spy_return_pct, alpha, buys_json, sells_json, holds_json, watchlist_json,
                  executive_summary, generated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
             """, (
                 briefing_data['run_id'],
                 briefing_data.get('strategy_id'),
                 briefing_data.get('portfolio_id'),
-                briefing_data.get('stocks_screened', 0),
-                briefing_data.get('stocks_scored', 0),
-                briefing_data.get('theses_generated', 0),
-                briefing_data.get('trades_executed', 0),
+                briefing_data.get('universe_size', 0),
+                briefing_data.get('candidates', 0),
+                briefing_data.get('qualifiers', 0),
+                briefing_data.get('theses', 0),
+                briefing_data.get('targets', 0),
+                briefing_data.get('trades', 0),
                 briefing_data.get('portfolio_value'),
                 briefing_data.get('portfolio_return_pct'),
                 briefing_data.get('spy_return_pct'),
@@ -56,8 +59,10 @@ class BriefingsMixin:
         try:
             cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
             cursor.execute("""
-                SELECT id, run_id, strategy_id, portfolio_id, stocks_screened, stocks_scored,
-                       theses_generated, trades_executed, portfolio_value, portfolio_return_pct,
+                SELECT id, run_id, strategy_id, portfolio_id, 
+                       universe_size, candidates, qualifiers,
+                       theses, targets,
+                       trades, portfolio_value, portfolio_return_pct,
                        spy_return_pct, alpha, buys_json, sells_json, holds_json, watchlist_json,
                        executive_summary, generated_at
                 FROM strategy_briefings
@@ -75,8 +80,10 @@ class BriefingsMixin:
         try:
             cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
             cursor.execute("""
-                SELECT id, run_id, strategy_id, portfolio_id, stocks_screened, stocks_scored,
-                       theses_generated, trades_executed, portfolio_value, portfolio_return_pct,
+                SELECT id, run_id, strategy_id, portfolio_id,
+                       universe_size, candidates, qualifiers,
+                       theses, targets,
+                       trades, portfolio_value, portfolio_return_pct,
                        spy_return_pct, alpha, buys_json, sells_json, holds_json, watchlist_json,
                        executive_summary, generated_at
                 FROM strategy_briefings

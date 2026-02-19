@@ -22,6 +22,9 @@ import {
     FileText,
     ArrowLeftRight,
     ArrowRight,
+    Globe,
+    Users,
+    Target
 } from 'lucide-react'
 
 const API_BASE = '/api'
@@ -125,14 +128,18 @@ function BriefingCard({ briefing }) {
                 )}
 
                 {/* Stats Pipeline */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-                    <PipelineStat icon={Filter} label="Screened" value={briefing.stocks_screened} />
-                    <ArrowRight className="h-3 w-3 opacity-40 shrink-0" />
-                    <PipelineStat icon={BarChart3} label="Scored" value={briefing.stocks_scored} />
-                    <ArrowRight className="h-3 w-3 opacity-40 shrink-0" />
-                    <PipelineStat icon={FileText} label="Theses" value={briefing.theses_generated} />
-                    <ArrowRight className="h-3 w-3 opacity-40 shrink-0" />
-                    <PipelineStat icon={ArrowLeftRight} label="Trades" value={briefing.trades_executed} />
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+                    <PipelineStat icon={Globe} label="Universe" value={briefing.universe_size} />
+                    <ArrowRight className="h-3 w-3 opacity-30 shrink-0" />
+                    <PipelineStat icon={Filter} label="Candidates" value={briefing.candidates} />
+                    <ArrowRight className="h-3 w-3 opacity-30 shrink-0" />
+                    <PipelineStat icon={BarChart3} label="Qualifiers" value={briefing.qualifiers} />
+                    <ArrowRight className="h-3 w-3 opacity-30 shrink-0" />
+                    <PipelineStat icon={FileText} label="Theses" value={briefing.theses} />
+                    <ArrowRight className="h-3 w-3 opacity-30 shrink-0" />
+                    <PipelineStat icon={Target} label="Targets" value={briefing.targets} />
+                    <ArrowRight className="h-3 w-3 opacity-30 shrink-0" />
+                    <PipelineStat icon={ArrowLeftRight} label="Trades" value={briefing.trades} />
                 </div>
 
                 {/* Trades Table */}
@@ -292,7 +299,7 @@ function PipelineStat({ icon: Icon, label, value }) {
         <div className="flex items-center gap-1.5 shrink-0">
             <Icon className="h-3.5 w-3.5 opacity-60" />
             <span className="font-medium tabular-nums">{value ?? 0}</span>
-            <span className="hidden sm:inline opacity-60">{label}</span>
+            <span className="hidden lg:inline opacity-60">{label}</span>
         </div>
     )
 }

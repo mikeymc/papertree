@@ -1823,10 +1823,13 @@ class SchemaMixin:
                     CHECK (status IN ('running', 'completed', 'failed', 'cancelled')),
 
                 -- Summary statistics
-                stocks_screened INTEGER DEFAULT 0,
-                stocks_scored INTEGER DEFAULT 0,
-                theses_generated INTEGER DEFAULT 0,
-                trades_executed INTEGER DEFAULT 0,
+                -- Summary statistics (6-Step Funnel)
+                universe_size INTEGER DEFAULT 0,
+                candidates INTEGER DEFAULT 0,
+                qualifiers INTEGER DEFAULT 0,
+                theses INTEGER DEFAULT 0,
+                targets INTEGER DEFAULT 0,
+                trades INTEGER DEFAULT 0,
 
                 -- Benchmark data at time of run
                 spy_price REAL,
@@ -1838,6 +1841,111 @@ class SchemaMixin:
                 -- Full run log (JSON array of events)
                 run_log JSONB DEFAULT '[]'
             )
+        """)
+
+        # Migration: Update strategy_runs to 7-step funnel nomenclature
+        cursor.execute("""
+            DO $$
+            BEGIN
+                -- 1. Rename stocks_screened -> filtered_universe
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_runs' AND column_name = 'stocks_screened') THEN
+                    ALTER TABLE strategy_runs RENAME COLUMN stocks_screened TO filtered_universe;
+                END IF;
+
+                -- 2. Rename stocks_scored -> passed_scoring
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_runs' AND column_name = 'stocks_scored') THEN
+                    ALTER TABLE strategy_runs RENAME COLUMN stocks_scored TO passed_scoring;
+                END IF;
+
+                -- 3. Add universe_size
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_runs' AND column_name = 'universe_size') THEN
+                    ALTER TABLE strategy_runs ADD COLUMN universe_size INTEGER DEFAULT 0;
+                END IF;
+
+                -- 4. Add passed_thesis
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_runs' AND column_name = 'passed_thesis') THEN
+                    ALTER TABLE strategy_runs ADD COLUMN passed_thesis INTEGER DEFAULT 0;
+                    
+                    -- Backfill from theses_generated if it exists
+                    IF EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_runs' AND column_name = 'theses_generated') THEN
+                        UPDATE strategy_runs SET passed_thesis = theses_generated WHERE passed_thesis = 0;
+                    END IF;
+                END IF;
+
+                -- 5. Add passed_deliberation
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_runs' AND column_name = 'passed_deliberation') THEN
+                    ALTER TABLE strategy_runs ADD COLUMN passed_deliberation INTEGER DEFAULT 0;
+                END IF;
+
+                -- 6. Add passed_picking
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_runs' AND column_name = 'passed_picking') THEN
+                    ALTER TABLE strategy_runs ADD COLUMN passed_picking INTEGER DEFAULT 0;
+                END IF;
+            END $$;
+        """)
+
+        # Migration: Update strategy_runs to 6-step "State" funnel nomenclature
+        cursor.execute("""
+            DO $$
+            BEGIN
+                -- 1. Rename filtered_universe -> candidates
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_runs' AND column_name = 'filtered_universe') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_runs' AND column_name = 'candidates') THEN
+                        ALTER TABLE strategy_runs RENAME COLUMN filtered_universe TO candidates;
+                    END IF;
+                END IF;
+
+                -- 2. Rename passed_scoring -> qualifiers
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_runs' AND column_name = 'passed_scoring') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_runs' AND column_name = 'qualifiers') THEN
+                        ALTER TABLE strategy_runs RENAME COLUMN passed_scoring TO qualifiers;
+                    END IF;
+                END IF;
+
+                -- 3. Rename passed_thesis -> theses (and backfill from theses_generated if needed)
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_runs' AND column_name = 'passed_thesis') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_runs' AND column_name = 'theses') THEN
+                        ALTER TABLE strategy_runs RENAME COLUMN passed_thesis TO theses;
+                    END IF;
+                END IF;
+
+                -- 4. Rename passed_deliberation -> targets
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_runs' AND column_name = 'passed_deliberation') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_runs' AND column_name = 'targets') THEN
+                        ALTER TABLE strategy_runs RENAME COLUMN passed_deliberation TO targets;
+                    END IF;
+                END IF;
+
+                -- 5. Rename trades_executed -> trades
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_runs' AND column_name = 'trades_executed') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_runs' AND column_name = 'trades') THEN
+                        ALTER TABLE strategy_runs RENAME COLUMN trades_executed TO trades;
+                    END IF;
+                END IF;
+
+                -- 6. Drop passed_picking (redundant with targets)
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_runs' AND column_name = 'passed_picking') THEN
+                    ALTER TABLE strategy_runs DROP COLUMN passed_picking;
+                END IF;
+            END $$;
         """)
 
         cursor.execute("""
@@ -2030,10 +2138,12 @@ class SchemaMixin:
                 run_id INTEGER REFERENCES strategy_runs(id) ON DELETE CASCADE UNIQUE,
                 strategy_id INTEGER REFERENCES investment_strategies(id) ON DELETE CASCADE,
                 portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
-                stocks_screened INTEGER,
-                stocks_scored INTEGER,
-                theses_generated INTEGER,
-                trades_executed INTEGER,
+                universe_size INTEGER,
+                candidates INTEGER,
+                qualifiers INTEGER,
+                theses INTEGER,
+                targets INTEGER,
+                trades INTEGER,
                 portfolio_value REAL,
                 portfolio_return_pct REAL,
                 spy_return_pct REAL,
@@ -2045,6 +2155,111 @@ class SchemaMixin:
                 executive_summary TEXT,
                 generated_at TIMESTAMP
             )
+        """)
+
+        # Migration: Update strategy_briefings to 7-step funnel nomenclature
+        cursor.execute("""
+            DO $$
+            BEGIN
+                -- 1. Rename stocks_screened -> filtered_universe
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_briefings' AND column_name = 'stocks_screened') THEN
+                    ALTER TABLE strategy_briefings RENAME COLUMN stocks_screened TO filtered_universe;
+                END IF;
+
+                -- 2. Rename stocks_scored -> passed_scoring
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_briefings' AND column_name = 'stocks_scored') THEN
+                    ALTER TABLE strategy_briefings RENAME COLUMN stocks_scored TO passed_scoring;
+                END IF;
+
+                -- 3. Add universe_size
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_briefings' AND column_name = 'universe_size') THEN
+                    ALTER TABLE strategy_briefings ADD COLUMN universe_size INTEGER DEFAULT 0;
+                END IF;
+
+                -- 4. Add passed_thesis
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_briefings' AND column_name = 'passed_thesis') THEN
+                    ALTER TABLE strategy_briefings ADD COLUMN passed_thesis INTEGER DEFAULT 0;
+                    
+                    -- Backfill from theses_generated if it exists
+                    IF EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_briefings' AND column_name = 'theses_generated') THEN
+                        UPDATE strategy_briefings SET passed_thesis = theses_generated WHERE passed_thesis = 0;
+                    END IF;
+                END IF;
+
+                -- 5. Add passed_deliberation
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_briefings' AND column_name = 'passed_deliberation') THEN
+                    ALTER TABLE strategy_briefings ADD COLUMN passed_deliberation INTEGER DEFAULT 0;
+                END IF;
+
+                -- 6. Add passed_picking
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'strategy_briefings' AND column_name = 'passed_picking') THEN
+                    ALTER TABLE strategy_briefings ADD COLUMN passed_picking INTEGER DEFAULT 0;
+                END IF;
+            END $$;
+        """)
+
+        # Migration: Update strategy_briefings to 6-step "State" funnel nomenclature
+        cursor.execute("""
+            DO $$
+            BEGIN
+                -- 1. Rename filtered_universe -> candidates
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_briefings' AND column_name = 'filtered_universe') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_briefings' AND column_name = 'candidates') THEN
+                        ALTER TABLE strategy_briefings RENAME COLUMN filtered_universe TO candidates;
+                    END IF;
+                END IF;
+
+                -- 2. Rename passed_scoring -> qualifiers
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_briefings' AND column_name = 'passed_scoring') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_briefings' AND column_name = 'qualifiers') THEN
+                        ALTER TABLE strategy_briefings RENAME COLUMN passed_scoring TO qualifiers;
+                    END IF;
+                END IF;
+
+                -- 3. Rename passed_thesis -> theses
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_briefings' AND column_name = 'passed_thesis') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_briefings' AND column_name = 'theses') THEN
+                        ALTER TABLE strategy_briefings RENAME COLUMN passed_thesis TO theses;
+                    END IF;
+                END IF;
+
+                -- 4. Rename passed_deliberation -> targets
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_briefings' AND column_name = 'passed_deliberation') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_briefings' AND column_name = 'targets') THEN
+                        ALTER TABLE strategy_briefings RENAME COLUMN passed_deliberation TO targets;
+                    END IF;
+                END IF;
+
+                -- 5. Rename trades_executed -> trades
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_briefings' AND column_name = 'trades_executed') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name = 'strategy_briefings' AND column_name = 'trades') THEN
+                        ALTER TABLE strategy_briefings RENAME COLUMN trades_executed TO trades;
+                    END IF;
+                END IF;
+
+                -- 6. Drop passed_picking
+                IF EXISTS (SELECT 1 FROM information_schema.columns 
+                           WHERE table_name = 'strategy_briefings' AND column_name = 'passed_picking') THEN
+                    ALTER TABLE strategy_briefings DROP COLUMN passed_picking;
+                END IF;
+            END $$;
         """)
 
         # Migration: Ensure existing briefings have CASCADE

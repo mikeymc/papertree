@@ -88,11 +88,22 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             portfolio_id = strategy['portfolio_id']
             summary = self.db.get_portfolio_summary(portfolio_id, use_live_prices=False)
             portfolio_value = summary['total_value'] if summary else 0
+            passed_thesis_count = 0
+
+            # Capture total universe size
+            try:
+                cursor = self.db.get_connection().cursor()
+                cursor.execute("SELECT COUNT(*) FROM stock_metrics")
+                universe_size = cursor.fetchone()[0]
+            except Exception as e:
+                logger.warning(f"Failed to get universe size: {e}")
+                universe_size = 0
 
             self.db.update_strategy_run(
                 run_id,
                 portfolio_value=portfolio_value,
-                spy_price=get_spy_price(self.db)
+                spy_price=get_spy_price(self.db),
+                universe_size=universe_size
             )
 
             # Phase 1: Screen candidates
@@ -124,7 +135,7 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             if held_candidates:
                 print(f"    Currently held candidates: {len(held_candidates)}")
 
-            self.db.update_strategy_run(run_id, stocks_screened=len(filtered_candidates))
+            self.db.update_strategy_run(run_id, candidates=len(filtered_candidates))
             log_event(self.db, run_id, f"Screened {len(filtered_candidates)} candidates ({len(new_candidates)} new, {len(held_candidates)} additions)")
             print(f"✓ Filtered {len(filtered_candidates)} total candidates\n")
 
@@ -158,7 +169,7 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
 
             # Combine scored candidates
             new_and_held_stocks_with_passing_scores = new_stocks_with_passing_scores + held_stocks_with_passing_scores
-            self.db.update_strategy_run(run_id, stocks_scored=len(new_and_held_stocks_with_passing_scores))
+            self.db.update_strategy_run(run_id, qualifiers=len(new_and_held_stocks_with_passing_scores))
             print(f"✓ Scored {len(new_and_held_stocks_with_passing_scores)} stocks that passed requirements\n")
 
             # Phase 3: Thesis Generation (with parallel processing)
@@ -171,10 +182,17 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
                 enriched = self._generate_theses(
                     all_for_deliberation, run_id, job_id=job_id, analysts=analysts
                 )
-                self.db.update_strategy_run(run_id, theses_generated=len(enriched))
-                print(f"✓ Generated {len(enriched)} theses\\n")
+                # Count stocks prepared for consensus (those where analysts gave a BUY/WATCH result)
+                passed_thesis_count = 0
+                for s in enriched:
+                    verdict = s.get('thesis_verdict', 'WATCH')
+                    if verdict in ['BUY', 'WATCH', 'HOLD']:
+                        passed_thesis_count += 1
+                
+                self.db.update_strategy_run(run_id, theses=passed_thesis_count)
+                print(f"✓ Generated {len(enriched)} theses ({passed_thesis_count} passed)\n")
             else:
-                print("Skipping (thesis not required)\\n")
+                print("Skipping (thesis not required)\n")
                 enriched = all_for_deliberation
 
             # Phase 4: Deliberate (Lynch and Buffett discuss their theses)
@@ -190,6 +208,10 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             )
             print(f"✓ {len(buy_decisions)} BUY decisions made in deliberation")
             print(f"  {len(deliberation_exit_decisions)} EXIT decisions made in deliberation")
+            
+            # Record deliberation result (all BUY decisions, including held stocks that analysts reaffirmed)
+            self.db.update_strategy_run(run_id, targets=len(buy_decisions))
+            
             if held_verdicts:
                 print(f"  {len(held_verdicts)} held positions captured for rebalancing")
 
@@ -233,6 +255,8 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             print("=" * 60)
             print("PHASE 6: TRADE EXECUTION")
             print("=" * 60)
+            # User's funnel: 6) trades executed.
+            
             trades_executed = self._execute_trades(
                 buy_decisions, exit_decisions, strategy, run_id,
                 held_verdicts=held_verdicts
@@ -250,7 +274,7 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
                 run_id,
                 status='completed',
                 completed_at=datetime.now(),
-                trades_executed=trades_executed
+                trades=trades_executed
             )
 
             # Wait for DB consistency/commit visibility
@@ -275,10 +299,12 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             return {
                 'status': 'completed',
                 'run_id': run_id,
-                'stocks_screened': len(filtered_candidates),
-                'stocks_scored': len(new_and_held_stocks_with_passing_scores),
-                'theses_generated': len(enriched) if conditions.get('require_thesis') else 0,
-                'trades_executed': trades_executed,
+                'universe_size': universe_size,
+                'candidates': len(filtered_candidates),
+                'qualifiers': len(new_and_held_stocks_with_passing_scores),
+                'theses': passed_thesis_count if conditions.get('require_thesis') else 0,
+                'targets': len(buy_decisions),
+                'trades': trades_executed,
                 'alpha': perf.get('alpha', 0)
             }
 

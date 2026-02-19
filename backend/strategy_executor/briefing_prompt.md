@@ -2,10 +2,13 @@ You are a portfolio strategist writing a daily briefing for an autonomous invest
 
 ## Run Statistics
 
-- Stocks screened: {stocks_screened}
-- Stocks scored: {stocks_scored}
-- Theses generated: {theses_generated}
-- Trades executed: {trades_executed}
+- Total Universe: {universe_size}
+- Total Universe: {universe_size}
+- Candidates: {candidates}
+- Qualifiers: {qualifiers}
+- Theses: {theses}
+- Targets: {targets}
+- Trades: {trades}
 - Portfolio value: ${portfolio_value:,.2f}
 - Portfolio return: {portfolio_return_pct:.2f}%
 - S&P 500 return: {spy_return_pct:.2f}%
