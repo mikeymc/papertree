@@ -1,16 +1,25 @@
 # ABOUTME: Shared strategy template definitions for wizard UI and conversational agent
 # ABOUTME: Single source of truth for filter templates, defaults, and strategy presets
 
+"""
+Examples of country or region filters:
+        "filters": [
+            # Multi-country support example:
+            { "field": "country", "value": ["US", "CA", "GB", "DE"], "operator": "in" },
+            # Region support example (North America includes US, CA, MX):
+            { "field": "region", "value": "North America", "operator": "==" }
+
+        ],
+
+"""
 FILTER_TEMPLATES = {
     "warren_buffett_classic": {
         "name": "Warren Buffett Solo",
         "description": "Wonderful businesses at fair prices",
         "use_case": "Find large established companies with strong moats and pricing power",
         "filters": [
-            { "field": "roe", "value": 15, "operator": ">=" }, 
-            { "field": "pe_ratio", "value": 25, "operator": "<=" }, 
-            { "field": "gross_margin", "value": 40, "operator": ">=" }, 
-            { "field": "debt_to_earnings", "value": 3, "operator": "<=" }
+            { "field": "market_cap", "value": 2000000000, "operator": ">=" }, # > $2B (Buffett likes size)
+            { "field": "country", "value": "US", "operator": "==" }  
         ],
         "analysts": ["buffett"], 
         "require_thesis": True, 
@@ -41,11 +50,8 @@ FILTER_TEMPLATES = {
         "description": "Growth at a reasonable price",
         "use_case": "Find fast growing companies at reasonable valuations",
         "filters": [
-            { "field": "peg_ratio", "value": 1.5, "operator": "<=" },
-            { "field": "debt_to_equity", "value": 1, "operator": "<=" },
-            { "field": "institutional_ownership", "value": 60, "operator": "<=" },
-            { "field": "revenue_growth", "value": 12, "operator": ">" },
-            { "field": "revenue_growth", "value": 30, "operator": "<=" }
+            { "field": "market_cap", "value": 100000000, "operator": ">=" }, # > $100M
+            { "field": "country", "value": ["US", "CA", "GB", "DE"], "operator": "in" }
         ],
         "analysts": [
             "lynch"
@@ -76,11 +82,9 @@ FILTER_TEMPLATES = {
         "description": "Lynch and Buffett collaborate to find investments they both like",
         "use_case": "Find great investments that both Lynch and Buffet would approve of",
         "filters": [
-            { "field": "peg_ratio", "value": 1.5, "operator": "<=" },
-            { "field": "debt_to_equity", "value": 1, "operator": "<=" },
-            { "field": "institutional_ownership", "value": 60, "operator": "<=" },
-            { "field": "revenue_growth", "value": 12, "operator": ">" },
-            { "field": "revenue_growth", "value": 30, "operator": "<=" }
+            # Universe filters only
+            { "field": "market_cap", "value": 1000000000, "operator": ">=" }, # > $1B
+            { "field": "country", "value": ["US", "CA", "GB", "DE"], "operator": "in" }
         ],
         "analysts": [
             "lynch",
@@ -214,7 +218,7 @@ QUICK_START_CONFIGS = {
             "thesis_verdict_required": FILTER_TEMPLATES["warren_buffett_classic"]["thesis_verdict_required"],
             "addition_scoring_requirements": FILTER_TEMPLATES["warren_buffett_classic"].get("addition_scoring_requirements")
         },
-        "consensus_mode": "either_approves",
+        "consensus_mode": "both_agree",
         "consensus_threshold": 70.0,
         "position_sizing": FILTER_TEMPLATES["warren_buffett_classic"]["position_sizing"],
         "exit_conditions": {
@@ -235,7 +239,7 @@ QUICK_START_CONFIGS = {
             "thesis_verdict_required": FILTER_TEMPLATES["peter_lynch_classic"]["thesis_verdict_required"],
             "addition_scoring_requirements": FILTER_TEMPLATES["peter_lynch_classic"].get("addition_scoring_requirements")
         },
-        "consensus_mode": "either_approves",
+        "consensus_mode": "both_agree",
         "consensus_threshold": 70.0,
         "position_sizing": FILTER_TEMPLATES["peter_lynch_classic"]["position_sizing"],
         "exit_conditions": {

@@ -66,12 +66,13 @@ class StockVectors:
         self._last_loaded = None
         self._cached_country_filter = None
 
-    def load_vectors(self, country_filter: str = 'US') -> pd.DataFrame:
+    def load_vectors(self, country_filter: Optional[Any] = None) -> pd.DataFrame:
         """
         Load all stocks with their raw metrics into a DataFrame.
         
         Args:
-            country_filter: Filter by country code (default 'US', None for all)
+            country_filter: Filter by country code (default 'US', None for all).
+                          Can be a single string or a list of strings.
             
         Returns:
             DataFrame with columns: symbol, price, market_cap, pe_ratio, 
@@ -79,9 +80,15 @@ class StockVectors:
             sector, company_name, country, earnings_cagr, revenue_cagr,
             income_consistency_score, revenue_consistency_score, peg_ratio
         """
+        # Create a cache key that handles both string and list
+        if isinstance(country_filter, list):
+            cache_key = tuple(sorted(country_filter))
+        else:
+            cache_key = country_filter
+
         # Return cached DataFrame if still fresh and filter matches
         if (self._df is not None and self._last_loaded is not None
-                and self._cached_country_filter == country_filter):
+                and self._cached_country_filter == cache_key):
             elapsed = (datetime.now() - self._last_loaded).total_seconds()
             if elapsed < self.CACHE_TTL_SECONDS:
                 return self._df
@@ -117,7 +124,7 @@ class StockVectors:
         
         self._df = df
         self._last_loaded = datetime.now()
-        self._cached_country_filter = country_filter
+        self._cached_country_filter = cache_key
         return df
 
     def _load_annual_earnings(self, symbols: List[str]) -> pd.DataFrame:
@@ -144,7 +151,7 @@ class StockVectors:
         finally:
             self.db.return_connection(conn)
     
-    def _load_stock_metrics(self, country_filter: str = None) -> pd.DataFrame:
+    def _load_stock_metrics(self, country_filter: Optional[Any] = None) -> pd.DataFrame:
         """
         Bulk load stock metrics from database.
         
@@ -173,8 +180,20 @@ class StockVectors:
         params = []
         
         if country_filter:
-            query += " WHERE s.country = %s"
-            params.append(country_filter)
+            if isinstance(country_filter, list):
+                if not country_filter: # Empty list
+                    # If empty list passed, maybe query nothing? Or query all?
+                    # Generally filter=[] means nothing matches.
+                    # But for now let's assume it means "no filter" if user passes None, 
+                    # check if list is empty -> 1=0
+                     query += " WHERE 1=0" 
+                else:
+                    placeholders = ', '.join(['%s'] * len(country_filter))
+                    query += f" WHERE s.country IN ({placeholders})"
+                    params.extend(country_filter)
+            else:
+                query += " WHERE s.country = %s"
+                params.append(country_filter)
         
         engine = self.db.get_sqlalchemy_engine()
         if engine:

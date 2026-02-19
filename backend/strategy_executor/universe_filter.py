@@ -26,20 +26,78 @@ class UniverseFilter:
             List of symbols that match all filters
         """
         filters = conditions.get('filters', [])
+        
+        # Extract country/region filters to optimize vector loading
+        country_filter = ['US'] # Default for backward compatibility if nothing specified
+        explicit_country_filter = False
+        
+        # Check for explicit country or region filters
+        for f in filters:
+            if f.get('field') == 'country':
+                val = f.get('value')
+                # Handle list or comma-separated string
+                if isinstance(val, str) and ',' in val:
+                    country_filter = [x.strip() for x in val.split(',')]
+                elif isinstance(val, list):
+                    country_filter = val
+                else:
+                    country_filter = [val]
+                explicit_country_filter = True
+            elif f.get('field') == 'region':
+                val = f.get('value')
+                # Expand region to countries
+                countries = self._expand_region_to_countries(val)
+                if countries:
+                    country_filter = countries
+                    explicit_country_filter = True
 
         # Load all stock data via vectorized engine (handles growth/Buffett metrics)
-        # Use US filter by default as per production settings
-        df = self.stock_vectors.load_vectors(country_filter='US')
+        # If no explicit filter found, we default to US (as per previous logic)
+        # unless user passed 'Global' or empty list? 
+        # For now, keeping default='US' logic effectively.
+        
+        # If explicitly requested 'Global' or similar, we might want to pass None?
+        # Assuming UI passes specific countries or regions.
+        
+        df = self.stock_vectors.load_vectors(country_filter=country_filter)
 
         if not filters:
-            # No filters = return all symbols in the universe
+            # No filters = return all symbols in the universe (loaded based on country)
             return df['symbol'].tolist()
 
         # Apply each filter sequentially to the DataFrame
         for filter_spec in filters:
+            # Skip country/region filters as they are handled at load time
+            # (unless we want to double check, but load_vectors does strictly filter)
+            if filter_spec.get('field') in ['country', 'region']:
+                continue
+                
             df = self._apply_filter(df, filter_spec)
 
         return df['symbol'].tolist()
+
+    def _expand_region_to_countries(self, region: Any) -> List[str]:
+        """Expand region name(s) to list of country codes."""
+        regions = {
+            'North America': ['US', 'CA'],
+            'Europe': ['GB', 'DE', 'FR', 'IT', 'ES', 'NL', 'CH', 'IE', 'BE', 'SE', 'NO', 'DK', 'FI', 'AT', 'PL', 'PT', 'GR', 'CZ', 'HU', 'RO', 'LU', 'IS'],
+            'Asia': ['CN', 'JP', 'KR', 'IN', 'SG', 'HK', 'TW', 'TH', 'MY', 'ID', 'PH', 'VN', 'IL'],
+            'Oceania': ['AU', 'NZ'],
+            'South America': ['MX', 'BR', 'AR', 'CL', 'PE', 'CO', 'VE', 'EC', 'BO', 'PY', 'UY'],
+        }
+        
+        target_regions = []
+        if isinstance(region, list):
+            target_regions = region
+        else:
+            target_regions = [region]
+            
+        countries = []
+        for r in target_regions:
+            if r in regions:
+                countries.extend(regions[r])
+        
+        return list(set(countries)) # storage dedup
 
     def _apply_filter(self, df: pd.DataFrame, filter_spec: Dict[str, Any]) -> pd.DataFrame:
         """Apply a single filter to the DataFrame.
@@ -71,7 +129,10 @@ class UniverseFilter:
             'gross_margin': 'gross_margin',
             'institutional_ownership': 'institutional_ownership',
             'earnings_growth': 'earnings_cagr',
-            'revenue_growth': 'revenue_cagr'
+            'revenue_growth': 'revenue_cagr',
+            'sector': 'sector',
+            # country handled separately but mapped just in case
+            'country': 'country'
         }
 
         col = field_mapping.get(field, field)
@@ -81,19 +142,17 @@ class UniverseFilter:
             return df
 
         try:
-            # Convert value to float for numeric comparison if possible
-            if isinstance(value, (str, int)):
+            # Handle Numeric Conversions for non-list values
+            if not isinstance(value, list) and isinstance(value, (str, int)) and col != 'sector':
                 try:
                     value = float(value)
                 except ValueError:
                     pass
 
-            # Normalize institutional_ownership (UI sends percentage 0-100, DB stores decimal 0-1)
-            if col == 'institutional_ownership':
-                # If the value is > 2, it's definitely a percentage. 
-                # If it's 0-2, it could be either, but we'll assume percentage based on UI labels.
-                # Note: Some stocks have > 100% inst ownership due to shorts/reporting lags, so we use a high threshold.
-                value = value / 100.0
+            # Normalize institutional_ownership
+            if col == 'institutional_ownership' and isinstance(value, (int, float)):
+                 if value > 2:
+                     value = value / 100.0
 
             # Apply operator
             if operator == '<':
@@ -105,9 +164,20 @@ class UniverseFilter:
             elif operator == '>=':
                 mask = df[col] >= value
             elif operator == '==':
-                mask = df[col] == value
+                 if isinstance(value, list):
+                     mask = df[col].isin(value)
+                 else:
+                     mask = df[col] == value
             elif operator == '!=':
-                mask = df[col] != value
+                 if isinstance(value, list):
+                     mask = ~df[col].isin(value)
+                 else:
+                     mask = df[col] != value
+            elif operator == 'in': # Explicit support if specialized
+                 if isinstance(value, list):
+                     mask = df[col].isin(value)
+                 else:
+                     mask = df[col] == value # Fallback
             else:
                 logger.warning(f"[UniverseFilter] Unsupported operator: {operator}")
                 return df

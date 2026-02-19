@@ -412,6 +412,8 @@ const StrategySettings = () => {
                                             <SelectItem value="revenue_growth">Revenue Growth (5Y CAGR)</SelectItem>
                                             <SelectItem value="price">Price ($)</SelectItem>
                                             <SelectItem value="sector">Sector</SelectItem>
+                                            <SelectItem value="country">Country</SelectItem>
+                                            <SelectItem value="region">Region</SelectItem>
                                         </SelectContent>
                                     </Select>
 
@@ -430,7 +432,7 @@ const StrategySettings = () => {
                                             <SelectValue placeholder="Op" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {(filter.field === 'sector' ? ['==', '!='] : ['<', '>', '<=', '>=', '==', '!=']).map(op => (
+                                            {(['sector', 'country', 'region'].includes(filter.field) ? ['==', '!='] : ['<', '>', '<=', '>=', '==', '!=']).map(op => (
                                                 <SelectItem key={op} value={op}>
                                                     {op === '!=' ? '≠' : op === '<=' ? '≤' : op === '>=' ? '≥' : op}
                                                 </SelectItem>
@@ -441,11 +443,19 @@ const StrategySettings = () => {
                                     <Input
                                         className="flex-1 min-w-[120px] bg-background"
                                         placeholder="Value"
-                                        type={filter.field === 'sector' ? 'text' : 'number'}
-                                        value={filter.value}
+                                        type={['sector', 'country', 'region'].includes(filter.field) ? 'text' : 'number'}
+                                        value={Array.isArray(filter.value) ? filter.value.join(', ') : filter.value}
                                         onChange={e => {
                                             const newFilters = [...formData.conditions.filters];
-                                            newFilters[idx] = { ...newFilters[idx], value: filter.field === 'sector' ? e.target.value : parseFloat(e.target.value) };
+                                            let val = e.target.value;
+                                            // For numeric fields, convert to number
+                                            if (!['sector', 'country', 'region'].includes(filter.field)) {
+                                                val = parseFloat(val);
+                                            }
+                                            // For text fields (which support comma-separated lists), keep as string
+                                            // The backend will split it if needed, or we could split here but keeping raw string input allows editing "US," naturally.
+
+                                            newFilters[idx] = { ...newFilters[idx], value: val };
                                             setFormData({ ...formData, conditions: { ...formData.conditions, filters: newFilters } });
                                         }}
                                     />

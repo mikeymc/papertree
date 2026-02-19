@@ -116,7 +116,7 @@ class ScoringMixin:
         print(f"  Loading stock data for {len(candidates)} candidates...")
 
         vectors = StockVectors(self.db)
-        df_all = vectors.load_vectors(country_filter='US')
+        df_all = vectors.load_vectors()
 
         if df_all is None or df_all.empty:
             log_event(self.db, run_id, "No stock data available for scoring")
