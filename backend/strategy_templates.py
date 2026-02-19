@@ -212,6 +212,7 @@ FILTER_TEMPLATES = {
         "use_case": "Buffett targets large profitable US companies with strong cash flows and consistent dividend histories. A concentrated, low-turnover portfolio that pays you to hold.",
         "filters": [
             { "field": "market_cap", "operator": ">=", "value": 5000000000 },  # > $5B
+            { "field": "dividend_yield", "operator": ">=", "value": 0.02 },
             { "field": "country", "value": "US", "operator": "==" }
         ],
         "analysts": ["buffett"],
