@@ -406,7 +406,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                 const response = await fetch(`/api/jobs/${jobId}`)
                 if (!response.ok) return
                 const job = await response.json()
-                setRunningJob({ id: jobId, status: job.status, progress: job.progress || 0 })
+                setRunningJob({ id: jobId, status: job.status, progress_pct: job.progress_pct || 0, progress_message: job.progress_message || null })
 
                 if (job.status === 'completed' || job.status === 'failed') {
                     clearInterval(pollInterval)
@@ -422,7 +422,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
             } catch (err) {
                 console.error('Error polling job status:', err)
             }
-        }, 5000)
+        }, 3000)
 
         return () => clearInterval(pollInterval)
     }, [searchParams.get('job')])
@@ -542,7 +542,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                                     <div>
                                         <p className="font-medium">Your strategy is running...</p>
                                         <p className="text-sm text-muted-foreground">
-                                            Screening stocks and building your first briefing. This may take a few minutes.
+                                            {runningJob.progress_message || 'Screening stocks and building your briefing. This may take a few minutes.'}
                                         </p>
                                     </div>
                                 </>

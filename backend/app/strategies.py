@@ -15,7 +15,7 @@ strategies_bp = Blueprint('strategies', __name__)
 @strategies_bp.route('/api/strategies', methods=['POST'])
 @require_user_auth
 def create_strategy(user_id):
-    """Create a new investment strategy."""
+    """Create a new investment strategy and trigger its first run."""
     try:
         data = request.json
         if not data:
@@ -50,10 +50,23 @@ def create_strategy(user_id):
             schedule_cron=data.get('schedule_cron', '0 9 * * 1-5')
         )
 
+        # Enable strategy and trigger first run immediately
+        deps.db.update_strategy(user_id=user_id, strategy_id=strategy_id, enabled=True)
+
+        job_id = deps.db.create_background_job(
+            'strategy_execution',
+            {'strategy_ids': [strategy_id]},
+            tier='light'
+        )
+
+        fly_manager = get_fly_manager()
+        fly_manager.start_worker_for_job(tier='light', max_workers=4)
+
         return jsonify({
             'id': strategy_id,
             'message': 'Strategy created successfully',
-            'portfolio_id': portfolio_id
+            'portfolio_id': portfolio_id,
+            'job_id': job_id
         }), 201
 
     except Exception as e:

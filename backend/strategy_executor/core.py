@@ -110,6 +110,8 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             print("=" * 60)
             print("PHASE 1: UNIVERSE FILTERING")
             print("=" * 60)
+            if job_id:
+                self.db.update_job_progress(job_id, progress_pct=5, progress_message='Scanning the universe for candidates...')
             log_event(self.db, run_id, "Starting universe filtering phase")
             conditions = strategy.get('conditions', {})
             filtered_candidates = self.universe_filter.filter_universe(conditions)
@@ -138,11 +140,16 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             self.db.update_strategy_run(run_id, candidates=len(filtered_candidates))
             log_event(self.db, run_id, f"Screened {len(filtered_candidates)} candidates ({len(new_candidates)} new, {len(held_candidates)} additions)")
             print(f"✓ Filtered {len(filtered_candidates)} total candidates\n")
+            if job_id:
+                self.db.update_job_progress(job_id, progress_pct=15, progress_message=f'Found {len(filtered_candidates)} candidates — now scoring them...')
 
             # Phase 2: Score candidates (with differentiated thresholds)
             print("=" * 60)
             print("PHASE 2: SCORING")
             print("=" * 60)
+            if job_id:
+                analyst_names = ' & '.join(a.capitalize() for a in analysts)
+                self.db.update_job_progress(job_id, progress_pct=20, progress_message=f'{analyst_names} are evaluating {len(filtered_candidates)} candidates...')
 
             # Score new positions with standard thresholds
             new_stocks_with_passing_scores = []
@@ -171,6 +178,8 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             new_and_held_stocks_with_passing_scores = new_stocks_with_passing_scores + held_stocks_with_passing_scores
             self.db.update_strategy_run(run_id, qualifiers=len(new_and_held_stocks_with_passing_scores))
             print(f"✓ Scored {len(new_and_held_stocks_with_passing_scores)} stocks that passed requirements\n")
+            if job_id:
+                self.db.update_job_progress(job_id, progress_pct=35, progress_message=f'{len(new_and_held_stocks_with_passing_scores)} stocks passed the score threshold — writing investment theses...')
 
             # Phase 3: Thesis Generation (with parallel processing)
             # held_stocks_with_failing_scores are included so Lynch and Buffett can deliberate on whether to exit
@@ -179,6 +188,9 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             print("=" * 60)
             all_for_deliberation = new_and_held_stocks_with_passing_scores + held_stocks_with_failing_scores
             if conditions.get('require_thesis', False):
+                if job_id:
+                    analyst_names = ' & '.join(a.capitalize() for a in analysts)
+                    self.db.update_job_progress(job_id, progress_pct=40, progress_message=f'{analyst_names} are researching {len(all_for_deliberation)} stocks in depth...')
                 enriched = self._generate_theses(
                     all_for_deliberation, run_id, job_id=job_id, analysts=analysts
                 )
@@ -191,6 +203,8 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
                 
                 self.db.update_strategy_run(run_id, theses=passed_thesis_count)
                 print(f"✓ Generated {len(enriched)} theses ({passed_thesis_count} passed)\n")
+                if job_id:
+                    self.db.update_job_progress(job_id, progress_pct=70, progress_message=f'Theses written — {passed_thesis_count} stocks advancing to deliberation...')
             else:
                 print("Skipping (thesis not required)\n")
                 enriched = all_for_deliberation
@@ -199,6 +213,9 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             print("=" * 60)
             print("PHASE 4: DELIBERATION")
             print("=" * 60)
+            if job_id:
+                analyst_names = ' & '.join(a.capitalize() for a in analysts)
+                self.db.update_job_progress(job_id, progress_pct=72, progress_message=f'{analyst_names} are deliberating — debating every pick...')
             symbols_of_held_stocks_with_failing_scores = {s['symbol'] for s in held_stocks_with_failing_scores}
             buy_decisions, deliberation_exit_decisions, held_verdicts = self._deliberate(
                 enriched, run_id, conditions, strategy=strategy, job_id=job_id,
@@ -211,6 +228,8 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             
             # Record deliberation result (all BUY decisions, including held stocks that analysts reaffirmed)
             self.db.update_strategy_run(run_id, targets=len(buy_decisions))
+            if job_id:
+                self.db.update_job_progress(job_id, progress_pct=82, progress_message=f'Deliberation complete — {len(buy_decisions)} buy targets selected...')
             
             if held_verdicts:
                 print(f"  {len(held_verdicts)} held positions captured for rebalancing")
@@ -219,6 +238,8 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             print("=" * 60)
             print("PHASE 5: EXIT DETECTION")
             print("=" * 60)
+            if job_id:
+                self.db.update_job_progress(job_id, progress_pct=85, progress_message='Reviewing current holdings for exit signals...')
             exit_conditions = strategy.get('exit_conditions', {})
             exit_decisions = []
 
@@ -255,6 +276,8 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             print("=" * 60)
             print("PHASE 6: TRADE EXECUTION")
             print("=" * 60)
+            if job_id:
+                self.db.update_job_progress(job_id, progress_pct=88, progress_message='Executing trades...')
             # User's funnel: 6) trades executed.
             
             trades_executed = self._execute_trades(
@@ -282,6 +305,8 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             time.sleep(2)
 
             # Phase 8: Generate briefing
+            if job_id:
+                self.db.update_job_progress(job_id, progress_pct=93, progress_message='Writing your strategy briefing...')
             try:
                 from strategy_executor.briefing import BriefingGenerator
                 briefing_gen = BriefingGenerator(self.db)
