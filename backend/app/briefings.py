@@ -38,8 +38,8 @@ def get_briefing(user_id, briefing_id):
         import psycopg.rows
         cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
         cursor.execute("""
-            SELECT id, run_id, strategy_id, portfolio_id, stocks_screened, stocks_scored,
-                   theses_generated, trades_executed, portfolio_value, portfolio_return_pct,
+            SELECT id, run_id, strategy_id, portfolio_id, candidates, qualifiers,
+                   theses, targets, trades, portfolio_value, portfolio_return_pct,
                    spy_return_pct, alpha, buys_json, sells_json, holds_json, watchlist_json,
                    executive_summary, generated_at
             FROM strategy_briefings

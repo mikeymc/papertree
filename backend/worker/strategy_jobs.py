@@ -74,13 +74,13 @@ class StrategyJobsMixin:
                         'strategy_id': strategy_id,
                         'name': strategy_name,
                         'status': result.get('status', 'completed'),
-                        'trades_executed': result.get('trades_executed', 0),
+                        'trades': result.get('trades', 0),
                         'alpha': result.get('alpha', 0)
                     })
 
                     logger.info(
                         f"Strategy {strategy_name} completed: "
-                        f"{result.get('trades_executed', 0)} trades, "
+                        f"{result.get('trades', 0)} trades, "
                         f"alpha: {result.get('alpha', 0):.2f}%"
                     )
 

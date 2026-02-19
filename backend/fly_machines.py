@@ -117,6 +117,25 @@ class FlyMachineManager:
             logger.error(f"Failed to stop machine {machine_id}: {e}")
             return False
 
+    def destroy_machine(self, machine_id: str) -> bool:
+        """Destroy a machine definitively"""
+        if not self._is_configured():
+            return False
+
+        try:
+            response = requests.delete(
+                self._api_url(f'/machines/{machine_id}?force=true'),
+                headers=self._headers(),
+                timeout=60
+            )
+            response.raise_for_status()
+            logger.info(f"Destroyed machine {machine_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to destroy machine {machine_id}: {e}")
+            return False
+
     def get_current_image(self) -> Optional[str]:
         """Get the current app image from a running web machine"""
         if not self._is_configured():
@@ -270,15 +289,24 @@ class FlyMachineManager:
             logger.info(f"Worker already running: {running[0]['id']}")
             return running[0]['id']
 
+        current_image = self.get_current_image()
+
         # Check for stopped workers to restart
         stopped = self.get_stopped_workers()
-        if stopped:
-            machine_id = stopped[0]['id']
+        for worker in stopped:
+            machine_id = worker['id']
+            worker_image = worker.get('config', {}).get('image')
+            
+            if current_image and worker_image and worker_image != current_image:
+                logger.info(f"Worker {machine_id} has stale image, destroying it")
+                self.destroy_machine(machine_id)
+                continue
+
             logger.info(f"Restarting stopped worker: {machine_id}")
             if self.start_machine(machine_id):
                 return machine_id
 
-        # Create new worker
+        # Create new worker if none could be restarted
         logger.info("Creating new worker machine")
         return self.create_worker_machine()
 
@@ -313,10 +341,19 @@ class FlyMachineManager:
             logger.info(f"At max {tier} workers ({running_count}/{max_workers}), job will be queued")
             return running[0]['id'] if running else None
         
+        current_image = self.get_current_image()
+
         # Check for stopped workers of this tier to restart
         stopped = self.get_stopped_workers(tier=tier)
-        if stopped:
-            machine_id = stopped[0]['id']
+        for worker in stopped:
+            machine_id = worker['id']
+            worker_image = worker.get('config', {}).get('image')
+            
+            if current_image and worker_image and worker_image != current_image:
+                logger.info(f"Worker {machine_id} has stale image, destroying it")
+                self.destroy_machine(machine_id)
+                continue
+
             logger.info(f"Restarting stopped {tier} worker: {machine_id} ({running_count + 1}/{max_workers})")
             if self.start_machine(machine_id):
                 return machine_id

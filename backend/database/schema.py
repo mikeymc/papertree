@@ -1948,6 +1948,57 @@ class SchemaMixin:
             END $$;
         """)
 
+        # Safety migration: Handle stale production DBs where old column names were never
+        # incrementally renamed. Directly maps any legacy name -> current 6-step funnel name.
+        cursor.execute("""
+            DO $$
+            BEGIN
+                -- stocks_screened -> candidates (skips filtered_universe intermediate name)
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name = 'strategy_runs' AND column_name = 'stocks_screened') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name = 'strategy_runs' AND column_name = 'candidates') THEN
+                        ALTER TABLE strategy_runs RENAME COLUMN stocks_screened TO candidates;
+                    ELSE
+                        ALTER TABLE strategy_runs DROP COLUMN stocks_screened;
+                    END IF;
+                END IF;
+
+                -- stocks_scored -> qualifiers (skips passed_scoring intermediate name)
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name = 'strategy_runs' AND column_name = 'stocks_scored') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name = 'strategy_runs' AND column_name = 'qualifiers') THEN
+                        ALTER TABLE strategy_runs RENAME COLUMN stocks_scored TO qualifiers;
+                    ELSE
+                        ALTER TABLE strategy_runs DROP COLUMN stocks_scored;
+                    END IF;
+                END IF;
+
+                -- theses_generated -> theses (skips passed_thesis intermediate name)
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name = 'strategy_runs' AND column_name = 'theses_generated') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name = 'strategy_runs' AND column_name = 'theses') THEN
+                        ALTER TABLE strategy_runs RENAME COLUMN theses_generated TO theses;
+                    ELSE
+                        ALTER TABLE strategy_runs DROP COLUMN theses_generated;
+                    END IF;
+                END IF;
+
+                -- trades_executed -> trades
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name = 'strategy_runs' AND column_name = 'trades_executed') THEN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name = 'strategy_runs' AND column_name = 'trades') THEN
+                        ALTER TABLE strategy_runs RENAME COLUMN trades_executed TO trades;
+                    ELSE
+                        ALTER TABLE strategy_runs DROP COLUMN trades_executed;
+                    END IF;
+                END IF;
+            END $$;
+        """)
+
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_runs_strategy
             ON strategy_runs(strategy_id, started_at DESC)
