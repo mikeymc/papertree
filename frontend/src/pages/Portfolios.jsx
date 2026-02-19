@@ -971,25 +971,38 @@ function PerformanceTab({ snapshots, loading, initialCash }) {
         )
     }
 
-    // Prepare chart data
+    // Aggregate intraday snapshots to one point per trading day (last snapshot of each day)
+    // snapshot_at is RFC 2822 format e.g. "Mon, 02 Feb 2026 23:05:35 GMT"
+    const dailyMap = {};
+    for (const s of snapshots) {
+        const day = new Date(s.snapshot_at).toISOString().slice(0, 10); // "YYYY-MM-DD" UTC
+        if (day && day !== 'Invalid') dailyMap[day] = s;
+    }
+    const daily = Object.keys(dailyMap).sort().map(day => dailyMap[day]);
+
+    // Prepare chart data from daily-aggregated points
     const chartData = {
-        labels: snapshots.map(s => format(new Date(s.snapshot_at), 'MMM d, h:mm a')),
+        labels: daily.map(s => format(new Date(s.snapshot_at), 'MMM d')),
         datasets: [
             {
                 label: 'Portfolio Return',
-                data: snapshots.map(s => s.portfolio_return_pct),
+                data: daily.map(s => s.portfolio_return_pct),
                 borderColor: 'rgb(34, 197, 94)', // Green
                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
                 fill: true,
-                tension: 0.3
+                tension: 0.2,
+                pointRadius: daily.length > 30 ? 0 : 3,
+                pointHoverRadius: 5,
             },
             {
                 label: 'S&P 500',
-                data: snapshots.map(s => s.spy_return_pct),
+                data: daily.map(s => s.spy_return_pct),
                 borderColor: 'rgb(148, 163, 184)', // Slate
                 borderDash: [5, 5],
                 fill: false,
-                tension: 0.3
+                tension: 0.2,
+                pointRadius: 0,
+                pointHoverRadius: 5,
             }
         ]
     }
@@ -997,13 +1010,15 @@ function PerformanceTab({ snapshots, loading, initialCash }) {
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
         plugins: {
             legend: {
                 position: 'top',
             },
             tooltip: {
-                mode: 'index',
-                intersect: false,
                 callbacks: {
                     label: function (context) {
                         let label = context.dataset.label || '';
@@ -1019,6 +1034,12 @@ function PerformanceTab({ snapshots, loading, initialCash }) {
             },
         },
         scales: {
+            x: {
+                ticks: {
+                    maxTicksLimit: 10,
+                    maxRotation: 0,
+                }
+            },
             y: {
                 title: {
                     display: true,
@@ -1033,7 +1054,7 @@ function PerformanceTab({ snapshots, loading, initialCash }) {
         }
     }
 
-    const latest = snapshots[snapshots.length - 1];
+    const latest = daily[daily.length - 1] || snapshots[snapshots.length - 1];
     const currentReturn = latest?.portfolio_return_pct || 0;
     const currentSpyReturn = latest?.spy_return_pct || 0;
     const alpha = latest?.alpha || 0;
