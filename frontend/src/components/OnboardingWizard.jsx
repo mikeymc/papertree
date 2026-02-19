@@ -13,105 +13,67 @@ import {
     DialogTitle,
 } from './ui/dialog'
 import { Button } from './ui/button'
-import { RadioGroup, RadioGroupItem } from './ui/radio-group'
-import { Label } from './ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 
 const STEPS = {
-    EXPERTISE: 1,
-    CHARACTER: 2,
-    LAUNCH_STRATEGY: 3,
+    WELCOME: 1,
+    STRATEGY: 2,
+    READY: 3,
 }
 
 const TOTAL_STEPS = 3
 
-const EXPERTISE_LEVELS = [
-    {
-        id: 'learning',
-        name: 'Learning',
-        description: 'I am new to investing and want to build a solid foundation.',
-    },
-    {
-        id: 'practicing',
-        name: 'Practicing',
-        description: 'I have a working knowledge of investing and want to deepen my understanding.',
-    },
-    {
-        id: 'expert',
-        name: 'Expert',
-        description: 'I am comfortable with complex finance concepts and investing terminology.',
-    },
-]
 
 
 
 export function OnboardingWizard({ open, onComplete, onSkip }) {
-    const [currentStep, setCurrentStep] = useState(STEPS.EXPERTISE)
+    const [currentStep, setCurrentStep] = useState(STEPS.WELCOME)
     const [selections, setSelections] = useState({
         expertise: 'practicing', // default
         character: 'lynch', // default
     })
-    const [characters, setCharacters] = useState([])
     const [loading, setLoading] = useState(false)
-    const [charactersLoading, setCharactersLoading] = useState(true)
     const [templates, setTemplates] = useState({})
-    const [recommendations, setRecommendations] = useState({})
+    const [selectedTemplate, setSelectedTemplate] = useState(null)
     const [launchingTemplate, setLaunchingTemplate] = useState(null)
 
     const navigate = useNavigate()
     const { user, checkAuth } = useAuth()
     const { setTheme } = useTheme()
 
-    // Fetch available characters
-    useEffect(() => {
-        const fetchCharacters = async () => {
-            try {
-                const response = await fetch('/api/characters')
-                const data = await response.json()
-                setCharacters(data.characters || [])
-            } catch (error) {
-                console.error('Failed to fetch characters:', error)
-            } finally {
-                setCharactersLoading(false)
-            }
-        }
 
-        if (open) {
-            fetchCharacters()
-        }
-    }, [open])
-
-    // Fetch strategy templates when reaching the launch step
+    // Fetch strategy templates when reaching the strategy step
     useEffect(() => {
         const fetchTemplates = async () => {
             try {
                 const response = await fetch('/api/strategy-templates')
                 const data = await response.json()
                 setTemplates(data.templates || {})
-                setRecommendations(data.character_recommendations || {})
             } catch (error) {
                 console.error('Failed to fetch templates:', error)
             }
         }
 
-        if (currentStep === STEPS.LAUNCH_STRATEGY) {
+        if (currentStep === STEPS.STRATEGY) {
             fetchTemplates()
         }
     }, [currentStep])
 
     const handleNext = () => {
-        if (currentStep === STEPS.CHARACTER) {
-            // Save settings then advance to launch step
+        if (currentStep === STEPS.WELCOME) {
+            // Save settings then advance to strategy step
             saveSettings().then(() => {
-                setCurrentStep(STEPS.LAUNCH_STRATEGY)
+                setCurrentStep(STEPS.STRATEGY)
             })
-        } else if (currentStep < STEPS.LAUNCH_STRATEGY) {
+        } else if (currentStep < STEPS.READY) {
             setCurrentStep(currentStep + 1)
         }
     }
 
     const handleBack = () => {
-        if (currentStep > STEPS.EXPERTISE) {
+        if (currentStep === STEPS.STRATEGY) {
+            setCurrentStep(STEPS.WELCOME)
+        } else if (currentStep > STEPS.WELCOME) {
             setCurrentStep(currentStep - 1)
         }
     }
@@ -226,24 +188,10 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
         setSelections(prev => ({ ...prev, [key]: value }))
     }
 
-    const getCharacterName = (id) => {
-        const char = characters.find(c => c.id === id)
-        return char ? char.name : id
-    }
 
-    const getExpertiseName = (id) => {
-        const level = EXPERTISE_LEVELS.find(l => l.id === id)
-        return level ? level.name : id
-    }
-
-    // Get recommended template IDs for the selected character
+    // Get all available template IDs
     const getRecommendedTemplates = () => {
-        const charRecs = recommendations[selections.character] || []
-        // Show character-specific recommendations, fall back to first 3 templates
-        if (charRecs.length > 0) {
-            return charRecs.filter(id => templates[id])
-        }
-        return Object.keys(templates).slice(0, 3)
+        return Object.keys(templates)
     }
 
     return (
@@ -264,156 +212,63 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
                     ))}
                 </div>
 
-                {/* Step 1: Expertise Level */}
-                {currentStep === STEPS.EXPERTISE && (
-                    <>
+                {/* Step 1: Welcome Screen */}
+                {currentStep === STEPS.WELCOME && (
+                    <div className="text-center py-6">
                         <DialogHeader>
-                            <DialogTitle>What is your expertise level?</DialogTitle>
-                            <DialogDescription>
-                                This helps us tailor the interaction style of written analyses and chat responses.
+                            <DialogTitle className="text-2xl mb-2">Welcome to papertree.ai</DialogTitle>
+                            <DialogDescription className="text-base">
+                                <p>There's a lot to explore. Let's start by launching your first autonomous investment portfolio.</p>
                             </DialogDescription>
                         </DialogHeader>
 
-                        <RadioGroup
-                            value={selections.expertise}
-                            onValueChange={(value) => updateSelection('expertise', value)}
-                            className="gap-4 mt-4"
-                        >
-                            {EXPERTISE_LEVELS.map((level) => (
-                                <div key={level.id} className="flex items-start gap-3 space-x-0">
-                                    <RadioGroupItem
-                                        value={level.id}
-                                        id={`expertise-${level.id}`}
-                                        className="mt-1"
-                                    />
-                                    <div className="flex flex-col">
-                                        <Label htmlFor={`expertise-${level.id}`} className="font-medium cursor-pointer">
-                                            {level.name}
-                                        </Label>
-                                        <span className="text-sm text-muted-foreground">
-                                            {level.description}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </RadioGroup>
-
-                        <div className="flex justify-end mt-6">
-                            <div className="flex gap-2">
-                                <Button variant="ghost" onClick={handleSkip} disabled={loading}>
-                                    Skip for now
-                                </Button>
-                                <Button onClick={handleNext} disabled={loading}>
-                                    Next
-                                </Button>
+                        <div className="mt-8 flex justify-center">
+                            <div className="bg-primary/10 p-6 rounded-full w-24 h-24 flex items-center justify-center mb-6 mx-auto">
+                                <span className="text-4xl">🚀</span>
                             </div>
                         </div>
-                    </>
-                )}
 
-                {/* Step 2: Character Selection */}
-                {currentStep === STEPS.CHARACTER && (
-                    <>
-                        <DialogHeader>
-                            <DialogTitle>Choose your investment philosophy</DialogTitle>
-                            <DialogDescription>
-                                This shapes the scoring algorithm, investment thesis, chart analysis, and chat responses.
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        {charactersLoading ? (
-                            <div className="flex justify-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                            </div>
-                        ) : (
-                            <RadioGroup
-                                value={selections.character}
-                                onValueChange={(value) => updateSelection('character', value)}
-                                className="gap-4 mt-4"
-                            >
-                                {characters.map((char) => (
-                                    <div key={char.id} className="flex items-start gap-3 space-x-0">
-                                        <RadioGroupItem
-                                            value={char.id}
-                                            id={`char-${char.id}`}
-                                            className="mt-1"
-                                        />
-                                        <div className="flex flex-col">
-                                            <Label htmlFor={`char-${char.id}`} className="font-medium cursor-pointer">
-                                                {char.name}
-                                            </Label>
-                                            <span className="text-sm text-muted-foreground">
-                                                {char.description}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </RadioGroup>
-                        )}
-
-                        <div className="flex justify-between mt-6">
-                            <Button variant="outline" onClick={handleBack} disabled={loading}>
-                                Back
+                        <div className="mt-8">
+                            <Button onClick={handleNext} size="lg" className="w-full sm:w-auto min-w-[200px]">
+                                Let's Go
                             </Button>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" onClick={handleSkip} disabled={loading}>
-                                    Skip for now
-                                </Button>
-                                <Button onClick={handleNext} disabled={loading || charactersLoading}>
-                                    Next
+                            <div className="mt-4">
+                                <Button variant="ghost" onClick={handleSkip} size="sm">
+                                    Skip setup
                                 </Button>
                             </div>
                         </div>
-                    </>
+                    </div>
                 )}
-
-
-
-
-
-                {/* Step 5: Launch Strategy */}
-                {currentStep === STEPS.LAUNCH_STRATEGY && (
+                {/* Step 4: Strategy Selection */}
+                {currentStep === STEPS.STRATEGY && (
                     <>
                         <DialogHeader>
-                            <DialogTitle>Launch your first AI-managed portfolio</DialogTitle>
+                            <DialogTitle>Choose a strategy</DialogTitle>
                             <DialogDescription>
-                                Pick a strategy below and we'll start right away.
+                                You can always change it later.
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className="grid gap-3 mt-4">
+                        <div className="grid gap-3 mt-4 max-h-[400px] overflow-y-auto pr-2">
                             {getRecommendedTemplates().map((templateId) => {
                                 const template = templates[templateId]
                                 if (!template) return null
-                                const isLaunching = launchingTemplate === templateId
+                                const isSelected = selectedTemplate === templateId
                                 return (
                                     <Card
                                         key={templateId}
-                                        className="cursor-pointer hover:border-primary transition-colors"
-                                        onClick={() => !launchingTemplate && handleQuickStart(templateId)}
+                                        className={`cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:border-primary/50'}`}
+                                        onClick={() => setSelectedTemplate(templateId)}
                                     >
-                                        <CardHeader className="pb-2">
+                                        <CardHeader className="pb-2 p-4">
                                             <div className="flex items-center justify-between">
                                                 <CardTitle className="text-base">{template.name}</CardTitle>
-                                                <Button
-                                                    size="sm"
-                                                    disabled={!!launchingTemplate}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        handleQuickStart(templateId)
-                                                    }}
-                                                >
-                                                    {isLaunching ? (
-                                                        <>
-                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                                                            Launching...
-                                                        </>
-                                                    ) : (
-                                                        'Launch'
-                                                    )}
-                                                </Button>
+                                                {isSelected && (
+                                                    <div className="h-4 w-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px]">✓</div>
+                                                )}
                                             </div>
-                                            <CardDescription>{template.description}</CardDescription>
+                                            <CardDescription className="text-xs mt-1">{template.description}</CardDescription>
                                         </CardHeader>
                                     </Card>
                                 )
@@ -421,15 +276,69 @@ export function OnboardingWizard({ open, onComplete, onSkip }) {
                         </div>
 
                         <div className="flex justify-between mt-6">
-                            <Button variant="outline" onClick={handleBack} disabled={!!launchingTemplate}>
+                            <Button variant="outline" onClick={handleBack}>
+                                Back
+                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => finishOnboarding()}
+                                >
+                                    I'll set up my own
+                                </Button>
+                                <Button
+                                    onClick={handleNext}
+                                    disabled={!selectedTemplate}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* Step 5: Ready to Launch */}
+                {currentStep === STEPS.READY && (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle>All set!</DialogTitle>
+                            <DialogDescription className="text-base mt-4 space-y-4">
+                                <p>Your <b>{templates[selectedTemplate]?.name}</b> portfolio will be managed autonomously using a combination of quantitative analysis and fundamental research.</p>
+                                <p>Every day, we will study the market and adjust your holdings to maximize returns. You will receive a daily brief and have access to an audit trail of every decision and transaction we make.</p>
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="py-8 flex flex-col items-center">
+                            <div className="h-16 w-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
+                                <span className="text-2xl">✨</span>
+                            </div>
+                            <p className="text-center text-muted-foreground max-w-sm">
+                                Let's launch your portfolio now.
+                            </p>
+                            <p className="text-center text-muted-foreground max-w-sm">
+                                Ready?
+                            </p>
+
+                        </div>
+
+                        <div className="flex justify-between mt-2">
+                            <Button variant="outline" onClick={handleBack} disabled={loading}>
                                 Back
                             </Button>
                             <Button
-                                variant="ghost"
-                                onClick={() => finishOnboarding()}
-                                disabled={!!launchingTemplate}
+                                onClick={() => handleQuickStart(selectedTemplate)}
+                                disabled={loading}
+                                size="lg"
+                                className="px-8"
                             >
-                                I'll set up my own
+                                {loading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Launching...
+                                    </>
+                                ) : (
+                                    'Launch Portfolio'
+                                )}
                             </Button>
                         </div>
                     </>
