@@ -2,7 +2,6 @@
 # ABOUTME: Re-exports Database for backward-compatible imports across the codebase
 
 from database.core import DatabaseCore
-from database.schema import SchemaMixin
 from database.alerts import AlertsMixin
 from database.stocks import StocksMixin
 from database.analysis import AnalysisMixin
@@ -18,7 +17,7 @@ from database.watchlist import WatchlistMixin
 from database.briefings import BriefingsMixin
 
 
-class Database(DatabaseCore, SchemaMixin, AlertsMixin, StocksMixin, AnalysisMixin,
+class Database(DatabaseCore, AlertsMixin, StocksMixin, AnalysisMixin,
                FilingsMixin, UsersMixin, PortfoliosMixin, ScreeningMixin,
                JobsMixin, SettingsMixin, SocialMixin, StrategiesMixin, WatchlistMixin,
                BriefingsMixin):

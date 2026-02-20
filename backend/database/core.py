@@ -15,9 +15,7 @@ import json
 logger = logging.getLogger(__name__)
 
 
-from database.schema import SchemaMixin
-
-class DatabaseCore(SchemaMixin):
+class DatabaseCore:
     def __init__(self,
                  host: str = "localhost",
                  port: int = 5432,
@@ -89,64 +87,45 @@ class DatabaseCore(SchemaMixin):
             logger.info("Database writer thread started successfully")
             return
 
-        # Initialize schema
-        logger.info("Initializing database schema...")
-        init_conn = self.connection_pool.getconn()
+        # Initialize schema via yoyo
+        logger.info("Initializing database schema via yoyo-migrations...")
         try:
-            # Enable autocommit for schema initialization to avoid deadlocks
-            # Multiple DDL statements (CREATE TABLE/INDEX) in a single transaction
-            # can lock many tables simultaneously, causing deadlocks between workers.
-            init_conn.autocommit = True
+            import yoyo
+            
+            # yoyo get_backend needs the connection string directly
+            yoyo_uri = f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+            backend = yoyo.get_backend(yoyo_uri)
+            migrations_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'migrations')
+            migrations = yoyo.read_migrations(migrations_dir)
+            
+            logger.info("Acquiring schema migration lock via yoyo...")
+            with backend.lock():
+                cursor = backend.cursor()
+                cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'stocks')")
+                db_already_exists = cursor.fetchone()[0]
+                
+                cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '_yoyo_migration')")
+                yoyo_table_exists = cursor.fetchone()[0]
+                
+                yoyo_migrated = False
+                if yoyo_table_exists:
+                    cursor.execute("SELECT COUNT(*) FROM _yoyo_migration")
+                    yoyo_migrated = cursor.fetchone()[0] > 0
 
-            # Use Advisory Lock to serialize schema migration across multiple workers
-            # Lock ID: 8675309 (Arbitrary integer for this app's schema lock)
-            LOCK_ID = 8675309
-            cursor = init_conn.cursor()
-
-            logger.info("Acquiring schema migration lock (session-level)...")
-            # Use session-level advisory lock which persists even with autocommit=True until explicitly unlocked
-            cursor.execute("SELECT pg_advisory_lock(%s)", (LOCK_ID,))
-
-            logger.info("Schema migration lock acquired. Checking/Updating schema...")
-            self._init_schema_with_connection(init_conn)
-
-            # Migration: Drop unused screening tables (refactored to use on-demand scoring)
-            try:
-                cursor.execute("""
-                    DROP TABLE IF EXISTS screening_results CASCADE;
-                    DROP TABLE IF EXISTS screening_sessions CASCADE;
-                """)
-                # We commit everything at the end of the block
-                logger.info("Migration: Dropped screening_sessions and screening_results tables")
-            except Exception as e:
-                logger.warning(f"Migration warning (drop screening tables): {e}")
-                # Don't rollback the whole thing just for this, but proceed
-
-            # Commit any pending changes
-            init_conn.commit()
+                if db_already_exists and not yoyo_migrated:
+                    logger.info("Existing database detected. Marking baseline schema as applied.")
+                    backend.mark_migrations(backend.to_apply(migrations))
+                else:
+                    logger.info("Applying pending migrations...")
+                    backend.apply_migrations(backend.to_apply(migrations))
+            
             logger.info("Database schema initialized successfully")
 
         except Exception as e:
             logger.error(f"Failed to initialize database schema: {e}", exc_info=True)
             raise
         finally:
-            # Always release the lock
-            logger.info("Releasing schema migration lock...")
-            try:
-                # Explicitly release the session-level lock
-                cursor.execute("SELECT pg_advisory_unlock(%s)", (LOCK_ID,))
-                logger.info("Session-level migration lock released")
-            except Exception as unlock_error:
-                logger.warning(f"Could not release lock (connection may be dead or already released): {unlock_error}")
-
-            # Reset autocommit before returning to pool
-            try:
-                init_conn.autocommit = False
-            except:
-                pass
-            self.connection_pool.putconn(init_conn)
-
-        self._initializing = False
+            self._initializing = False
 
         # Start background writer thread
         logger.info("Starting background writer thread...")

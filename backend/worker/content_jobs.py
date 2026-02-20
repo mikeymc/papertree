@@ -624,7 +624,6 @@ class ContentJobsMixin:
         if not force_refresh:
             logger.info("Pre-computing skip list based on earnings dates...")
             try:
-                from datetime import datetime, timedelta, date
                 today = datetime.now().date()
                 refresh_metadata = self.db.get_earnings_refresh_metadata()
 
@@ -699,7 +698,7 @@ class ContentJobsMixin:
                                     processed_count=0,
                                     total_count=total)
 
-        # Initialize scraper (Playwright session) - runs async
+        # Initialize scraper (Requests session) - runs async
         processed = 0
         cached = 0
         skipped = skipped_initial # Track total skipped including pre-skipped

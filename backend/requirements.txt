@@ -27,3 +27,4 @@ resend
 PyYAML
 markdown
 cloudscraper
+yoyo-migrations>=9.0.0
