@@ -155,6 +155,16 @@ const StrategySettings = () => {
                 .then(r => r.json())
                 .then(data => {
                     const strategy = data.strategy;
+                    // Convert dividend yield decimal back to percentage for UI 
+                    if (strategy.conditions?.filters) {
+                        strategy.conditions.filters = strategy.conditions.filters.map(f => {
+                            if (f.field === 'dividend_yield' && typeof f.value === 'number') {
+                                return { ...f, value: Number((f.value * 100).toFixed(4)) };
+                            }
+                            return f;
+                        });
+                    }
+
                     setFormData(prev => ({
                         ...defaults,
                         ...strategy,
@@ -198,7 +208,12 @@ const StrategySettings = () => {
             consensus_mode: t.consensus_mode || prev.consensus_mode,
             conditions: {
                 ...prev.conditions,
-                filters: [...(t.filters || [])],
+                filters: (t.filters || []).map(f => {
+                    if (f.field === 'dividend_yield' && typeof f.value === 'number') {
+                        return { ...f, value: Number((f.value * 100).toFixed(4)) };
+                    }
+                    return f;
+                }),
                 require_thesis: true,
                 scoring_requirements: t.scoring_requirements?.length
                     ? [...t.scoring_requirements]
@@ -235,6 +250,17 @@ const StrategySettings = () => {
             }
 
             const payload = { ...formData };
+
+            // Convert dividend yield percentage back to decimal for backend
+            if (payload.conditions && payload.conditions.filters) {
+                payload.conditions = { ...payload.conditions };
+                payload.conditions.filters = payload.conditions.filters.map(f => {
+                    if (f.field === 'dividend_yield' && typeof f.value === 'number') {
+                        return { ...f, value: f.value / 100 };
+                    }
+                    return f;
+                });
+            }
 
             // Force new portfolio creation and manual schedule for new strategies
             if (mode !== 'edit') {

@@ -73,18 +73,31 @@ const StrategyWizard = ({ onClose, onSuccess, initialData = null, mode = 'create
         schedule_cron: '0 9 * * 1-5'
     };
 
-    // Merge initialData with defaults to ensure all fields exist
-    const [formData, setFormData] = useState(
-        initialData
-            ? {
-                ...defaults,
-                ...initialData,
-                conditions: { ...defaults.conditions, ...initialData.conditions },
-                exit_conditions: { ...defaults.exit_conditions, ...initialData.exit_conditions },
-                position_sizing: { ...defaults.position_sizing, ...initialData.position_sizing }
-            }
-            : defaults
-    );
+    // Convert dividend_yield for initialData if present
+    const getInitialState = () => {
+        if (!initialData) return defaults;
+
+        const state = {
+            ...defaults,
+            ...initialData,
+            conditions: { ...defaults.conditions, ...initialData.conditions },
+            exit_conditions: { ...defaults.exit_conditions, ...initialData.exit_conditions },
+            position_sizing: { ...defaults.position_sizing, ...initialData.position_sizing }
+        };
+
+        if (state.conditions?.filters) {
+            state.conditions.filters = state.conditions.filters.map(f => {
+                if (f.field === 'dividend_yield' && typeof f.value === 'number') {
+                    return { ...f, value: Number((f.value * 100).toFixed(4)) };
+                }
+                return f;
+            });
+        }
+
+        return state;
+    };
+
+    const [formData, setFormData] = useState(getInitialState());
 
     const [portfolios, setPortfolios] = useState([]);
     const [error, setError] = useState(null);
@@ -161,6 +174,17 @@ const handleSubmit = async () => {
     setError(null);
     try {
         const payload = { ...formData };
+
+        // Convert dividend yield percentage back to decimal for backend
+        if (payload.conditions && payload.conditions.filters) {
+            payload.conditions = { ...payload.conditions };
+            payload.conditions.filters = payload.conditions.filters.map(f => {
+                if (f.field === 'dividend_yield' && typeof f.value === 'number') {
+                    return { ...f, value: f.value / 100 };
+                }
+                return f;
+            });
+        }
 
         // Force new portfolio creation and manual schedule for new strategies
         if (mode !== 'edit') {
@@ -256,9 +280,15 @@ const handleTemplateSelect = (e) => {
         // Apply template filters
         const template = templates[templateKey];
         if (template) {
+            const convertedFilters = template.filters.map(f => {
+                if (f.field === 'dividend_yield' && typeof f.value === 'number') {
+                    return { ...f, value: Number((f.value * 100).toFixed(4)) };
+                }
+                return f;
+            });
             setFormData({
                 ...formData,
-                conditions: { ...formData.conditions, filters: [...template.filters] }
+                conditions: { ...formData.conditions, filters: convertedFilters }
             });
         }
     }
