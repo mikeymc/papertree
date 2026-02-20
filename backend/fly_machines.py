@@ -170,7 +170,8 @@ class FlyMachineManager:
             'FINNHUB_API_KEY': os.environ.get('FINNHUB_API_KEY', ''),
             'EDGAR_USE_LOCAL_DATA': 'False',
             'EDGAR_USE_CACHE': 'False',
-            'EXIT_ON_EMPTY': 'false'
+            'EXIT_ON_EMPTY': 'false',
+            'SKIP_SCHEMA_INIT': 'true'
         }
 
     def create_worker_machine(self, tier: str = 'light') -> Optional[str]:
@@ -228,6 +229,7 @@ class FlyMachineManager:
                 'EDGAR_USE_LOCAL_DATA': 'False',
                 'EDGAR_USE_CACHE': 'False',
                 'EXIT_ON_EMPTY': 'false',
+                'SKIP_SCHEMA_INIT': 'true',
                 'FLY_APP_NAME': self.app_name,
                 'FLY_API_TOKEN': self.api_token,
                 'FLY_REGION': self.region,

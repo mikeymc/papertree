@@ -77,7 +77,18 @@ class DatabaseCore(SchemaMixin):
         self._symbol_cache_lock = threading.Lock()
 
         # Initialize schema
-        logger.info("Initializing database schema...")
+        # Check if schema initialization should be skipped
+        if os.environ.get('SKIP_SCHEMA_INIT') == 'true':
+            logger.info("Skipping database schema initialization (SKIP_SCHEMA_INIT=true)")
+            self._initializing = False
+            
+            # Start background writer thread
+            logger.info("Starting background writer thread...")
+            self.writer_thread = threading.Thread(target=self._writer_loop, daemon=True)
+            self.writer_thread.start()
+            logger.info("Database writer thread started successfully")
+            return
+
         # Initialize schema
         logger.info("Initializing database schema...")
         init_conn = self.connection_pool.getconn()
@@ -92,9 +103,9 @@ class DatabaseCore(SchemaMixin):
             LOCK_ID = 8675309
             cursor = init_conn.cursor()
 
-            logger.info("Acquiring schema migration lock (transaction-level)...")
-            # Use transaction-level advisory lock which automatically releases on commit/rollback
-            cursor.execute("SELECT pg_advisory_xact_lock(%s)", (LOCK_ID,))
+            logger.info("Acquiring schema migration lock (session-level)...")
+            # Use session-level advisory lock which persists even with autocommit=True until explicitly unlocked
+            cursor.execute("SELECT pg_advisory_lock(%s)", (LOCK_ID,))
 
             logger.info("Schema migration lock acquired. Checking/Updating schema...")
             self._init_schema_with_connection(init_conn)
@@ -111,9 +122,9 @@ class DatabaseCore(SchemaMixin):
                 logger.warning(f"Migration warning (drop screening tables): {e}")
                 # Don't rollback the whole thing just for this, but proceed
 
-            # Commit the transaction which also releases the pg_advisory_xact_lock
+            # Commit any pending changes
             init_conn.commit()
-            logger.info("Database schema initialized successfully (lock released)")
+            logger.info("Database schema initialized successfully")
 
         except Exception as e:
             logger.error(f"Failed to initialize database schema: {e}", exc_info=True)
@@ -122,11 +133,9 @@ class DatabaseCore(SchemaMixin):
             # Always release the lock
             logger.info("Releasing schema migration lock...")
             try:
-                # The transaction-level lock is released on commit/rollback,
-                # so an explicit unlock is not strictly necessary here if commit/rollback happened.
-                # However, if an exception occurred before commit, the lock might still be held.
-                # For robustness, we can try to unlock, but it might fail if the connection is dead.
+                # Explicitly release the session-level lock
                 cursor.execute("SELECT pg_advisory_unlock(%s)", (LOCK_ID,))
+                logger.info("Session-level migration lock released")
             except Exception as unlock_error:
                 logger.warning(f"Could not release lock (connection may be dead or already released): {unlock_error}")
 
