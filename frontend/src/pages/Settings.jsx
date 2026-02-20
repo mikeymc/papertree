@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import OptimizationTab from "@/components/settings/OptimizationTab"
 import { screeningCache } from "@/utils/cache"
@@ -23,6 +24,8 @@ export default function Settings() {
     const [switchingExpertise, setSwitchingExpertise] = useState(false)
 
     const [algorithmTuningEnabled, setAlgorithmTuningEnabled] = useState(false)
+    const [emailBriefs, setEmailBriefs] = useState(false)
+    const [togglingEmail, setTogglingEmail] = useState(false)
 
     useEffect(() => {
         // Fetch available characters and current setting
@@ -30,13 +33,15 @@ export default function Settings() {
             fetch("/api/characters").then(res => res.json()),
             fetch("/api/settings/character", { credentials: 'include' }).then(res => res.json()),
             fetch("/api/settings/expertise-level", { credentials: 'include' }).then(res => res.json()),
-            fetch("/api/settings", { cache: 'no-store' }).then(res => res.json())
-        ]).then(([charsData, settingData, expertiseData, generalSettings]) => {
+            fetch("/api/settings", { cache: 'no-store' }).then(res => res.json()),
+            fetch("/api/settings/email-briefs", { credentials: 'include' }).then(res => res.json())
+        ]).then(([charsData, settingData, expertiseData, generalSettings, emailData]) => {
             setCharacters(charsData.characters || [])
             setActiveCharacter(settingData.active_character || "lynch")
             setCharacterLoading(false)
             setExpertiseLevel(expertiseData.expertise_level || "practicing")
             setExpertiseLoading(false)
+            setEmailBriefs(emailData.email_briefs === true)
 
             // Check feature flag
             const algoEnabled = generalSettings.feature_algorithm_optimization_enabled?.value === true ||
@@ -129,6 +134,25 @@ export default function Settings() {
         }
     }
 
+    const handleEmailBriefsToggle = async (checked) => {
+        setTogglingEmail(true)
+        try {
+            const response = await fetch("/api/settings/email-briefs", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email_briefs: checked }),
+                credentials: 'include'
+            })
+            if (response.ok) {
+                setEmailBriefs(checked)
+            }
+        } catch (err) {
+            console.error("Failed to update email preference:", err)
+        } finally {
+            setTogglingEmail(false)
+        }
+    }
+
     const sidebarItems = [
         {
             id: "appearance",
@@ -141,6 +165,10 @@ export default function Settings() {
         {
             id: "expertise",
             title: "Expertise Level",
+        },
+        {
+            id: "notifications",
+            title: "Notifications",
         },
         ...(algorithmTuningEnabled ? [{
             id: "item2",
@@ -387,6 +415,42 @@ export default function Settings() {
                                             </div>
                                         </RadioGroup>
                                     )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+
+                    {activeTab === "notifications" && (
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-lg font-medium">Notifications</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Control how and when you receive updates about your strategies.
+                                </p>
+                            </div>
+                            <div className="border-t" />
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Email Briefs</CardTitle>
+                                    <CardDescription>
+                                        Receive a daily email summary when your strategy completes a run.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <Label htmlFor="email-briefs">Daily strategy briefings</Label>
+                                            <p className="text-sm text-muted-foreground">
+                                                Get portfolio performance, trades, and AI analysis delivered to your inbox.
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            id="email-briefs"
+                                            checked={emailBriefs}
+                                            onCheckedChange={handleEmailBriefsToggle}
+                                            disabled={togglingEmail}
+                                        />
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>

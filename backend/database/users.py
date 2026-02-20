@@ -190,6 +190,26 @@ class UsersMixin:
         self.write_queue.put((sql, args))
         self.flush()
 
+    def get_email_briefs_preference(self, user_id: int) -> bool:
+        """Get user's email briefs preference. Defaults to False."""
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT email_briefs FROM users WHERE id = %s", (user_id,))
+            result = cursor.fetchone()
+            if result is None:
+                return False
+            return result[0] if result[0] is not None else False
+        finally:
+            self.return_connection(conn)
+
+    def set_email_briefs_preference(self, user_id: int, enabled: bool):
+        """Set user's email briefs preference."""
+        sql = "UPDATE users SET email_briefs = %s WHERE id = %s"
+        args = (enabled, user_id)
+        self.write_queue.put((sql, args))
+        self.flush()
+
     def log_user_event(self, user_id: Optional[int], event_type: str, path: str, method: str,
                        query_params: Optional[Dict[str, Any]] = None,
                        request_body: Optional[Dict[str, Any]] = None,

@@ -257,6 +257,36 @@ def set_user_theme_endpoint(user_id):
         return jsonify({'error': str(e)}), 500
 
 
+@settings_bp.route('/api/settings/email-briefs', methods=['GET'])
+@require_user_auth
+def get_email_briefs(user_id):
+    """Get the user's email briefs preference."""
+    try:
+        enabled = deps.db.get_email_briefs_preference(user_id)
+        return jsonify({'email_briefs': enabled})
+    except Exception as e:
+        logger.error(f"Error getting email briefs preference: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/api/settings/email-briefs', methods=['PUT'])
+@require_user_auth
+def set_email_briefs(user_id):
+    """Set the user's email briefs preference."""
+    try:
+        data = request.get_json()
+        if data is None or 'email_briefs' not in data:
+            return jsonify({'error': 'email_briefs is required'}), 400
+
+        enabled = bool(data['email_briefs'])
+        deps.db.set_email_briefs_preference(user_id, enabled)
+
+        return jsonify({'success': True, 'email_briefs': enabled})
+    except Exception as e:
+        logger.error(f"Error setting email briefs preference: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @settings_bp.route('/api/algorithm/config', methods=['GET', 'POST'])
 @require_user_auth
 def algorithm_config(user_id=None):

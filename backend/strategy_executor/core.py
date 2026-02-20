@@ -339,6 +339,18 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
                 )
                 self.db.save_briefing(briefing_data)
                 print(f"✓ Briefing generated\n")
+
+                # Send email brief if user has opted in
+                try:
+                    user_id = strategy.get('user_id')
+                    if user_id and self.db.get_email_briefs_preference(user_id):
+                        user = self.db.get_user_by_id(user_id)
+                        if user and user.get('email'):
+                            from email_service import send_briefing_email
+                            portfolio_name = strategy.get('name', 'Strategy')
+                            send_briefing_email(user['email'], briefing_data, portfolio_name)
+                except Exception as email_err:
+                    logger.warning(f"Email brief delivery failed (non-fatal): {email_err}")
             except Exception as e:
                 logger.warning(f"Briefing generation failed (non-fatal): {e}")
 

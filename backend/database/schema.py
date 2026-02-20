@@ -2418,4 +2418,15 @@ class SchemaMixin:
             ON strategy_briefings(portfolio_id, generated_at DESC)
         """)
 
+        # Migration: Add email_briefs preference to users table
+        cursor.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                               WHERE table_name = 'users' AND column_name = 'email_briefs') THEN
+                    ALTER TABLE users ADD COLUMN email_briefs BOOLEAN DEFAULT FALSE;
+                END IF;
+            END $$;
+        """)
+
         conn.commit()
