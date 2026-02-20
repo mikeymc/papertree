@@ -283,13 +283,25 @@ class FlyMachineManager:
             logger.info("Fly.io not configured - worker will not be started")
             return None
 
+        current_image = self.get_current_image()
+
         # Check for running workers
         running = self.get_running_workers()
-        if running:
-            logger.info(f"Worker already running: {running[0]['id']}")
-            return running[0]['id']
+        valid_running = []
+        for worker in running:
+            machine_id = worker['id']
+            worker_image = worker.get('config', {}).get('image')
+            
+            # If the worker has an old image, it's stale code picking up new jobs! Destroy it.
+            if current_image and worker_image and worker_image != current_image:
+                logger.info(f"Running worker {machine_id} has stale image, destroying it")
+                self.destroy_machine(machine_id)
+            else:
+                valid_running.append(worker)
 
-        current_image = self.get_current_image()
+        if valid_running:
+            logger.info(f"Worker already running: {valid_running[0]['id']}")
+            return valid_running[0]['id']
 
         # Check for stopped workers to restart
         stopped = self.get_stopped_workers()
@@ -333,15 +345,28 @@ class FlyMachineManager:
             logger.info("Fly.io not configured - worker will not be started")
             return None
 
+        current_image = self.get_current_image()
+
         # Count running workers for this specific tier
         running = self.get_running_workers(tier=tier)
-        running_count = len(running)
+        
+        # Filter out and destroy any running workers that are on a stale image
+        valid_running = []
+        for worker in running:
+            machine_id = worker['id']
+            worker_image = worker.get('config', {}).get('image')
+            
+            if current_image and worker_image and worker_image != current_image:
+                logger.info(f"Running {tier} worker {machine_id} has stale image, destroying it")
+                self.destroy_machine(machine_id)
+            else:
+                valid_running.append(worker)
+                
+        running_count = len(valid_running)
         
         if running_count >= max_workers:
             logger.info(f"At max {tier} workers ({running_count}/{max_workers}), job will be queued")
-            return running[0]['id'] if running else None
-        
-        current_image = self.get_current_image()
+            return valid_running[0]['id'] if valid_running else None
 
         # Check for stopped workers of this tier to restart
         stopped = self.get_stopped_workers(tier=tier)
