@@ -114,34 +114,44 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
                 self.db.update_job_progress(job_id, progress_pct=5, progress_message='Scanning the universe for candidates...')
             log_event(self.db, run_id, "Starting universe filtering phase")
             conditions = strategy.get('conditions', {})
-            filtered_candidates = self.universe_filter.filter_universe(conditions)
+            all_passing_symbols = self.universe_filter.filter_universe(conditions)
+            filtered_candidates = list(all_passing_symbols)
             
             # Determine active analysts
             # We store this in conditions for now to avoid schema migration
             analysts = conditions.get('analysts', ['lynch', 'buffett'])
             print(f"  Active Analysts: {', '.join(analysts)}")
 
-            # Apply limit if requested
-            if limit and limit > 0:
-                print(f"  Limiting candidates to {limit} per request (found {len(filtered_candidates)})")
-                filtered_candidates = filtered_candidates[:limit]
-
             # Separate held vs new positions
             current_portfolio_holdings = self.db.get_portfolio_holdings(portfolio_id)
             current_portfolio_holdings_symbols = set(current_portfolio_holdings.keys())
+            
+            # Identify held stocks that NO LONGER pass the universe filter
+            # These must be sold regardless of any 'limit' set on the run
+            failed_universe_holdings = current_portfolio_holdings_symbols - set(all_passing_symbols)
+            if failed_universe_holdings:
+                print(f"  ⚠ {len(failed_universe_holdings)} currently held stocks no longer pass universe filters")
+                for s in failed_universe_holdings:
+                    print(f"    - {s}")
+
+            # Apply limit if requested (only affects what we screen for ADDTIONS/NEW buys)
+            if limit and limit > 0:
+                print(f"  Limiting candidates for scoring to {limit} per request (found {len(filtered_candidates)})")
+                filtered_candidates = filtered_candidates[:limit]
+
             new_candidates = [s for s in filtered_candidates if s not in current_portfolio_holdings_symbols]
             held_candidates = [s for s in filtered_candidates if s in current_portfolio_holdings_symbols]
 
             print(f"  Universe breakdown:")
-            print(f"    New candidates: {len(new_candidates)}")
+            print(f"    New candidates to score: {len(new_candidates)}")
             if held_candidates:
-                print(f"    Currently held candidates: {len(held_candidates)}")
+                print(f"    Currently held candidates to score: {len(held_candidates)}")
 
             self.db.update_strategy_run(run_id, candidates=len(filtered_candidates))
-            log_event(self.db, run_id, f"Screened {len(filtered_candidates)} candidates ({len(new_candidates)} new, {len(held_candidates)} additions)")
-            print(f"✓ Filtered {len(filtered_candidates)} total candidates\n")
+            log_event(self.db, run_id, f"Screened {len(all_passing_symbols)} total passing symbols ({len(new_candidates)} new to score, {len(held_candidates)} additions to score)")
+            print(f"✓ Found {len(all_passing_symbols)} total symbols passing universe filter\n")
             if job_id:
-                self.db.update_job_progress(job_id, progress_pct=15, progress_message=f'Found {len(filtered_candidates)} candidates — now scoring them...')
+                self.db.update_job_progress(job_id, progress_pct=15, progress_message=f'Found {len(all_passing_symbols)} candidates — now scoring them...')
 
             # Phase 2: Score candidates (with differentiated thresholds)
             print("=" * 60)
@@ -244,8 +254,9 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
             exit_decisions = []
 
             # Source 1: Universe compliance — held stocks no longer passing entry filters
+            # CRITICAL: Use the untruncated all_passing_symbols list here!
             universe_exits = self.exit_checker.check_universe_compliance(
-                current_portfolio_holdings_symbols, filtered_candidates, current_portfolio_holdings
+                current_portfolio_holdings_symbols, all_passing_symbols, current_portfolio_holdings
             )
             if universe_exits:
                 print(f"  Universe compliance: {len(universe_exits)} positions no longer pass filters")

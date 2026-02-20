@@ -148,15 +148,16 @@ class ExitConditionChecker:
         failing = held_symbols - set(filtered_candidates)
         exits = []
         for symbol in failing:
-            # Holdings is {symbol: quantity} mapping, not {symbol: {quantity: ...}}
+            # holdings is a map from symbol to quantity (int)
             quantity = holdings.get(symbol, 0)
-            exits.append(ExitSignal(
-                symbol=symbol,
-                quantity=quantity,
-                reason="No longer passes universe filters",
-                current_value=0.0,
-                gain_pct=0.0,
-            ))
+            if quantity > 0:
+                exits.append(ExitSignal(
+                    symbol=symbol,
+                    quantity=quantity,
+                    reason=f"Universe Compliance: {symbol} no longer passes entry filters",
+                    current_value=0.0,  # Value is computed later in process_exits if needed
+                    gain_pct=0.0,
+                ))
         return exits
 
     def _check_score_degradation(
