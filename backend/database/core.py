@@ -82,6 +82,11 @@ class DatabaseCore(SchemaMixin):
         logger.info("Initializing database schema...")
         init_conn = self.connection_pool.getconn()
         try:
+            # Enable autocommit for schema initialization to avoid deadlocks
+            # Multiple DDL statements (CREATE TABLE/INDEX) in a single transaction
+            # can lock many tables simultaneously, causing deadlocks between workers.
+            init_conn.autocommit = True
+
             # Use Advisory Lock to serialize schema migration across multiple workers
             # Lock ID: 8675309 (Arbitrary integer for this app's schema lock)
             LOCK_ID = 8675309
@@ -112,12 +117,24 @@ class DatabaseCore(SchemaMixin):
 
         except Exception as e:
             logger.error(f"Failed to initialize database schema: {e}", exc_info=True)
-            try:
-                init_conn.rollback()
-            except:
-                pass
             raise
         finally:
+            # Always release the lock
+            logger.info("Releasing schema migration lock...")
+            try:
+                # The transaction-level lock is released on commit/rollback,
+                # so an explicit unlock is not strictly necessary here if commit/rollback happened.
+                # However, if an exception occurred before commit, the lock might still be held.
+                # For robustness, we can try to unlock, but it might fail if the connection is dead.
+                cursor.execute("SELECT pg_advisory_unlock(%s)", (LOCK_ID,))
+            except Exception as unlock_error:
+                logger.warning(f"Could not release lock (connection may be dead or already released): {unlock_error}")
+
+            # Reset autocommit before returning to pool
+            try:
+                init_conn.autocommit = False
+            except:
+                pass
             self.connection_pool.putconn(init_conn)
 
         self._initializing = False

@@ -10,7 +10,13 @@ class SchemaMixin:
 
     def _init_schema_with_connection(self, conn):
         """Initialize database schema using the provided connection"""
-        cursor = conn.cursor()
+        class LoggingCursor:
+            def __init__(self, c): self.c = c
+            def execute(self, q, v=None):
+                logger.info(f"Executing DDL: {q[:150].strip()}...")
+                return self.c.execute(q, v)
+            def fetchone(self): return self.c.fetchone()
+        cursor = LoggingCursor(conn.cursor())
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS stocks (
@@ -386,10 +392,10 @@ class SchemaMixin:
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                                WHERE table_name = 'lynch_analyses' AND column_name = 'user_id') THEN
                     ALTER TABLE lynch_analyses ADD COLUMN user_id INTEGER;
+                    
+                    -- Always ensure the user_id is populated for PK if we're migrating
+                    UPDATE lynch_analyses SET user_id = 999 WHERE user_id IS NULL; -- Default to dev user or most likely owner
                 END IF;
-
-                -- Always ensure the user_id is populated for PK if we're migrating
-                UPDATE lynch_analyses SET user_id = 999 WHERE user_id IS NULL; -- Default to dev user or most likely owner
 
                 -- Update Primary Key to include character_id if it's currently just (user_id, symbol) or something else
                 IF NOT EXISTS (
@@ -448,9 +454,9 @@ class SchemaMixin:
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                                WHERE table_name = 'chart_analyses' AND column_name = 'user_id') THEN
                     ALTER TABLE chart_analyses ADD COLUMN user_id INTEGER;
+                    
+                    UPDATE chart_analyses SET user_id = 999 WHERE user_id IS NULL;
                 END IF;
-
-                UPDATE chart_analyses SET user_id = 999 WHERE user_id IS NULL;
 
                 -- Update Primary Key to include character_id
                 IF NOT EXISTS (
@@ -817,7 +823,13 @@ class SchemaMixin:
 
     def _init_rest_of_schema(self, conn):
         """Initialize remaining schema tables"""
-        cursor = conn.cursor()
+        class LoggingCursor:
+            def __init__(self, c): self.c = c
+            def execute(self, q, v=None):
+                logger.info(f"Executing DDL: {q[:150].strip()}...")
+                return self.c.execute(q, v)
+            def fetchone(self): return self.c.fetchone()
+        cursor = LoggingCursor(conn.cursor())
 
         # Create dcf_recommendations table for storing AI-generated DCF scenarios
         cursor.execute("""
@@ -1370,39 +1382,48 @@ class SchemaMixin:
 
         # Migration: Fix earnings_date for "NO_TRANSCRIPT" markers (future-proofing and repairing bad data)
         cursor.execute("""
-            WITH calculated_dates AS (
-                SELECT
-                    t.symbol,
-                    COALESCE(
-                        CASE
-                            -- Strategy 1: Next Earnings Date
-                            WHEN m.next_earnings_date IS NOT NULL AND m.next_earnings_date > CURRENT_DATE THEN
-                                (m.next_earnings_date - INTERVAL '91 days')::DATE
-                            WHEN m.next_earnings_date IS NOT NULL THEN
-                                m.next_earnings_date
-                            -- Strategy 2: Latest History
-                            ELSE (
-                                SELECT fiscal_end::DATE
-                                FROM earnings_history h
-                                WHERE h.symbol = t.symbol AND h.period != 'annual'
-                                ORDER BY h.year DESC, h.period DESC
-                                LIMIT 1
-                            )
-                        END,
-                        CURRENT_DATE
-                    ) as estimated_date
-                FROM earnings_transcripts t
-                LEFT JOIN stock_metrics m ON t.symbol = m.symbol
-                WHERE t.transcript_text = 'NO_TRANSCRIPT_AVAILABLE'
-            )
-            UPDATE earnings_transcripts t
-            SET earnings_date = c.estimated_date,
-                last_updated = NOW()
-            FROM calculated_dates c
-            WHERE t.symbol = c.symbol
-              AND t.transcript_text = 'NO_TRANSCRIPT_AVAILABLE'
-              AND c.estimated_date IS NOT NULL
-              AND (t.earnings_date IS NULL OR t.earnings_date != c.estimated_date);
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM earnings_transcripts 
+                    WHERE transcript_text = 'NO_TRANSCRIPT_AVAILABLE' 
+                    AND earnings_date IS NULL
+                ) THEN
+                    WITH calculated_dates AS (
+                        SELECT
+                            t.symbol,
+                            COALESCE(
+                                CASE
+                                    -- Strategy 1: Next Earnings Date
+                                    WHEN m.next_earnings_date IS NOT NULL AND m.next_earnings_date > CURRENT_DATE THEN
+                                        (m.next_earnings_date - INTERVAL '91 days')::DATE
+                                    WHEN m.next_earnings_date IS NOT NULL THEN
+                                        m.next_earnings_date
+                                    -- Strategy 2: Latest History
+                                    ELSE (
+                                        SELECT fiscal_end::DATE
+                                        FROM earnings_history h
+                                        WHERE h.symbol = t.symbol AND h.period != 'annual'
+                                        ORDER BY h.year DESC, h.period DESC
+                                        LIMIT 1
+                                    )
+                                END,
+                                CURRENT_DATE
+                            ) as estimated_date
+                        FROM earnings_transcripts t
+                        LEFT JOIN stock_metrics m ON t.symbol = m.symbol
+                        WHERE t.transcript_text = 'NO_TRANSCRIPT_AVAILABLE'
+                    )
+                    UPDATE earnings_transcripts t
+                    SET earnings_date = c.estimated_date,
+                        last_updated = NOW()
+                    FROM calculated_dates c
+                    WHERE t.symbol = c.symbol
+                      AND t.transcript_text = 'NO_TRANSCRIPT_AVAILABLE'
+                      AND c.estimated_date IS NOT NULL
+                      AND (t.earnings_date IS NULL OR t.earnings_date != c.estimated_date);
+                END IF;
+            END $$;
         """)
 
         # Material event summaries (AI-generated summaries for 8-K filings)
@@ -1646,17 +1667,26 @@ class SchemaMixin:
         cursor.execute("""
             DO $$
             BEGIN
-                -- Drop the old constraint if it exists
-                IF EXISTS (
-                    SELECT 1 FROM pg_constraint
-                    WHERE conname = 'portfolio_transactions_transaction_type_check'
+                -- Only drop and recreate if the constraint definition DOES NOT include DIVIDEND
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint c
+                    JOIN pg_class t ON c.conrelid = t.oid
+                    WHERE t.relname = 'portfolio_transactions'
+                    AND c.conname = 'portfolio_transactions_transaction_type_check'
+                    AND pg_get_constraintdef(c.oid) LIKE '%DIVIDEND%'
                 ) THEN
-                    ALTER TABLE portfolio_transactions DROP CONSTRAINT portfolio_transactions_transaction_type_check;
-                END IF;
+                    -- Drop the old constraint if it exists
+                    IF EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'portfolio_transactions_transaction_type_check'
+                    ) THEN
+                        ALTER TABLE portfolio_transactions DROP CONSTRAINT portfolio_transactions_transaction_type_check;
+                    END IF;
 
-                -- Add updated constraint
-                ALTER TABLE portfolio_transactions ADD CONSTRAINT portfolio_transactions_transaction_type_check
-                CHECK (transaction_type IN ('BUY', 'SELL', 'DIVIDEND'));
+                    -- Add updated constraint
+                    ALTER TABLE portfolio_transactions ADD CONSTRAINT portfolio_transactions_transaction_type_check
+                    CHECK (transaction_type IN ('BUY', 'SELL', 'DIVIDEND'));
+                END IF;
             END $$;
         """)
 
@@ -2131,27 +2161,37 @@ class SchemaMixin:
 
         # 2. Migrate existing theses from User 1 to User 0 (if not conflicting)
         cursor.execute("""
-            UPDATE lynch_analyses
-            SET user_id = 0
-            WHERE user_id = 1
-            AND NOT EXISTS (
-                SELECT 1 FROM lynch_analyses target
-                WHERE target.user_id = 0
-                AND target.symbol = lynch_analyses.symbol
-                AND target.character_id = lynch_analyses.character_id
-            );
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM lynch_analyses WHERE user_id = 1) THEN
+                    UPDATE lynch_analyses
+                    SET user_id = 0
+                    WHERE user_id = 1
+                    AND NOT EXISTS (
+                        SELECT 1 FROM lynch_analyses target
+                        WHERE target.user_id = 0
+                        AND target.symbol = lynch_analyses.symbol
+                        AND target.character_id = lynch_analyses.character_id
+                    );
+                END IF;
+            END $$;
         """)
 
         # 3. Migrate existing deliberations from User 1 to User 0
         cursor.execute("""
-            UPDATE deliberations
-            SET user_id = 0
-            WHERE user_id = 1
-            AND NOT EXISTS (
-                SELECT 1 FROM deliberations target
-                WHERE target.user_id = 0
-                AND target.symbol = deliberations.symbol
-            );
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM deliberations WHERE user_id = 1) THEN
+                    UPDATE deliberations
+                    SET user_id = 0
+                    WHERE user_id = 1
+                    AND NOT EXISTS (
+                        SELECT 1 FROM deliberations target
+                        WHERE target.user_id = 0
+                        AND target.symbol = deliberations.symbol
+                    );
+                END IF;
+            END $$;
         """)
 
         # User Interaction Logging
