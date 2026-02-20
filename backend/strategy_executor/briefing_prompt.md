@@ -1,5 +1,7 @@
 {analyst_persona} Your audience is the portfolio owner — they want to understand exactly what happened, why, and what it means.
 
+{strategy_context}
+
 ## Run Statistics
 
 - Total Universe: {universe_size}
@@ -38,6 +40,8 @@ Use this mapping to identify stocks and their tickers:
 ## Instructions
 
 Write a detailed daily briefing in markdown format. Each stock entry above includes analyst scores, a consensus verdict, DCF valuation data, and a "deliberation" field containing the actual analyst reasoning about the stock. Draw heavily from these deliberations — they contain the specific reasoning that drove each decision.
+
+If a Strategy and Objective are provided above, weave that objective naturally throughout the briefing — every trade, hold decision, and watchlist comment should be framed in the context of that goal. Do not mention the strategy name like a label; let it flow as the underlying thesis.
 
 Structure your briefing as follows:
 

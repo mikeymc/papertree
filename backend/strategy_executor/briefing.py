@@ -23,6 +23,8 @@ class BriefingGenerator:
         portfolio_id: int,
         performance: Dict[str, Any],
         analysts: list = None,
+        strategy_name: str = '',
+        strategy_description: str = '',
     ) -> Dict[str, Any]:
         logger.info(f"[Briefing] Starting generation for run {run_id}...")
         
@@ -176,6 +178,8 @@ class BriefingGenerator:
 
         # Generate AI executive summary
         briefing['analysts'] = analysts or ['lynch', 'buffett']
+        briefing['strategy_name'] = strategy_name or ''
+        briefing['strategy_description'] = strategy_description or ''
         briefing['executive_summary'] = self._generate_executive_summary(briefing)
 
         logger.info(f"[Briefing] Successfully generated briefing for run {run_id}")
@@ -219,8 +223,19 @@ class BriefingGenerator:
             analysts = briefing.get('analysts', ['lynch', 'buffett'])
             analyst_persona = self._build_analyst_persona(analysts)
 
+            strategy_name = briefing.get('strategy_name', '')
+            strategy_description = briefing.get('strategy_description', '')
+            strategy_context = ''
+            if strategy_name:
+                strategy_context = f"**Strategy:** {strategy_name}"
+                if strategy_description:
+                    strategy_context += f"\n**Objective:** {strategy_description}"
+                else:
+                    strategy_context += "\n**Objective:** (infer from the strategy name above)"
+
             prompt = prompt_template.format(
                 analyst_persona=analyst_persona,
+                strategy_context=strategy_context,
                 universe_size=briefing.get('universe_size', 0),
                 candidates=briefing.get('candidates', 0),
                 qualifiers=briefing.get('qualifiers', 0),
