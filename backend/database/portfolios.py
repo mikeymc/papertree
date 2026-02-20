@@ -560,7 +560,8 @@ class PortfoliosMixin:
         portfolio_id: int,
         holdings_value: float = None,
         cash: float = None,
-        initial_cash: float = None
+        initial_cash: float = None,
+        created_at: date = None
     ) -> Dict[str, Any]:
         """Calculate portfolio performance with dividend attribution.
 
@@ -574,18 +575,22 @@ class PortfoliosMixin:
             holdings_value: Pre-computed holdings value (optional, computed if not provided)
             cash: Pre-computed cash balance (optional, computed if not provided)
             initial_cash: Pre-computed initial cash (optional, computed if not provided)
+            created_at: Portfolio creation date (optional, computed if not provided for alpha calculation)
         """
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
 
-            # Get initial cash if not provided
-            if initial_cash is None:
-                cursor.execute("SELECT initial_cash FROM portfolios WHERE id = %s", (portfolio_id,))
+            # Get initial cash and created_at if not provided
+            if initial_cash is None or created_at is None:
+                cursor.execute("SELECT initial_cash, created_at FROM portfolios WHERE id = %s", (portfolio_id,))
                 row = cursor.fetchone()
                 if not row:
                     return None
-                initial_cash = row[0]
+                initial_cash = initial_cash if initial_cash is not None else row[0]
+                created_at = created_at if created_at is not None else row[1].date()
+            elif hasattr(created_at, 'date'):
+                created_at = created_at.date()
 
             # Get transaction breakdown
             cursor.execute("""
@@ -633,6 +638,26 @@ class PortfoliosMixin:
             total_return = current_value - initial_cash
             total_return_pct = (total_return / initial_cash * 100) if initial_cash > 0 else 0
 
+            # Alpha vs SPY
+            live_alpha = 0.0
+            spy_return_pct = 0.0
+            if created_at:
+                cursor.execute("""
+                    SELECT spy_price FROM benchmark_snapshots 
+                    ORDER BY ABS(snapshot_date - %s) ASC 
+                    LIMIT 1
+                """, (created_at,))
+                inception_benchmark = cursor.fetchone()
+                inception_spy = float(inception_benchmark[0]) if inception_benchmark else None
+
+                cursor.execute("SELECT spy_price FROM benchmark_snapshots ORDER BY snapshot_date DESC LIMIT 1")
+                current_benchmark = cursor.fetchone()
+                current_spy = float(current_benchmark[0]) if current_benchmark else None
+
+                if inception_spy and current_spy:
+                    spy_return_pct = ((current_spy - inception_spy) / inception_spy) * 100
+                    live_alpha = total_return_pct - spy_return_pct
+
             # Attribution
             capital_gains = unrealized_gains + realized_gains
             dividend_yield_pct = (dividend_income / initial_cash * 100) if initial_cash > 0 else 0
@@ -644,7 +669,9 @@ class PortfoliosMixin:
                 'dividend_income': float(dividend_income),
                 'dividend_yield_pct': float(dividend_yield_pct),
                 'realized_gains': float(realized_gains),
-                'unrealized_gains': float(unrealized_gains)
+                'unrealized_gains': float(unrealized_gains),
+                'live_alpha': float(live_alpha),
+                'spy_return_pct': float(spy_return_pct)
             }
         finally:
             self.return_connection(conn)
@@ -796,8 +823,14 @@ class PortfoliosMixin:
             portfolio_id,
             holdings_value=holdings_value,
             cash=cash,
-            initial_cash=initial_cash
+            initial_cash=initial_cash,
+            created_at=portfolio.get('created_at')
         )
+
+        # Update latest_alpha with live_alpha
+        latest_alpha = portfolio.get('latest_alpha')
+        if performance_attribution and 'live_alpha' in performance_attribution:
+            latest_alpha = performance_attribution['live_alpha']
 
         # Include user info if available in portfolio_obj (mainly for admin views)
         return {
@@ -818,7 +851,7 @@ class PortfoliosMixin:
             'strategy_name': portfolio.get('strategy_name'),
             'strategy_enabled': portfolio.get('strategy_enabled'),
             'strategy_runs_count': portfolio.get('strategy_runs_count', 0),
-            'latest_alpha': portfolio.get('latest_alpha'),
+            'latest_alpha': latest_alpha,
             # Dividend tracking
             'total_dividends': dividend_summary.get('total_dividends', 0),
             'ytd_dividends': dividend_summary.get('ytd_dividends', 0),

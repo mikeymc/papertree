@@ -42,6 +42,7 @@ import { Line } from 'react-chartjs-2'
 import { useAuth } from '@/context/AuthContext'
 import BriefingsTab from '@/pages/portfolios/BriefingsTab'
 import StrategyRunsTab from '@/pages/portfolios/StrategyRunsTab'
+import PortfolioPerformanceChart from '@/components/portfolios/PortfolioPerformanceChart'
 import { formatLocal } from '@/utils/formatters'
 
 const LiveSignal = () => (
@@ -437,10 +438,12 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
     const isPositive = gainLoss >= 0
 
     useEffect(() => {
+        fetchValueHistory()
+    }, [portfolio.id])
+
+    useEffect(() => {
         if (activeTab === 'transactions') {
             fetchTransactions()
-        } else if (activeTab === 'performance') {
-            fetchValueHistory()
         }
     }, [activeTab, portfolio.id])
 
@@ -553,7 +556,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
             )}
 
             {/* Summary Cards */}
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6 w-full">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 mb-6 w-full">
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
@@ -581,36 +584,17 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                         <p className="text-2xl font-bold">{formatCurrency(holdingsValue, true)}</p>
                     </CardContent>
                 </Card>
-                <Card className={isPositive ? 'border-emerald-500/30' : 'border-red-500/30'}>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                            {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                            Gain/Loss
-                        </div>
-                        <p className={`text-2xl font-bold ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {formatCurrency(gainLoss, true)}
-                        </p>
-                        <p className={`text-sm ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {formatPercent(gainLossPercent)}
-                        </p>
-                    </CardContent>
-                </Card>
-                {portfolio.strategy_id && (
-                    <>
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                                    <Activity className="h-4 w-4" />
-                                    Alpha vs SPY
-                                </div>
-                                <p className={`text-2xl font-bold ${(portfolio.latest_alpha || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                    {formatPercent(portfolio.latest_alpha || 0)}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </>
-                )}
             </div>
+
+            {/* Performance Chart - Highlighted */}
+            <PortfolioPerformanceChart
+                snapshots={valueHistory}
+                loading={loadingHistory}
+                liveTotalValue={totalValue}
+                liveAlpha={portfolio.latest_alpha || 0}
+                liveGainLoss={gainLoss}
+                liveGainLossPercent={gainLossPercent}
+            />
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -621,7 +605,6 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                         <TabsTrigger value="holdings" className="px-1.5 sm:px-4 text-sm">Holdings</TabsTrigger>
                         {!portfolio.strategy_id && <TabsTrigger value="trade" className="px-1.5 sm:px-4 text-sm">Trade</TabsTrigger>}
                         <TabsTrigger value="transactions" className="px-1.5 sm:px-4 text-sm">Transactions</TabsTrigger>
-                        <TabsTrigger value="performance" className="px-1.5 sm:px-4 text-sm">Performance</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -656,14 +639,6 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                     <TransactionsTab
                         transactions={transactions}
                         loading={loadingTransactions}
-                    />
-                </TabsContent>
-
-                <TabsContent value="performance">
-                    <PerformanceTab
-                        snapshots={valueHistory}
-                        loading={loadingHistory}
-                        initialCash={initialCash}
                     />
                 </TabsContent>
             </Tabs>
@@ -948,156 +923,3 @@ function TransactionsTab({ transactions, loading }) {
     )
 }
 
-function PerformanceTab({ snapshots, loading, initialCash }) {
-    if (loading) {
-        return (
-            <Card>
-                <CardContent className="py-8">
-                    <Skeleton className="h-64 w-full" />
-                </CardContent>
-            </Card>
-        )
-    }
-
-    if (snapshots.length === 0) {
-        return (
-            <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                    <LineChart className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>No performance data yet.</p>
-                    <p className="text-sm mt-1">Portfolio snapshots are taken every 15 minutes during market hours.</p>
-                </CardContent>
-            </Card>
-        )
-    }
-
-    // Aggregate intraday snapshots to one point per trading day (last snapshot of each day)
-    // snapshot_at is RFC 2822 format e.g. "Mon, 02 Feb 2026 23:05:35 GMT"
-    const dailyMap = {};
-    for (const s of snapshots) {
-        const day = new Date(s.snapshot_at).toISOString().slice(0, 10); // "YYYY-MM-DD" UTC
-        if (day && day !== 'Invalid') dailyMap[day] = s;
-    }
-    const daily = Object.keys(dailyMap).sort().map(day => dailyMap[day]);
-
-    // Prepare chart data from daily-aggregated points
-    const chartData = {
-        labels: daily.map(s => format(new Date(s.snapshot_at), 'MMM d')),
-        datasets: [
-            {
-                label: 'Portfolio Return',
-                data: daily.map(s => s.portfolio_return_pct),
-                borderColor: 'rgb(34, 197, 94)', // Green
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                fill: true,
-                tension: 0.2,
-                pointRadius: daily.length > 30 ? 0 : 3,
-                pointHoverRadius: 5,
-            },
-            {
-                label: 'S&P 500',
-                data: daily.map(s => s.spy_return_pct),
-                borderColor: 'rgb(148, 163, 184)', // Slate
-                borderDash: [5, 5],
-                fill: false,
-                tension: 0.2,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-            }
-        ]
-    }
-
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-            mode: 'index',
-            intersect: false,
-        },
-        plugins: {
-            legend: {
-                position: 'top',
-            },
-            tooltip: {
-                callbacks: {
-                    label: function (context) {
-                        let label = context.dataset.label || '';
-                        if (label) {
-                            label += ': ';
-                        }
-                        if (context.parsed.y !== null) {
-                            label += context.parsed.y.toFixed(2) + '%';
-                        }
-                        return label;
-                    }
-                }
-            },
-        },
-        scales: {
-            x: {
-                ticks: {
-                    maxTicksLimit: 10,
-                    maxRotation: 0,
-                }
-            },
-            y: {
-                title: {
-                    display: true,
-                    text: 'Return (%)'
-                },
-                ticks: {
-                    callback: function (value) {
-                        return value.toFixed(1) + '%';
-                    }
-                }
-            }
-        }
-    }
-
-    const latest = daily[daily.length - 1] || snapshots[snapshots.length - 1];
-    const currentReturn = latest?.portfolio_return_pct || 0;
-    const currentSpyReturn = latest?.spy_return_pct || 0;
-    const alpha = latest?.alpha || 0;
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-lg">Performance vs Benchmark</CardTitle>
-                <CardDescription>
-                    Comparing returns against S&P 500 (SPY) since inception
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="h-[400px] w-full mb-8">
-                    <Line data={chartData} options={chartOptions} />
-                </div>
-
-                <Separator className="my-6" />
-
-                {/* Stats summary */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div>
-                        <p className="text-sm text-muted-foreground">Portfolio Return</p>
-                        <p className={`text-xl font-bold ${currentReturn >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {formatPercent(currentReturn)}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-muted-foreground">SPY Return</p>
-                        <p className="text-xl font-bold text-slate-400">{formatPercent(currentSpyReturn)}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-muted-foreground">Alpha vs SPY</p>
-                        <p className={`text-xl font-bold ${alpha >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {formatPercent(alpha)}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-muted-foreground">Current Value</p>
-                        <p className="text-xl font-bold">{formatCurrency(latest?.total_value)}</p>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
-}
