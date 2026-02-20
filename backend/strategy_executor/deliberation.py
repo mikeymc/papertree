@@ -370,29 +370,61 @@ class DeliberationMixin:
             buffett_thesis = stock.get('buffett_thesis')
 
             if lynch_thesis and buffett_thesis:
-                # print(f"  Conducting deliberation for {symbol}...") # Reduced logging noise
+                lynch_verdict = stock.get('lynch_thesis_verdict', 'UNKNOWN')
+                buffett_verdict = stock.get('buffett_thesis_verdict', 'UNKNOWN')
 
+                # Short-circuit: skip deliberation if neither analyst is bullish.
+                # Deliberation only adds value when at least one character sees a BUY.
+                if lynch_verdict != 'BUY' and buffett_verdict != 'BUY':
+                    combined_reasoning = f"Lynch: {lynch_verdict}, Buffett: {buffett_verdict} — no BUY from either analyst, skipping deliberation."
+                    logger.info(f"[Deliberation] Skipping {symbol} — {combined_reasoning}")
+                    print(f"    Skipping deliberation: Lynch={lynch_verdict}, Buffett={buffett_verdict}")
+                    self.db.create_strategy_decision(
+                        run_id=run_id,
+                        symbol=symbol,
+                        lynch_score=stock.get('lynch_score'),
+                        lynch_status=stock.get('lynch_status'),
+                        buffett_score=stock.get('buffett_score'),
+                        buffett_status=stock.get('buffett_status'),
+                        consensus_score=stock.get('consensus_score'),
+                        consensus_verdict='SKIP',
+                        thesis_verdict='SKIP',
+                        thesis_summary=combined_reasoning,
+                        thesis_full=None,
+                        final_decision='SKIP',
+                        decision_reasoning=combined_reasoning
+                    )
+                    # Emit exit signal if held and at least one analyst said AVOID
+                    if (lynch_verdict == 'AVOID' or buffett_verdict == 'AVOID') and symbol in held_symbols:
+                        quantity = holdings.get(symbol, 0)
+                        return {'_exit_signal': ExitSignal(
+                            symbol=symbol,
+                            quantity=quantity,
+                            reason=f"No bullish case: Lynch={lynch_verdict}, Buffett={buffett_verdict}",
+                        )}
+                    return None
+
+                # At least one analyst is bullish — proceed with AI deliberation
                 try:
                     deliberation_text, final_verdict = self._conduct_deliberation(
                         user_id=user_id,
                         symbol=symbol,
                         lynch_thesis=lynch_thesis,
-                        lynch_verdict=stock.get('lynch_thesis_verdict', 'UNKNOWN'),
+                        lynch_verdict=lynch_verdict,
                         buffett_thesis=buffett_thesis,
-                        buffett_verdict=stock.get('buffett_thesis_verdict', 'UNKNOWN'),
+                        buffett_verdict=buffett_verdict,
                         lynch_timestamp=stock.get('lynch_thesis_timestamp'),
                         buffett_timestamp=stock.get('buffett_thesis_timestamp')
                     )
 
                     stock['deliberation'] = deliberation_text
                     stock['final_verdict'] = final_verdict
-                    # print(f"    Final verdict after deliberation: {final_verdict}")
 
                 except Exception as e:
                     logger.error(f"Deliberation failed for {symbol}: {e}")
                     stock['final_verdict'] = None
                     stock['deliberation'] = None
-                    # print(f"    Deliberation FAILED: {e}")
+
 
                 # Check if final verdict meets requirements
                 if thesis_verdicts_required:
