@@ -148,6 +148,7 @@ class BriefingGenerator:
             'sells_json': json.dumps(sells),
             'holds_json': json.dumps(holds),
             'watchlist_json': json.dumps(watchlist),
+            'analysts': analysts or ['lynch', 'buffett'],
         }
 
         # Collect all symbols to provide a name mapping for the AI
@@ -175,9 +176,10 @@ class BriefingGenerator:
         # Format stock reference for prompt
         stock_ref_str = "\n".join([f"- {sym}: {name}" for sym, name in stock_ref_map.items()])
         briefing['stock_reference'] = stock_ref_str
+        # Store structured name map for the frontend
+        briefing['company_names'] = stock_ref_map
 
         # Generate AI executive summary
-        briefing['analysts'] = analysts or ['lynch', 'buffett']
         briefing['strategy_name'] = strategy_name or ''
         briefing['strategy_description'] = strategy_description or ''
         briefing['executive_summary'] = self._generate_executive_summary(briefing)

@@ -212,7 +212,14 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
                         passed_thesis_count += 1
                 
                 self.db.update_strategy_run(run_id, theses=passed_thesis_count)
-                print(f"✓ Generated {len(enriched)} theses ({passed_thesis_count} passed)\n")
+                
+                # For single-analyst strategies, targets = BUY verdicts (no deliberation phase)
+                # For pair strategies, targets will be overwritten by deliberation result below
+                buy_verdict_count = sum(1 for s in enriched if s.get('thesis_verdict') == 'BUY')
+                self.db.update_strategy_run(run_id, targets=buy_verdict_count)
+                
+                print(f"✓ Generated {len(enriched)} theses ({passed_thesis_count} passed, {buy_verdict_count} BUY targets)\n")
+
                 if job_id:
                     self.db.update_job_progress(job_id, progress_pct=70, progress_message=f'Theses written — {passed_thesis_count} stocks advancing to deliberation...')
             else:

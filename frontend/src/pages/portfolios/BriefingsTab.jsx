@@ -1,7 +1,7 @@
 // ABOUTME: Strategy run briefings tab for autonomous portfolios
 // ABOUTME: Displays briefing cards with markdown summaries, trades table, and score-enriched holds
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
     ChevronDown,
     Filter,
@@ -23,8 +24,8 @@ import {
     ArrowLeftRight,
     ArrowRight,
     Globe,
-    Users,
-    Target
+    Target,
+    MessageSquare
 } from 'lucide-react'
 
 const API_BASE = '/api'
@@ -84,6 +85,9 @@ export default function BriefingsTab({ portfolioId, refreshKey = 0 }) {
 
 function BriefingCard({ briefing }) {
     const date = formatLocal(briefing.generated_at)
+    const analysts = briefing.analysts || ['lynch', 'buffett']
+    const companyNames = briefing.company_names || {}
+    const theses = briefing.character_theses || {}  // {symbol: {character_id: text}}
 
     const buys = safeParse(briefing.buys_json)
     const sells = safeParse(briefing.sells_json)
@@ -92,6 +96,22 @@ function BriefingCard({ briefing }) {
         ...sells.map(s => ({ ...s, action: 'SELL' })),
         ...buys.map(b => ({ ...b, action: 'BUY' })),
     ]
+
+    // Fetch decisions for this run to get thesis/deliberation data
+    const [decisions, setDecisions] = useState([])
+    useEffect(() => {
+        if (!briefing.run_id) return
+        fetch(`${API_BASE}/strategies/runs/${briefing.run_id}/decisions`, { credentials: 'include' })
+            .then(res => res.ok ? res.json() : [])
+            .then(data => setDecisions(Array.isArray(data) ? data : []))
+            .catch(() => { })
+    }, [briefing.run_id])
+
+    // Build a quick lookup map: symbol -> decision record
+    const decisionMap = {}
+    for (const d of decisions) {
+        if (d.symbol) decisionMap[d.symbol] = d
+    }
 
     return (
         <Card>
@@ -143,12 +163,55 @@ function BriefingCard({ briefing }) {
                 </div>
 
                 {/* Trades Table */}
-                {trades.length > 0 && <TradesTable trades={trades} />}
+                {trades.length > 0 && (
+                    <TradesTable
+                        trades={trades}
+                        analysts={analysts}
+                        companyNames={companyNames}
+                        theses={theses}
+                        decisionMap={decisionMap}
+                    />
+                )}
 
                 {/* Holds */}
                 {holds.length > 0 && <HoldsSection holds={holds} />}
             </CardContent>
         </Card>
+    )
+}
+
+/** Small dialog that renders any markdown text. */
+function TextDialog({ open, onClose, title, content }) {
+    return (
+        <Dialog open={open} onOpenChange={onClose}>
+            <DialogContent className="max-w-3xl max-h-[85vh] p-0 flex flex-col overflow-hidden">
+                <DialogHeader className="p-6 pb-4 border-b">
+                    <DialogTitle>{title}</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="h-[calc(85vh-100px)] w-full">
+                    <div className="p-6 prose prose-sm max-w-none dark:prose-invert">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                    </div>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+/** A small link-style button that opens a text dialog. */
+function ThesisLink({ label, content, title }) {
+    const [open, setOpen] = useState(false)
+    if (!content) return <span className="text-xs text-muted-foreground">—</span>
+    return (
+        <>
+            <button
+                className="text-xs text-primary hover:underline underline-offset-2 cursor-pointer"
+                onClick={() => setOpen(true)}
+            >
+                {label}
+            </button>
+            <TextDialog open={open} onClose={() => setOpen(false)} title={title} content={content} />
+        </>
     )
 }
 
@@ -167,77 +230,152 @@ function ScoreBadge({ score, status }) {
     )
 }
 
-function TradesTable({ trades }) {
+function TradesTable({ trades, analysts, companyNames, theses, decisionMap }) {
+    const isSingle = analysts.length === 1
+    const showLynch = analysts.includes('lynch')
+    const showBuffett = analysts.includes('buffett')
+
+    // Column labels
+    const lynchLabel = isSingle ? 'Score' : 'Lynch Score'
+    const buffettLabel = 'Buffett Score'
+
     return (
         <div>
             <h4 className="text-sm font-medium mb-2">Trades</h4>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[60px]">Action</TableHead>
-                        <TableHead>Symbol</TableHead>
-                        <TableHead className="text-right">Shares</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-right">Value</TableHead>
-                        <TableHead className="text-right">Lynch</TableHead>
-                        <TableHead className="text-right">Buffett</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {trades.map((trade, i) => (
-                        <TableRow key={`${trade.action}-${trade.symbol}-${i}`}>
-                            <TableCell>
-                                <Badge
-                                    variant={trade.action === 'BUY' ? 'success' : 'destructive'}
-                                    className="text-[10px] px-1.5 py-0"
-                                >
-                                    {trade.action}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>
-                                <Link
-                                    to={`/stock/${trade.symbol}`}
-                                    className="font-mono text-sm font-medium text-primary hover:underline"
-                                >
-                                    {trade.symbol}
-                                </Link>
-                            </TableCell>
-                            <TableCell className="text-right tabular-nums text-sm">
-                                {trade.shares ?? '—'}
-                            </TableCell>
-                            <TableCell className="text-right tabular-nums text-sm">
-                                {trade.price != null ? `$${trade.price.toFixed(2)}` : '—'}
-                            </TableCell>
-                            <TableCell className="text-right tabular-nums text-sm">
-                                {trade.position_value != null
-                                    ? `$${trade.position_value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                                    : '—'}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <ScoreBadge score={trade.lynch_score} status={trade.lynch_status} />
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <ScoreBadge score={trade.buffett_score} status={trade.buffett_status} />
-                            </TableCell>
+            <div className="w-full overflow-hidden rounded-md border border-border/50">
+                <Table className="w-full table-auto">
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[70px]">Action</TableHead>
+                            <TableHead className="min-w-[150px]">Symbol</TableHead>
+                            <TableHead className="text-right w-[80px]">Shares</TableHead>
+                            <TableHead className="text-right w-[90px]">Price</TableHead>
+                            <TableHead className="text-right w-[100px]">Value</TableHead>
+                            {showLynch && <TableHead className="text-right w-[50px] leading-tight">{lynchLabel}</TableHead>}
+                            {showBuffett && <TableHead className="text-right w-[50px] leading-tight">{buffettLabel}</TableHead>}
+                            {/* Thesis / deliberation columns */}
+                            {isSingle && (
+                                <TableHead className="text-center w-[50px]">Thesis</TableHead>
+                            )}
+                            {!isSingle && showLynch && (
+                                <TableHead className="text-center w-[50px] leading-tight">Lynch Thesis</TableHead>
+                            )}
+                            {!isSingle && showBuffett && (
+                                <TableHead className="text-center w-[50px] leading-tight">Buffett Thesis</TableHead>
+                            )}
+                            {!isSingle && (
+                                <TableHead className="text-center w-[50px] leading-tight">Deliberation</TableHead>
+                            )}
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {trades.map((trade, i) => {
+                            const decision = decisionMap[trade.symbol]
+                            const companyName = companyNames[trade.symbol]
+                            const symbolTheses = theses[trade.symbol] || {}
+
+                            // Individual character theses come from lynch_analyses cache
+                            const lynchThesis = symbolTheses['lynch'] || null
+                            const buffettThesis = symbolTheses['buffett'] || null
+                            // Deliberation for pair strategies = thesis_full on the decision record
+                            const deliberation = !isSingle
+                                ? (decision?.thesis_full || decision?.decision_reasoning)
+                                : null
+                            // For single analyst, use their thesis from symbolTheses
+                            const singleThesis = isSingle
+                                ? (symbolTheses[analysts[0]] || null)
+                                : null
+
+                            return (
+                                <TableRow key={`${trade.action}-${trade.symbol}-${i}`}>
+                                    <TableCell>
+                                        <Badge
+                                            variant={trade.action === 'BUY' ? 'success' : 'destructive'}
+                                            className="text-[10px] px-1.5 py-0"
+                                        >
+                                            {trade.action}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="py-2">
+                                        <div className="flex flex-col min-w-0 pr-2">
+                                            <Link
+                                                to={`/stock/${trade.symbol}`}
+                                                className="font-mono text-sm font-medium text-primary hover:underline"
+                                            >
+                                                {trade.symbol}
+                                            </Link>
+                                            {companyName && (
+                                                <span className="text-xs text-muted-foreground truncate max-w-[160px]">
+                                                    {companyName}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right tabular-nums text-sm">
+                                        {trade.shares ?? '—'}
+                                    </TableCell>
+                                    <TableCell className="text-right tabular-nums text-sm">
+                                        {trade.price != null ? `$${trade.price.toFixed(2)}` : '—'}
+                                    </TableCell>
+                                    <TableCell className="text-right tabular-nums text-sm">
+                                        {trade.position_value != null
+                                            ? `$${trade.position_value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                            : '—'}
+                                    </TableCell>
+                                    {showLynch && (
+                                        <TableCell className="text-right">
+                                            <ScoreBadge score={trade.lynch_score} status={trade.lynch_status} />
+                                        </TableCell>
+                                    )}
+                                    {showBuffett && (
+                                        <TableCell className="text-right">
+                                            <ScoreBadge score={trade.buffett_score} status={trade.buffett_status} />
+                                        </TableCell>
+                                    )}
+                                    {/* Thesis columns */}
+                                    {isSingle && (
+                                        <TableCell className="text-center">
+                                            <ThesisLink
+                                                label="Read"
+                                                content={singleThesis}
+                                                title={`${trade.symbol} — ${analysts[0] === 'lynch' ? 'Lynch' : 'Buffett'} Thesis`}
+                                            />
+                                        </TableCell>
+                                    )}
+                                    {!isSingle && showLynch && (
+                                        <TableCell className="text-center">
+                                            <ThesisLink
+                                                label="Read"
+                                                content={lynchThesis}
+                                                title={`${trade.symbol} — Lynch's Thesis`}
+                                            />
+                                        </TableCell>
+                                    )}
+                                    {!isSingle && showBuffett && (
+                                        <TableCell className="text-center">
+                                            <ThesisLink
+                                                label="Read"
+                                                content={buffettThesis}
+                                                title={`${trade.symbol} — Buffett's Thesis`}
+                                            />
+                                        </TableCell>
+                                    )}
+                                    {!isSingle && (
+                                        <TableCell className="text-center">
+                                            <ThesisLink
+                                                label="Read"
+                                                content={deliberation}
+                                                title={`${trade.symbol} — Deliberation`}
+                                            />
+                                        </TableCell>
+                                    )}
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
+            </div>
         </div>
-    )
-}
-
-function UpsideBadge({ pct }) {
-    if (pct == null) return <span className="text-xs text-muted-foreground">—</span>
-
-    const colorClass = pct >= 10 ? 'text-emerald-600 dark:text-emerald-400'
-        : pct >= 0 ? 'text-yellow-600 dark:text-yellow-400'
-            : 'text-red-600 dark:text-red-400'
-
-    return (
-        <span className={`text-xs font-medium tabular-nums ${colorClass}`}>
-            {pct >= 0 ? '+' : ''}{pct.toFixed(1)}%
-        </span>
     )
 }
 
