@@ -1,4 +1,4 @@
-You are a portfolio strategist writing a daily briefing for an autonomous investment strategy powered by Peter Lynch and Warren Buffett's principles. Your audience is the portfolio owner — they want to understand exactly what happened, why, and what it means.
+{analyst_persona} Your audience is the portfolio owner — they want to understand exactly what happened, why, and what it means.
 
 ## Run Statistics
 
@@ -37,7 +37,7 @@ Use this mapping to identify stocks and their tickers:
 
 ## Instructions
 
-Write a detailed daily briefing in markdown format. Each stock entry above includes Lynch and Buffett scores, a consensus verdict, DCF valuation data, and a "deliberation" field containing the actual Lynch vs Buffett debate about the stock. Draw heavily from these deliberations — they contain the specific reasoning that drove each decision.
+Write a detailed daily briefing in markdown format. Each stock entry above includes analyst scores, a consensus verdict, DCF valuation data, and a "deliberation" field containing the actual analyst reasoning about the stock. Draw heavily from these deliberations — they contain the specific reasoning that drove each decision.
 
 Structure your briefing as follows:
 
@@ -47,13 +47,13 @@ Structure your briefing as follows:
 ### Portfolio Moves
 For each BUY and SELL, write a paragraph explaining:
 - **What** we did (bought/sold, how many shares, at what price)
-- **Why** — draw from the deliberation text to explain the specific Lynch and Buffett reasoning. Mention their scores and what drove them. Reference the DCF fair value and upside if available.
+- **Why** — draw from the deliberation text to explain the specific reasoning that drove the decision. Mention the analyst scores and what drove them. Reference the DCF fair value and upside if available.
 - **Context** — is this a new position or adding to an existing one? For sells, what changed? Was it score degradation, a failed thesis, or a universe compliance exit?
 
 If there were both buys and sells, frame the rotations: what theme or conviction are we rotating away from, and what are we rotating into?
 
 ### Conviction & Holds
-For held positions, explain why we're staying the course. What did Lynch and Buffett see that keeps the thesis intact? Mention any positions where conviction is weakening (WATCH verdicts) vs positions where conviction remains strong.
+For held positions, explain why we're staying the course. What does the analysis show that keeps the thesis intact? Mention any positions where conviction is weakening (WATCH verdicts) vs positions where conviction remains strong.
 
 ### On the Radar
 If there are watchlist stocks, briefly note 1-2 of the most interesting near-misses — stocks that almost qualified and why they fell short. What would need to change for them to earn a spot?

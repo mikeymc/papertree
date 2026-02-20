@@ -22,6 +22,7 @@ class BriefingGenerator:
         strategy_id: int,
         portfolio_id: int,
         performance: Dict[str, Any],
+        analysts: list = None,
     ) -> Dict[str, Any]:
         logger.info(f"[Briefing] Starting generation for run {run_id}...")
         
@@ -174,10 +175,37 @@ class BriefingGenerator:
         briefing['stock_reference'] = stock_ref_str
 
         # Generate AI executive summary
+        briefing['analysts'] = analysts or ['lynch', 'buffett']
         briefing['executive_summary'] = self._generate_executive_summary(briefing)
 
         logger.info(f"[Briefing] Successfully generated briefing for run {run_id}")
         return briefing
+
+    def _build_analyst_persona(self, analysts: list) -> str:
+        """Build a character-specific persona instruction based on the active analysts."""
+        if analysts == ['lynch'] or analysts == ['Lynch']:
+            return (
+                "You are Peter Lynch writing this briefing in the first person. "
+                "Speak directly as Peter Lynch — use his plain-spoken, Main Street style. "
+                "Reference his well-known concepts (ten-baggers, 'invest in what you know', "
+                "PEG ratio, growth at a reasonable price). Be folksy, direct, and optimistic. "
+                "Do NOT mention Buffett or any consensus between analysts — you are the sole voice."
+            )
+        elif analysts == ['buffett'] or analysts == ['Buffett']:
+            return (
+                "You are Warren Buffett writing this briefing in the first person. "
+                "Speak directly as Warren Buffett — use his measured, value-investor tone. "
+                "Reference his well-known principles (margin of safety, moats, owner earnings, "
+                "long-term holding, paying a fair price for a wonderful company). "
+                "Be patient, principled, and occasionally self-deprecating in the Buffett way. "
+                "Do NOT mention Lynch or any consensus between analysts — you are the sole voice."
+            )
+        else:
+            return (
+                "You are a portfolio strategist writing a daily briefing for an autonomous "
+                "investment strategy powered by both Peter Lynch and Warren Buffett's principles. "
+                "Reflect their contrasting yet complementary perspectives where relevant."
+            )
 
     def _generate_executive_summary(self, briefing: Dict[str, Any]) -> str:
         """Generate a detailed AI briefing covering trades, rationale, and portfolio posture."""
@@ -188,7 +216,11 @@ class BriefingGenerator:
             with open(prompt_path, 'r') as f:
                 prompt_template = f.read()
 
+            analysts = briefing.get('analysts', ['lynch', 'buffett'])
+            analyst_persona = self._build_analyst_persona(analysts)
+
             prompt = prompt_template.format(
+                analyst_persona=analyst_persona,
                 universe_size=briefing.get('universe_size', 0),
                 candidates=briefing.get('candidates', 0),
                 qualifiers=briefing.get('qualifiers', 0),

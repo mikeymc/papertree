@@ -326,6 +326,7 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
                     strategy_id=strategy_id,
                     portfolio_id=portfolio_id,
                     performance=perf,
+                    analysts=analysts,
                 )
                 self.db.save_briefing(briefing_data)
                 print(f"✓ Briefing generated\n")
