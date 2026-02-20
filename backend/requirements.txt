@@ -20,10 +20,10 @@ lxml
 psycopg[binary]
 psycopg_pool
 scipy
-pytest-playwright
 scikit-optimize
 debugpy
 fredapi
 resend
 PyYAML
 markdown
+cloudscraper
