@@ -19,6 +19,7 @@ import StockListCard from './components/StockListCard'
 
 import AlgorithmTuning from './pages/AlgorithmTuning'
 import LoginPage from './pages/LoginPage'
+import LandingPage from './pages/LandingPage'
 
 import AdvancedFilter from './components/AdvancedFilter'
 import SearchPopover from './components/SearchPopover'
@@ -1159,9 +1160,10 @@ function App() {
   if (!user) {
     return (
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     )
   }
