@@ -18,6 +18,9 @@ import {
   CheckCircle2,
   ArrowRight,
   BookOpen,
+  MessageSquare,
+  Calculator,
+  Newspaper,
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -137,7 +140,7 @@ export default function LandingPage() {
             How it works
           </p>
           <h2 className="text-2xl font-bold md:text-3xl text-white">
-            Six steps. Thousands of stocks. Your shortlist.
+            Six steps. Thousands of stocks. One disciplined portfolio.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-zinc-500">
             papertree.ai runs every stock through a multi-step filtering pipeline
@@ -199,6 +202,57 @@ export default function LandingPage() {
               <p className="mt-2 text-sm leading-relaxed text-zinc-400">{desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Research Desk */}
+      <section className="border-y border-zinc-800 bg-zinc-900/50">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="text-center">
+            <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-500">
+              Beyond the portfolio
+            </p>
+            <h2 className="text-2xl font-bold md:text-3xl text-white">
+              A full research desk at your fingertips.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-zinc-500">
+              Dig into any company, any time. papertree.ai gives you the same tools
+              the autonomous portfolio uses — available whenever you need them.
+            </p>
+          </div>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                icon: MessageSquare,
+                title: 'AI Chat',
+                desc: 'Ask questions about any stock. 30+ specialized tools for financials, filings, insider activity, and more.',
+              },
+              {
+                icon: Calculator,
+                title: 'DCF Analysis',
+                desc: 'Run AI-assisted discounted cash flow models to estimate intrinsic value and margin of safety.',
+              },
+              {
+                icon: Newspaper,
+                title: 'Earnings Intelligence',
+                desc: 'Read synthesized earnings calls and reports — key takeaways, management tone, and guidance changes.',
+              },
+              {
+                icon: Search,
+                title: 'Stock Screener',
+                desc: 'Filter the full market by fundamentals, growth metrics, debt levels, and investor-style scoring.',
+              },
+            ].map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="rounded-xl border border-zinc-800 bg-zinc-900 p-5"
+              >
+                <Icon className="mb-3 h-5 w-5 text-emerald-500" />
+                <h3 className="font-semibold text-white">{title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">{desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
