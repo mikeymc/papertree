@@ -99,7 +99,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  There's no shortage of financial data — the problem is knowing what matters
+                  Traditional screeners only catch the numbers, completely missing qualitative context
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
@@ -125,7 +125,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                  AI screens stocks against proven, time-tested investment criteria
+                  AI combines hard financial metrics with qualitative intelligence from SEC filings
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
