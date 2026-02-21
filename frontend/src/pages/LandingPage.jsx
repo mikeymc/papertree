@@ -24,23 +24,23 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
+    <div className="min-h-screen bg-zinc-950 text-white">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur-md">
+      <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <img
-              src="/icons/bonsai_black.png"
+              src="/icons/bonsai_white.png"
               alt="papertree.ai"
               className="h-8 w-8 object-contain"
             />
-            <span className="text-xl font-semibold tracking-tight">papertree.ai</span>
+            <span className="text-xl font-semibold tracking-tight text-white">papertree.ai</span>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate('/login')}>
+            <Button variant="ghost" className="text-zinc-300 hover:text-white hover:bg-zinc-800" onClick={() => navigate('/login')}>
               Log In
             </Button>
-            <Button onClick={() => navigate('/login')}>
+            <Button className="bg-emerald-600 text-white hover:bg-emerald-700 font-medium" onClick={() => navigate('/login')}>
               Try Free for 14 Days
             </Button>
           </div>
@@ -53,65 +53,65 @@ export default function LandingPage() {
           <p className="mb-4 text-sm font-medium uppercase tracking-widest text-emerald-600">
             AI-Powered Stock Research
           </p>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+          <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl text-white">
             Stop scrolling through tickers.
             <br />
-            <span className="text-zinc-400">Start reading investment theses.</span>
+            <span className="text-zinc-500">Start reading investment theses.</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600">
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
             papertree.ai screens thousands of stocks using the same criteria as legendary
             investors like Peter Lynch and Warren Buffett — then writes you a research
             briefing explaining exactly why each stock made the cut.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Button size="lg" className="text-base px-8 py-6" onClick={() => navigate('/login')}>
+            <Button size="lg" className="text-base px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0" onClick={() => navigate('/login')}>
               Try Free for 14 Days
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-            <Button variant="outline" size="lg" className="text-base px-8 py-6" onClick={() => {
+            <Button variant="outline" size="lg" className="text-base px-8 py-6 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" onClick={() => {
               document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
             }}>
               See How It Works
             </Button>
           </div>
-          <p className="mt-4 text-sm text-zinc-400">No credit card required</p>
+          <p className="mt-4 text-sm text-zinc-500">No credit card required</p>
         </div>
       </section>
 
       {/* Problem / Solution */}
-      <section className="border-y border-zinc-200 bg-zinc-50">
+      <section className="border-y border-zinc-800 bg-zinc-900/50">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="grid gap-16 md:grid-cols-2">
             <div>
-              <p className="mb-3 text-sm font-medium uppercase tracking-widest text-zinc-400">
+              <p className="mb-3 text-sm font-medium uppercase tracking-widest text-zinc-500">
                 The problem
               </p>
-              <h2 className="text-2xl font-bold md:text-3xl">
+              <h2 className="text-2xl font-bold md:text-3xl text-white">
                 Stock screeners give you lists. Not answers.
               </h2>
-              <ul className="mt-6 space-y-4 text-zinc-600">
+              <ul className="mt-6 space-y-4 text-zinc-400">
                 <li className="flex items-start gap-3">
-                  <span className="mt-1 text-zinc-300">&#x2715;</span>
+                  <span className="mt-1 text-zinc-600">&#x2715;</span>
                   Generic screeners dump hundreds of tickers with no context
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="mt-1 text-zinc-300">&#x2715;</span>
+                  <span className="mt-1 text-zinc-600">&#x2715;</span>
                   ChatGPT hallucinates financial data — P/E ratios, revenue, debt figures
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="mt-1 text-zinc-300">&#x2715;</span>
+                  <span className="mt-1 text-zinc-600">&#x2715;</span>
                   Researching each stock yourself takes hours per company
                 </li>
               </ul>
             </div>
             <div>
-              <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-600">
+              <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-500">
                 The solution
               </p>
-              <h2 className="text-2xl font-bold md:text-3xl">
+              <h2 className="text-2xl font-bold md:text-3xl text-white">
                 A research analyst that screens, verifies, and explains.
               </h2>
-              <ul className="mt-6 space-y-4 text-zinc-600">
+              <ul className="mt-6 space-y-4 text-zinc-400">
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
                   AI screens stocks against proven, time-tested investment criteria
@@ -133,10 +133,10 @@ export default function LandingPage() {
       {/* How It Works */}
       <section id="how-it-works" className="mx-auto max-w-6xl px-6 py-20">
         <div className="text-center">
-          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-600">
+          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-500">
             How it works
           </p>
-          <h2 className="text-2xl font-bold md:text-3xl">
+          <h2 className="text-2xl font-bold md:text-3xl text-white">
             Six steps. Thousands of stocks. Your shortlist.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-zinc-500">
@@ -182,31 +182,37 @@ export default function LandingPage() {
               title: 'Your Shortlist',
               desc: 'A curated list of high-conviction ideas with the research already done — ready for your final decision.',
             },
+            {
+              icon: TrendingUp,
+              step: '7',
+              title: 'Autonomous Tracking',
+              desc: 'Let your strategy run in the background. The system tracks alpha vs the S&P 500 automatically over time.',
+            },
           ].map(({ icon: Icon, step, title, desc }) => (
             <div
               key={step}
-              className="rounded-xl border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-md"
+              className="rounded-xl border border-zinc-800 bg-zinc-900 p-6 transition-shadow hover:shadow-lg hover:shadow-emerald-900/10 hover:border-zinc-700"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-950 border border-emerald-900 text-emerald-500">
                   <Icon className="h-5 w-5" />
                 </div>
-                <span className="text-xs font-medium uppercase tracking-widest text-zinc-400">
+                <span className="text-xs font-medium uppercase tracking-widest text-zinc-500">
                   Step {step}
                 </span>
               </div>
-              <h3 className="text-lg font-semibold">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-500">{desc}</p>
+              <h3 className="text-lg font-semibold text-white">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Legendary Investors */}
-      <section className="border-y border-zinc-200 bg-zinc-900 text-white">
+      <section className="border-y border-zinc-800 bg-black text-white">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="text-center">
-            <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-400">
+            <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-500">
               Built on proven strategies
             </p>
             <h2 className="text-2xl font-bold md:text-3xl">
@@ -273,60 +279,65 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Differentiators */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
+      {/* Pricing Section replacing Content */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="text-center">
-          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-600">
-            Why papertree.ai
+          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-500">
+            Pricing
           </p>
-          <h2 className="text-2xl font-bold md:text-3xl">
-            Not another screener. A research process.
+          <h2 className="text-2xl font-bold md:text-3xl text-white">
+            Simple, transparent pricing.
           </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-zinc-400">
+            Start finding better investments today. One successful trade pays for years of access.
+          </p>
         </div>
-        <div className="mt-12 grid gap-8 md:grid-cols-3">
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
-              <Shield className="h-6 w-6 text-emerald-600" />
+
+        <div className="mt-16 mx-auto max-w-sm">
+          <div className="rounded-2xl border border-emerald-800 bg-zinc-900/80 p-8 shadow-xl shadow-emerald-900/20 backdrop-blur-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
+              Most Popular
             </div>
-            <h3 className="font-semibold">Real Data, Not Hallucinations</h3>
-            <p className="mt-2 text-sm text-zinc-500">
-              Every metric comes from verified financial data sources.
-              AI generates the thesis — but the numbers are never made up.
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
-              <TrendingUp className="h-6 w-6 text-emerald-600" />
+            <h3 className="text-2xl font-semibold text-white">Pro Analyst</h3>
+            <div className="mt-4 flex items-baseline text-white">
+              <span className="text-5xl font-bold tracking-tight">$39</span>
+              <span className="ml-1 text-xl text-zinc-400">/month</span>
             </div>
-            <h3 className="font-semibold">Strategies, Not Just Screens</h3>
-            <p className="mt-2 text-sm text-zinc-500">
-              Set up an investment strategy once and let it run continuously.
-              Get notified when new stocks match your criteria.
+            <p className="mt-4 text-sm text-zinc-400">
+              Full access to the AI analyst, portfolio tracking, and proven templates.
             </p>
-          </div>
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
-              <FileText className="h-6 w-6 text-emerald-600" />
-            </div>
-            <h3 className="font-semibold">Theses, Not Tickers</h3>
-            <p className="mt-2 text-sm text-zinc-500">
-              Every result includes a written investment thesis — the bull case,
-              key risks, and critical metrics. No more blind ticker lists.
-            </p>
+            <ul className="mt-8 space-y-4">
+              {[
+                'Unlimited AI generated theses',
+                'Lynch & Buffett strategy templates',
+                'Autonomous portfolio tracking',
+                'Advanced real-time risk filtering',
+                'SEC filing & earnings analysis'
+              ].map((feature, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm text-zinc-300">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            <Button className="mt-8 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-6" onClick={() => navigate('/login')}>
+              Start 14-Day Free Trial
+            </Button>
+            <p className="mt-3 text-center text-xs text-zinc-500">Cancel anytime. No questions asked.</p>
           </div>
         </div>
       </section>
 
       {/* Social Proof Placeholder */}
-      <section className="border-y border-zinc-200 bg-zinc-50">
+      <section className="border-y border-zinc-800 bg-zinc-900/30">
         <div className="mx-auto max-w-6xl px-6 py-20 text-center">
-          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-zinc-400">
+          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-zinc-500">
             Early access
           </p>
-          <h2 className="text-2xl font-bold md:text-3xl">
+          <h2 className="text-2xl font-bold md:text-3xl text-white">
             Built by an investor, for investors.
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-zinc-500">
+          <p className="mx-auto mt-4 max-w-2xl text-zinc-400">
             papertree.ai was born from frustration with tools that give you data
             but not insight. We're a small team obsessed with making stock research
             faster and more rigorous — not replacing your judgment, but sharpening it.
@@ -336,14 +347,14 @@ export default function LandingPage() {
 
       {/* Final CTA */}
       <section className="mx-auto max-w-6xl px-6 py-24 text-center">
-        <h2 className="text-3xl font-bold md:text-4xl">
+        <h2 className="text-3xl font-bold md:text-4xl text-white">
           Your next investment idea is waiting.
         </h2>
-        <p className="mx-auto mt-4 max-w-xl text-zinc-500">
+        <p className="mx-auto mt-4 max-w-xl text-zinc-400">
           Start your free 14-day trial. No credit card required.
         </p>
         <div className="mt-8">
-          <Button size="lg" className="text-base px-8 py-6" onClick={() => navigate('/login')}>
+          <Button size="lg" className="text-base px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0" onClick={() => navigate('/login')}>
             Get Started Free
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
@@ -351,20 +362,20 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-sm text-zinc-400">
+      <footer className="border-t border-zinc-800 bg-zinc-950">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-sm text-zinc-500">
           <div className="flex items-center gap-2">
             <img
-              src="/icons/bonsai_black.png"
+              src="/icons/bonsai_white.png"
               alt="papertree.ai"
               className="h-5 w-5 object-contain opacity-40"
             />
             <span>&copy; {new Date().getFullYear()} papertree.ai</span>
           </div>
           <div className="flex items-center gap-6">
-            <a href="mailto:info@papertree.ai" className="hover:text-zinc-600">Contact</a>
-            <a href="#" className="hover:text-zinc-600">Terms</a>
-            <a href="#" className="hover:text-zinc-600">Privacy</a>
+            <a href="mailto:info@papertree.ai" className="hover:text-zinc-300 transition-colors">Contact</a>
+            <a href="#" className="hover:text-zinc-300 transition-colors">Terms</a>
+            <a href="#" className="hover:text-zinc-300 transition-colors">Privacy</a>
           </div>
         </div>
       </footer>
