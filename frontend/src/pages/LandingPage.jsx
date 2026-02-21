@@ -44,7 +44,7 @@ export default function LandingPage() {
               Log In
             </Button>
             <Button className="bg-emerald-600 text-white hover:bg-emerald-700 font-medium" onClick={() => navigate('/login')}>
-              Try Free for 14 Days
+              Get Started Free
             </Button>
           </div>
         </div>
@@ -68,7 +68,7 @@ export default function LandingPage() {
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <Button size="lg" className="text-base px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0" onClick={() => navigate('/login')}>
-              Try Free for 14 Days
+              Get Started Free
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button variant="outline" size="lg" className="text-base px-8 py-6 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" onClick={() => {
@@ -341,29 +341,58 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="mt-16 mx-auto max-w-sm">
-          <div className="rounded-2xl border border-emerald-800 bg-zinc-900/80 p-8 shadow-xl shadow-emerald-900/20 backdrop-blur-sm relative overflow-hidden">
+        <div className="mt-16 grid gap-8 lg:grid-cols-3">
+          {/* Starter Tier */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 flex flex-col">
+            <h3 className="text-2xl font-semibold text-white">Starter</h3>
+            <div className="mt-4 flex items-baseline text-white">
+              <span className="text-5xl font-bold tracking-tight">$0</span>
+              <span className="ml-1 text-xl text-zinc-500">/forever</span>
+            </div>
+            <p className="mt-4 text-sm text-zinc-400 min-h-[40px]">
+              Get comfortable with AI-driven research.
+            </p>
+            <ul className="mt-8 space-y-4 flex-1">
+              {[
+                'Basic stock screening',
+                '5 AI theses per month',
+                'Access to fundamental data',
+                'Manual watchlist tracking'
+              ].map((feature, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-zinc-300">
+                  <CheckCircle2 className="h-5 w-5 text-zinc-600 shrink-0 mt-0.5" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            <Button variant="outline" className="mt-8 w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white py-6" onClick={() => navigate('/login')}>
+              Create Free Account
+            </Button>
+          </div>
+
+          {/* Research Pro Tier */}
+          <div className="rounded-2xl border border-emerald-800 bg-zinc-900/80 p-8 shadow-xl shadow-emerald-900/20 backdrop-blur-sm relative overflow-hidden flex flex-col scale-105 z-10">
             <div className="absolute top-0 right-0 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
               Most Popular
             </div>
-            <h3 className="text-2xl font-semibold text-white">Pro Analyst</h3>
+            <h3 className="text-2xl font-semibold text-white">Research Pro</h3>
             <div className="mt-4 flex items-baseline text-white">
-              <span className="text-5xl font-bold tracking-tight">$39</span>
+              <span className="text-5xl font-bold tracking-tight">$19</span>
               <span className="ml-1 text-xl text-zinc-400">/month</span>
             </div>
-            <p className="mt-4 text-sm text-zinc-400">
-              Full access to the AI analyst, portfolio tracking, and proven templates.
+            <p className="mt-4 text-sm text-emerald-100/70 min-h-[40px]">
+              A full AI research desk at your fingertips.
             </p>
-            <ul className="mt-8 space-y-4">
+            <ul className="mt-8 space-y-4 flex-1">
               {[
                 'Unlimited AI generated theses',
-                'Lynch & Buffett strategy templates',
-                'Autonomous portfolio tracking',
-                'Advanced real-time risk filtering',
-                'SEC filing & earnings analysis'
+                'Unlimited stock screening',
+                'AI chat for the full market',
+                'DCF modeling & Earnings Intelligence',
+                'Advanced real-time risk filtering'
               ].map((feature, i) => (
-                <li key={i} className="flex items-center gap-3 text-sm text-zinc-300">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                <li key={i} className="flex items-start gap-3 text-sm text-zinc-300">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                   {feature}
                 </li>
               ))}
@@ -371,7 +400,36 @@ export default function LandingPage() {
             <Button className="mt-8 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-6" onClick={() => navigate('/login')}>
               Start 14-Day Free Trial
             </Button>
-            <p className="mt-3 text-center text-xs text-zinc-500">Cancel anytime. No questions asked.</p>
+            <p className="mt-3 text-center text-xs text-emerald-500/60">Cancel anytime. No questions asked.</p>
+          </div>
+
+          {/* Autonomous Tier */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 flex flex-col">
+            <h3 className="text-2xl font-semibold text-white">Autonomous</h3>
+            <div className="mt-4 flex items-baseline text-white">
+              <span className="text-5xl font-bold tracking-tight">$39</span>
+              <span className="ml-1 text-xl text-zinc-500">/month</span>
+            </div>
+            <p className="mt-4 text-sm text-zinc-400 min-h-[40px]">
+              Let the system build and manage your portfolio.
+            </p>
+            <ul className="mt-8 space-y-4 flex-1">
+              {[
+                'Everything in Research Pro',
+                'Full 6-step autonomous pipeline',
+                'Lynch & Buffett strategy templates',
+                'Continuous portfolio monitoring',
+                'Automated rebalancing (paper trading)'
+              ].map((feature, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-zinc-300">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600/50 shrink-0 mt-0.5" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            <Button variant="outline" className="mt-8 w-full border-zinc-700 text-white hover:bg-zinc-800 hover:text-white py-6 bg-zinc-800/50" onClick={() => navigate('/login')}>
+              Start 14-Day Free Trial
+            </Button>
           </div>
         </div>
       </section>
@@ -413,7 +471,7 @@ export default function LandingPage() {
           Stop guessing. Start investing with conviction.
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-zinc-400">
-          Start your free 14-day trial. No credit card required.
+          Create a free account. No credit card required.
         </p>
         <div className="mt-8">
           <Button size="lg" className="text-base px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0" onClick={() => navigate('/login')}>
