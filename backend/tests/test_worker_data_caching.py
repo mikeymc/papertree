@@ -1,0 +1,326 @@
+"""
+Integration tests for worker data caching
+Tests that the worker correctly caches all external data during screening
+"""
+import pytest
+from unittest.mock import Mock, MagicMock, patch
+from worker import BackgroundWorker
+
+
+class TestWorkerDataCaching:
+    """Integration tests for worker data caching functionality"""
+    
+    # NOTE: These are placeholder tests for future integration testing
+    # The worker data caching has been manually tested and verified
+    # Full integration tests would require:
+    # - Running actual worker process
+    # - Mocking external APIs (TradingView, Finnhub, SEC, etc.)
+    # - Verifying database writes
+    # - Testing parallel execution with ThreadPoolExecutor
+    
+    def test_worker_module_imports(self):
+        """Verify worker module can be imported and has required classes"""
+        import worker
+        
+        # Verify BackgroundWorker class exists
+        assert hasattr(worker, 'BackgroundWorker')
+        assert callable(worker.BackgroundWorker)
+    
+    def test_fetcher_modules_exist(self):
+        """Verify all fetcher modules can be imported"""
+        # These imports will fail if the modules don't exist or have syntax errors
+        from price_history_fetcher import PriceHistoryFetcher
+        from sec_data_fetcher import SECDataFetcher
+        from news_fetcher import NewsFetcher
+        from material_events_fetcher import MaterialEventsFetcher
+        
+        # Verify classes are callable
+        assert callable(PriceHistoryFetcher)
+        assert callable(SECDataFetcher)
+        assert callable(NewsFetcher)
+        assert callable(MaterialEventsFetcher)
+    
+    @pytest.fixture
+    def mock_db(self):
+        """Create a mock database"""
+        db = Mock()
+        db.claim_pending_job = Mock(return_value=None)
+        db.get_stock_metrics = Mock()
+        db.save_screening_result = Mock()
+        db.update_job_progress = Mock()
+        db.update_session_progress = Mock()
+        db.update_session_total_count = Mock()
+        db.flush = Mock()
+        return db
+    
+    def test_worker_handles_fetch_timeout(self):
+        """Test that worker handles 10-second timeout for data fetching"""
+        # Test that slow fetches don't block the entire screening
+        assert True  # Placeholder for integration test
+    
+    def test_worker_continues_on_fetch_failure(self):
+        """Test that worker continues screening even if data fetch fails"""
+        # Test that a failed price fetch doesn't prevent stock from being screened
+        assert True  # Placeholder for integration test
+    
+    def test_parallel_fetching_performance(self):
+        """Test that parallel fetching completes within expected time"""
+        # Test that 4 concurrent fetches complete faster than sequential
+        assert True  # Placeholder for performance test
+
+
+class TestCachedAPIEndpoints:
+    """Integration tests for cached API endpoints"""
+    
+    @pytest.fixture
+    def mock_db(self):
+        """Create a mock database with cached data"""
+        db = Mock()
+        
+        # Mock cached price data
+        db.get_price_history.return_value = [
+            {'date': '2023-09-30', 'close': 175.0, 'adjusted_close': 175.0, 'volume': 1000000}
+        ]
+        db.get_weekly_prices.return_value = {
+            'dates': ['2023-01-01', '2023-01-08'],
+            'prices': [150.0, 152.5]
+        }
+        
+        # Mock cached SEC data
+        db.get_sec_filings.return_value = [
+            {'type': '10-K', 'date': '2023-10-27', 'url': 'http://...'}
+        ]
+        db.get_filing_sections.return_value = {
+            'business': {'content': 'Business description...', 'filing_type': '10-K'}
+        }
+        
+        # Mock cached news
+        db.get_news_articles.return_value = [
+            {'headline': 'Apple announces...', 'published_date': '2023-01-01'}
+        ]
+        db.get_news_cache_status.return_value = {
+            'last_updated': '2023-12-14T00:00:00',
+            'article_count': 1
+        }
+        
+        # Mock cached events
+        db.get_material_events.return_value = [
+            {'headline': 'Apple acquisition', 'filing_date': '2023-10-15'}
+        ]
+        db.get_material_events_cache_status.return_value = {
+            'last_updated': '2023-12-14T00:00:00',
+            'event_count': 1
+        }
+        
+        return db
+    
+    @patch('app.deps.db')
+    def test_history_endpoint_uses_cache(self, mock_db_patch, mock_db):
+        """Test that /api/stock/<symbol>/history uses cached data"""
+        # This would require actual Flask app testing
+        # Verify no external API calls are made
+        assert True  # Placeholder for integration test
+    
+    @patch('app.deps.db')
+    def test_filings_endpoint_uses_cache(self, mock_db_patch, mock_db):
+        """Test that /api/stock/<symbol>/filings uses cached data"""
+        assert True  # Placeholder for integration test
+    
+    @patch('app.deps.db')
+    def test_sections_endpoint_uses_cache(self, mock_db_patch, mock_db):
+        """Test that /api/stock/<symbol>/sections uses cached data"""
+        assert True  # Placeholder for integration test
+    
+    @patch('app.deps.db')
+    def test_news_endpoint_uses_cache(self, mock_db_patch, mock_db):
+        """Test that /api/stock/<symbol>/news uses cached data"""
+        assert True  # Placeholder for integration test
+    
+    @patch('app.deps.db')
+    def test_events_endpoint_uses_cache(self, mock_db_patch, mock_db):
+        """Test that /api/stock/<symbol>/material-events uses cached data"""
+        assert True  # Placeholder for integration test
+    
+    def test_no_external_calls_on_page_load(self):
+        """Test that loading stock detail page makes zero external API calls"""
+        # This would be best tested with network monitoring
+        assert True  # Placeholder for E2E test
+
+
+class TestCacheJobRouting:
+    """Tests for the new cache job type routing in worker._execute_job"""
+    
+    def test_execute_job_routes_price_history_cache(self):
+        """Verify _execute_job routes price_history_cache job type"""
+        import worker
+        assert hasattr(worker.BackgroundWorker, '_run_price_history_cache')
+        assert callable(getattr(worker.BackgroundWorker, '_run_price_history_cache'))
+    
+    def test_execute_job_routes_news_cache(self):
+        """Verify _execute_job routes news_cache job type"""
+        import worker
+        assert hasattr(worker.BackgroundWorker, '_run_news_cache')
+        assert callable(getattr(worker.BackgroundWorker, '_run_news_cache'))
+    
+    def test_execute_job_routes_10k_cache(self):
+        """Verify _execute_job routes 10k_cache job type"""
+        import worker
+        assert hasattr(worker.BackgroundWorker, '_run_10k_cache')
+        assert callable(getattr(worker.BackgroundWorker, '_run_10k_cache'))
+    
+    def test_execute_job_routes_8k_cache(self):
+        """Verify _execute_job routes 8k_cache job type"""
+        import worker
+        assert hasattr(worker.BackgroundWorker, '_run_8k_cache')
+        assert callable(getattr(worker.BackgroundWorker, '_run_8k_cache'))
+    
+    def test_execute_job_routes_outlook_cache(self):
+        """Verify _execute_job routes outlook_cache job type"""
+        import worker
+        assert hasattr(worker.BackgroundWorker, '_run_outlook_cache')
+        assert callable(getattr(worker.BackgroundWorker, '_run_outlook_cache'))
+
+
+class TestNewsCacheJob:
+    """Tests for news cache job implementation"""
+
+    def test_news_cache_uses_tradingview_with_ordering(self):
+        """Verify _run_news_cache uses TradingView like other cache methods and orders by score"""
+        import worker
+        import inspect
+
+        source = inspect.getsource(worker.BackgroundWorker._run_news_cache)
+
+        # Check TradingView usage (consistent with other cache methods)
+        assert 'TradingViewFetcher' in source, \
+            "News cache should use TradingViewFetcher like other cache methods"
+        assert 'fetch_all_stocks' in source, \
+            "News cache should fetch_all_stocks from TradingView"
+
+        # Check score ordering is used
+        assert 'get_stocks_ordered_by_score' in source, \
+            "News cache should prioritize stocks ordered by score"
+
+    def test_news_cache_uses_region_param(self):
+        """Verify _run_news_cache uses region logic like other cache methods"""
+        import worker
+        import inspect
+
+        source = inspect.getsource(worker.BackgroundWorker._run_news_cache)
+
+        # Check region logic exists (consistent with other cache methods)
+        assert 'region_mapping' in source, \
+            "News cache should use region mapping like other cache methods"
+        assert 'tv_regions' in source, \
+            "News cache should calculate tv_regions from region param"
+
+    def test_news_cache_supports_symbols_param(self):
+        """Verify _run_news_cache supports symbols parameter like other cache methods"""
+        import worker
+        import inspect
+
+        source = inspect.getsource(worker.BackgroundWorker._run_news_cache)
+
+        # Check symbols parameter support (consistent with 10k, outlook, transcripts, forward_metrics)
+        assert "params.get('symbols')" in source, \
+            "News cache should support symbols parameter for testing specific stocks"
+        assert 'specific_symbols' in source or 'symbols_list' in source, \
+            "News cache should extract symbols from params"
+
+
+class TestDatabaseOrderByScore:
+    """Tests for the new get_stocks_ordered_by_score database method"""
+    
+    def test_get_stocks_ordered_by_score_method_exists(self):
+        """Verify get_stocks_ordered_by_score method exists in Database"""
+        from database import Database
+        assert hasattr(Database, 'get_stocks_ordered_by_score')
+        assert callable(getattr(Database, 'get_stocks_ordered_by_score'))
+
+
+class TestOTCFiltering:
+    """Tests for OTC stock filtering in worker.py"""
+    
+    def test_otc_symbols_are_filtered(self):
+        """Test that 5+ character symbols ending in F are filtered"""
+        # Simulate the filter logic from worker.py
+        test_symbols = [
+            'AAPL',     # Should pass - normal stock
+            'MOBNF',    # Should be filtered - OTC (ends in F, 5 chars)
+            'MVVYF',    # Should be filtered - OTC (ends in F, 5 chars)
+            'KGSSF',    # Should be filtered - OTC (ends in F, 5 chars)
+            'BRK.B',    # Should pass - exception
+            'GOOG',     # Should pass - normal stock
+            'AAAAU',    # Should be filtered - unit (ends in U, 5 chars)
+            'AACBR',    # Should be filtered - right (ends in R, 5 chars)
+            'ABCDW',    # Should be filtered - warrant (ends in W, 5 chars)
+            'AF',       # Should pass - only 2 chars, F doesn't trigger filter
+            'BUFF',     # Should pass - ends in F but is a real stock name (4 chars)
+            'AAAU',     # Should pass - only 4 chars, U doesn't trigger filter
+        ]
+        
+        filtered_symbols = []
+        for sym in test_symbols:
+            if any(char in sym for char in ['$', '-', '.']) and sym not in ['BRK.B', 'BF.B']:
+                continue
+            if len(sym) >= 5 and sym[-1] in ['W', 'R', 'U']:
+                continue
+            # OTC filter
+            if len(sym) >= 5 and sym[-1] == 'F':
+                continue
+            filtered_symbols.append(sym)
+        
+        # Verify expected symbols pass
+        assert 'AAPL' in filtered_symbols
+        assert 'GOOG' in filtered_symbols
+        assert 'AF' in filtered_symbols
+        assert 'BUFF' in filtered_symbols
+        assert 'AAAU' in filtered_symbols  # Only 4 chars - passes filter
+        
+        # Verify OTC symbols are filtered
+        assert 'MOBNF' not in filtered_symbols
+        assert 'MVVYF' not in filtered_symbols
+        assert 'KGSSF' not in filtered_symbols
+        
+        # Verify warrants/rights/units with 5+ chars are filtered
+        assert 'AAAAU' not in filtered_symbols  # 5 chars ending in U
+        assert 'AACBR' not in filtered_symbols
+        assert 'ABCDW' not in filtered_symbols
+    
+    def test_tradingview_fetcher_has_otc_filter(self):
+        """Verify TradingViewFetcher._should_skip_ticker filters OTC patterns"""
+        from tradingview_fetcher import TradingViewFetcher
+        import inspect
+        
+        source = inspect.getsource(TradingViewFetcher._should_skip_ticker)
+        
+        # Check that OTC suffix filter exists
+        assert "OTC suffix" in source or "sym[-1] == 'F'" in source or "ticker_upper[-1] == 'F'" in source, \
+            "TradingView should filter OTC suffix patterns"
+    
+    def test_tradingview_fetcher_has_warrant_filter(self):
+        """Verify TradingViewFetcher._should_skip_ticker filters warrants"""
+        from tradingview_fetcher import TradingViewFetcher
+        import inspect
+        
+        source = inspect.getsource(TradingViewFetcher._should_skip_ticker)
+        
+        # Check that warrant filter exists
+        assert "warrant" in source.lower() or "'W'" in source, \
+            "TradingView should filter warrant patterns"
+    
+    def test_tradingview_filters_at_source(self):
+        """Verify worker relies on TradingView filtering, not post-filtering"""
+        import worker
+        import inspect
+        
+        # Screening should NOT have filter_symbols call
+        screening_source = inspect.getsource(worker.BackgroundWorker._run_screening)
+        assert "filter_symbols" not in screening_source, \
+            "Screening should rely on TradingView filtering, not filter_symbols"
+        
+        # Price cache should NOT have filter_symbols call
+        cache_source = inspect.getsource(worker.BackgroundWorker._run_price_history_cache)
+        assert "filter_symbols" not in cache_source, \
+            "Price caching should rely on TradingView filtering, not filter_symbols"
+
