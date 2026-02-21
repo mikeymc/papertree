@@ -26,5 +26,5 @@ fredapi
 resend
 PyYAML
 markdown
-cloudscraper
+curl_cffi
 yoyo-migrations>=9.0.0

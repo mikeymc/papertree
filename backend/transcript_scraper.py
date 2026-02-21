@@ -6,8 +6,8 @@ import logging
 import re
 from datetime import datetime
 from typing import Dict, Any, Optional, List
-import requests
-import cloudscraper
+from curl_cffi import requests as c_req
+from curl_cffi.requests.errors import RequestsError
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class TranscriptScraper:
     def __init__(self):
         """Initialize the transcript scraper."""
         self._last_request_time = 0
-        self._session = cloudscraper.create_scraper()
+        self._session = c_req.Session(impersonate="chrome")
         self._session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -49,7 +49,7 @@ class TranscriptScraper:
         """No-op for compatibility with old playwrigh scraper."""
         logger.info("[TranscriptScraper] Resetting session...")
         self._session.close()
-        self._session = cloudscraper.create_scraper()
+        self._session = c_req.Session(impersonate="chrome")
         self._session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         })
@@ -130,7 +130,7 @@ class TranscriptScraper:
             t_soup = BeautifulSoup(t_resp.text, 'lxml')
             return self._extract_transcript(t_soup, symbol, transcript_link)
             
-        except requests.RequestException as e:
+        except RequestsError as e:
             if resp is not None and resp.status_code in (403, 401):
                 logger.error(f"[TranscriptScraper] [{symbol}] Access denied (Cloudflare/Bot detection): {e}")
             else:
