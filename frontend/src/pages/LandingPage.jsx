@@ -95,7 +95,11 @@ export default function LandingPage() {
               <ul className="mt-6 space-y-4 text-zinc-400">
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  Generic screeners give you data, not answers
+                  Investment ideas from social media come with someone else's biases baked in
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-1 text-zinc-600">&#x2715;</span>
+                  There's no shortage of financial data — the problem is knowing what matters
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
@@ -103,7 +107,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  Thorough due diligence takes hours per company
+                  Thorough due diligence takes discipline, a systematic process, and hours per company
                 </li>
               </ul>
             </div>
@@ -117,6 +121,10 @@ export default function LandingPage() {
               <ul className="mt-6 space-y-4 text-zinc-400">
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
+                  A disciplined, systematic process replaces gut feelings and social media tips
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
                   AI screens stocks against proven, time-tested investment criteria
                 </li>
                 <li className="flex items-start gap-3">
@@ -125,7 +133,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                  You get a written thesis, not just a ticker symbol
+                  An AI analyst that reads filings, writes theses, answers your questions, and monitors your portfolio
                 </li>
               </ul>
             </div>
