@@ -96,7 +96,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  ChatGPT hallucinates financial data — P/E ratios, revenue, debt figures
+                  General-purpose AI tools aren't built for rigorous financial analysis
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
