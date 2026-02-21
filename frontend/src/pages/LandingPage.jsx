@@ -71,7 +71,7 @@ export default function LandingPage() {
               Get Started Free
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-            <Button variant="outline" size="lg" className="text-base px-8 py-6 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" onClick={() => {
+            <Button variant="outline" size="lg" className="text-base px-8 py-6 border-zinc-600 text-zinc-900 bg-zinc-100 hover:bg-zinc-200" onClick={() => {
               document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
             }}>
               See How It Works
@@ -373,7 +373,7 @@ export default function LandingPage() {
                 </li>
               ))}
             </ul>
-            <Button variant="outline" className="mt-8 w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white py-6" onClick={() => navigate('/login')}>
+            <Button variant="outline" className="mt-8 w-full border-zinc-600 text-zinc-900 bg-zinc-100 hover:bg-zinc-200 py-6" onClick={() => navigate('/login')}>
               Create Free Account
             </Button>
           </div>
