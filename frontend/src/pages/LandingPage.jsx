@@ -153,7 +153,7 @@ export default function LandingPage() {
               icon: Search,
               step: '1',
               title: 'Discovery',
-              desc: 'Scan the full market to define your investable universe based on foundational criteria like market cap or sector.',
+              desc: 'Start with the full global market and narrow it down by market cap, sector, region, and other baseline criteria.',
             },
             {
               icon: Filter,
@@ -171,13 +171,13 @@ export default function LandingPage() {
               icon: Brain,
               step: '4',
               title: 'AI Analysis',
-              desc: 'An AI analyst reads SEC filings, earnings transcripts, and news to write customized bull and bear case theses.',
+              desc: 'An AI analyst reads SEC filings, earnings transcripts, and news to produce a full analysis and recommendation for each stock.',
             },
             {
               icon: Target,
               step: '5',
               title: 'Deliberation',
-              desc: 'The AI acts as an investment committee, deliberating over the theses to select the absolute highest-conviction targets.',
+              desc: 'Multiple AI agents — each applying a different methodology like Lynch or Buffett — deliberate to select the highest-conviction targets.',
             },
             {
               icon: TrendingUp,
@@ -267,8 +267,8 @@ export default function LandingPage() {
               Invest like the legends. Automatically.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-zinc-400">
-              Choose from strategy templates based on the published methodologies
-              of the greatest investors in history.
+              Every strategy is grounded in the published methodologies of the
+              greatest investors in history.
             </p>
           </div>
           <div className="mt-12 grid gap-8 md:grid-cols-2">
@@ -390,7 +390,7 @@ export default function LandingPage() {
               <p>
                 Too much of retail investing is driven by hype — chasing momentum on
                 social media, buying into stories that "feel" right, panic-selling when
-                sentiment shifts. It's exhausting, and the results speak for themselves.
+                sentiment shifts.
               </p>
               <p>
                 But it doesn't have to work that way. Investors like Lynch and Buffett
