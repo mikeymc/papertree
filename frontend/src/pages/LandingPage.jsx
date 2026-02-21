@@ -356,7 +356,7 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="mx-auto max-w-6xl px-6 py-24 text-center">
         <h2 className="text-3xl font-bold md:text-4xl text-white">
-          Your next investment idea is waiting.
+          Stop guessing. Start investing with conviction.
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-zinc-400">
           Start your free 14-day trial. No credit card required.
