@@ -90,12 +90,12 @@ export default function LandingPage() {
                 The problem
               </p>
               <h2 className="text-2xl font-bold md:text-3xl text-white">
-                Stock screeners give you lists. Not answers.
+                Stock screeners give you data. Not answers.
               </h2>
               <ul className="mt-6 space-y-4 text-zinc-400">
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  Generic screeners dump hundreds of tickers with no context
+                  Generic screeners give you data, not answers
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
@@ -103,7 +103,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  Researching each stock yourself takes hours per company
+                  Thorough due diligence takes hours per company
                 </li>
               </ul>
             </div>
@@ -112,7 +112,7 @@ export default function LandingPage() {
                 The solution
               </p>
               <h2 className="text-2xl font-bold md:text-3xl text-white">
-                A research analyst that screens, verifies, and explains.
+                A research analyst that screens, verifies, invests, and explains.
               </h2>
               <ul className="mt-6 space-y-4 text-zinc-400">
                 <li className="flex items-start gap-3">
