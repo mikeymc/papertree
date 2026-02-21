@@ -137,7 +137,7 @@ export default function LandingPage() {
       <section id="how-it-works" className="mx-auto max-w-6xl px-6 py-20">
         <div className="text-center">
           <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-500">
-            How it works
+            Autonomous investing
           </p>
           <h2 className="text-2xl font-bold md:text-3xl text-white">
             Six steps. Thousands of stocks. One disciplined portfolio.
@@ -210,7 +210,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="text-center">
             <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-500">
-              Beyond the portfolio
+              Hands-on research
             </p>
             <h2 className="text-2xl font-bold md:text-3xl text-white">
               A full research desk at your fingertips.
