@@ -12,6 +12,7 @@ import { algorithmHandlers } from './algorithm.js'
 import { onboardingHandlers } from './onboarding.js'
 import { feedbackHandlers } from './feedback.js'
 import { economyHandlers } from './economy.js'
+import { adminHandlers } from './admin.js'
 
 export const defaultHandlers = [
   ...authHandlers,
@@ -25,4 +26,5 @@ export const defaultHandlers = [
   ...onboardingHandlers,
   ...feedbackHandlers,
   ...economyHandlers,
+  ...adminHandlers,
 ]
