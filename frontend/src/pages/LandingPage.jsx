@@ -54,14 +54,14 @@ export default function LandingPage() {
             AI-Powered Stock Research
           </p>
           <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl text-white">
-            Stop scrolling through tickers.
+            Stop chasing hype.
             <br />
-            <span className="text-zinc-500">Start reading investment theses.</span>
+            <span className="text-zinc-500">Start investing systematically.</span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
-            papertree.ai screens thousands of stocks using the same criteria as legendary
-            investors like Peter Lynch and Warren Buffett — then writes you a research
-            briefing explaining exactly why each stock made the cut.
+            papertree.ai screens thousands of stocks using the proven criteria of legendary
+            investors — delivering deep-dive research theses and managing autonomous paper
+            portfolios so you can invest with discipline, not emotion.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-4">
             <Button size="lg" className="text-base px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0" onClick={() => navigate('/login')}>
