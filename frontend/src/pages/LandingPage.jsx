@@ -126,6 +126,52 @@ export default function LandingPage() {
                 </li>
               </ul>
             </div>
+
+            {/* Problem 2 (Reddit/Retail Focus) */}
+            <div className="md:mt-8">
+              <p className="mb-3 text-sm font-medium uppercase tracking-widest text-zinc-500">
+                The problem
+              </p>
+              <h2 className="text-2xl font-bold md:text-3xl text-white">
+                Retail investing is driven by hype and emotion.
+              </h2>
+              <ul className="mt-6 space-y-4 text-zinc-400">
+                <li className="flex items-start gap-3">
+                  <span className="mt-1 text-zinc-600">&#x2715;</span>
+                  Retail investors rely on speculative bets from Reddit or social media
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-1 text-zinc-600">&#x2715;</span>
+                  Emotional decision-making leads to buying high and selling panic
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-1 text-zinc-600">&#x2715;</span>
+                  High-quality, objective advice is inaccessible to everyday investors
+                </li>
+              </ul>
+            </div>
+            <div className="md:mt-8">
+              <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-500">
+                The solution
+              </p>
+              <h2 className="text-2xl font-bold md:text-3xl text-white">
+                An unemotional, disciplined, and on-call advisor.
+              </h2>
+              <ul className="mt-6 space-y-4 text-zinc-400">
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
+                  AI acts as your personal Buffett/Lynch advisor, immune to market hype
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
+                  Strictly adheres to time-tested, fundamental value principles
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
+                  Available 24/7 to analyze new opportunities or deliberately monitor your portfolio
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
