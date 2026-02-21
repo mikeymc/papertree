@@ -150,13 +150,13 @@ export default function LandingPage() {
               icon: Search,
               step: '1',
               title: 'Discovery',
-              desc: 'Scan the full market for companies matching investor-defined criteria — growth rates, P/E ratios, debt levels, and more.',
+              desc: 'Scan the full market to define your investable universe based on foundational criteria like market cap or sector.',
             },
             {
               icon: Filter,
               step: '2',
               title: 'Quantitative Scoring',
-              desc: 'Each stock is scored across dozens of financial metrics using algorithms modeled after Lynch and Buffett\'s published strategies.',
+              desc: 'Every candidate is scored across dozens of financial metrics using algorithms modeled after Lynch and Buffett\'s published strategies.',
             },
             {
               icon: Shield,
@@ -168,25 +168,19 @@ export default function LandingPage() {
               icon: Brain,
               step: '4',
               title: 'AI Analysis',
-              desc: 'An AI analyst reads SEC filings, earnings transcripts, and news to assess qualitative factors no screener can capture.',
-            },
-            {
-              icon: FileText,
-              step: '5',
-              title: 'Thesis Generation',
-              desc: 'For every stock that passes, you get a written investment thesis explaining the bull case, risks, and key metrics.',
+              desc: 'An AI analyst reads SEC filings, earnings transcripts, and news to write customized bull and bear case theses.',
             },
             {
               icon: Target,
-              step: '6',
-              title: 'Your Shortlist',
-              desc: 'A curated list of high-conviction ideas with the research already done — ready for your final decision.',
+              step: '5',
+              title: 'Deliberation',
+              desc: 'The AI acts as an investment committee, deliberating over the theses to select the absolute highest-conviction targets.',
             },
             {
               icon: TrendingUp,
-              step: '7',
-              title: 'Autonomous Tracking',
-              desc: 'Let your strategy run in the background. The system tracks alpha vs the S&P 500 automatically over time.',
+              step: '6',
+              title: 'Autonomous Management',
+              desc: 'The system automatically executes trades, tracks alpha vs the S&P 500, and continuously monitors your portfolio over time.',
             },
           ].map(({ icon: Icon, step, title, desc }) => (
             <div
