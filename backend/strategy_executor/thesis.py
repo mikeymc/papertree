@@ -2,6 +2,7 @@
 # ABOUTME: Handles Phase 3 of strategy execution with parallel thesis generation
 
 import logging
+import re
 from typing import Dict, Any, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -152,26 +153,33 @@ class ThesisMixin:
 
         The thesis typically starts with '## Bottom Line' followed by
         **BUY**, **WATCH**, or **AVOID**.
+        
+        This implementation uses a broadened regex to handle various formatting 
+        styles and uses re.search to prioritize the FIRST occurrence found.
         """
         if not thesis_text:
             print("      WARNING: No thesis text to extract verdict from")
             return None
 
-        # Look for verdict markers
+        # 1. Broadened regex to handle variants:
+        # - Optional colon
+        # - "VERDICT:" or "Bottom Line"
+        # - Optional nested "VERDICT:"
+        # - Explicitly matching the allowed keywords (BUY/WATCH/AVOID/HOLD)
+        regex = r"(?:## Bottom Line|VERDICT)[:\s]+(?:\**VERDICT:?\s*\**)?\**(?P<verdict>BUY|WATCH|AVOID|HOLD)\**"
+        
+        # re.search finds the FIRST match by default
+        match = re.search(regex, thesis_text, re.IGNORECASE)
+        if match:
+            verdict = match.group('verdict').upper()
+            # Map HOLD to WATCH for internal consistency
+            if verdict == 'HOLD':
+                verdict = 'WATCH'
+            print(f"      Found {verdict} verdict (explicit via regex)")
+            return verdict
+
+        # 2. Fallback: look in first 500 chars for verdict keywords
         text_upper = thesis_text.upper()
-
-        # Check for explicit verdict patterns
-        if '**BUY**' in thesis_text or 'VERDICT: BUY' in text_upper:
-            print("      Found BUY verdict (explicit)")
-            return 'BUY'
-        elif '**WATCH**' in thesis_text or 'VERDICT: WATCH' in text_upper:
-            print("      Found WATCH verdict (explicit)")
-            return 'WATCH'
-        elif '**AVOID**' in thesis_text or 'VERDICT: AVOID' in text_upper:
-            print("      Found AVOID verdict (explicit)")
-            return 'AVOID'
-
-        # Fallback: look in first 500 chars for verdict keywords
         first_section = text_upper[:500]
         if 'BUY' in first_section and 'AVOID' not in first_section:
             print("      Found BUY verdict (fallback in first 500 chars)")
