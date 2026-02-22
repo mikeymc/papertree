@@ -8,18 +8,26 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-sys.modules["google.genai"] = MagicMock()
-sys.modules["google.genai.types"] = MagicMock()
-sys.modules["price_history_fetcher"] = MagicMock()
-sys.modules["sec_data_fetcher"] = MagicMock()
-sys.modules["news_fetcher"] = MagicMock()
-sys.modules["material_events_fetcher"] = MagicMock()
-sys.modules["sec_rate_limiter"] = MagicMock()
-sys.modules["yfinance.cache"] = MagicMock()
-sys.modules["portfolio_service"] = MagicMock()
+# Pre-mock modules needed to import strategy_executor (transitive deps)
+_MOCKED_MODULES = [
+    "google.genai", "google.genai.types",
+    "price_history_fetcher", "sec_data_fetcher", "news_fetcher",
+    "material_events_fetcher", "sec_rate_limiter", "yfinance.cache",
+    "portfolio_service",
+]
+_saved = {m: sys.modules.get(m) for m in _MOCKED_MODULES}
+for m in _MOCKED_MODULES:
+    sys.modules[m] = MagicMock()
 
 from strategy_executor.exit_conditions import ExitConditionChecker
 from strategy_executor.models import ExitSignal
+
+# Restore original modules to prevent cross-test contamination
+for m in _MOCKED_MODULES:
+    if _saved[m] is not None:
+        sys.modules[m] = _saved[m]
+    else:
+        sys.modules.pop(m, None)
 
 
 @pytest.fixture
@@ -43,7 +51,7 @@ def test_universe_compliance_exit(checker):
     """Held symbol absent from filtered_candidates produces an ExitSignal."""
     held_symbols = {'AAPL', 'MSFT'}
     filtered_candidates = ['MSFT', 'GOOG']  # AAPL is missing
-    holdings = {'AAPL': {'quantity': 10}, 'MSFT': {'quantity': 5}}
+    holdings = {'AAPL': 10, 'MSFT': 5}
 
     exits = checker.check_universe_compliance(held_symbols, filtered_candidates, holdings)
 
@@ -57,7 +65,7 @@ def test_universe_compliance_no_exit_for_passing(checker):
     """Held symbol present in filtered_candidates produces no exit."""
     held_symbols = {'AAPL', 'MSFT'}
     filtered_candidates = ['AAPL', 'MSFT', 'GOOG']
-    holdings = {'AAPL': {'quantity': 10}, 'MSFT': {'quantity': 5}}
+    holdings = {'AAPL': 10, 'MSFT': 5}
 
     exits = checker.check_universe_compliance(held_symbols, filtered_candidates, holdings)
 
@@ -146,8 +154,8 @@ def test_phase5_consolidation_all_sources_merged():
     }
     mock_db.create_strategy_run.return_value = 99
     mock_db.get_portfolio_holdings.return_value = {
-        'AAPL': {'quantity': 10},  # will fail universe
-        'MSFT': {'quantity': 5},
+        'AAPL': 10,  # will fail universe
+        'MSFT': 5,
     }
 
     with patch('strategy_executor.PositionSizer'):
@@ -214,7 +222,7 @@ def test_held_declined_get_deliberated():
         'exit_conditions': {},
     }
     mock_db.create_strategy_run.return_value = 99
-    mock_db.get_portfolio_holdings.return_value = {'MSFT': {'quantity': 5}}
+    mock_db.get_portfolio_holdings.return_value = {'MSFT': 5}
 
     with patch('strategy_executor.PositionSizer'):
         executor = StrategyExecutor(mock_db)
@@ -226,9 +234,11 @@ def test_held_declined_get_deliberated():
 
     captured_deliberate_calls = {}
 
-    def spy_deliberate(enriched, run_id, conditions=None, user_id=None, job_id=None,
+    def spy_deliberate(enriched, run_id, conditions=None, strategy=None,
+                       user_id=None, job_id=None,
                        held_symbols=None, holdings=None,
-                       symbols_of_held_stocks_with_failing_scores=None):
+                       symbols_of_held_stocks_with_failing_scores=None,
+                       analysts=None):
         captured_deliberate_calls['exit_only_symbols'] = symbols_of_held_stocks_with_failing_scores
         captured_deliberate_calls['enriched_symbols'] = {s['symbol'] for s in enriched}
         return [], [], []
@@ -255,12 +265,14 @@ def test_held_declined_get_deliberated():
 def test_held_declined_avoid_exits():
     """Held declined stock with AVOID verdict → ExitSignal emitted."""
     from strategy_executor.deliberation import DeliberationMixin
+    from strategy_executor.consensus import ConsensusEngine
     from strategy_executor.models import ExitSignal
 
     class TestExecutor(DeliberationMixin):
         def __init__(self):
             self.db = MagicMock()
             self.db.create_strategy_decision.return_value = 1
+            self.consensus_engine = ConsensusEngine()
 
     executor = TestExecutor()
 
@@ -279,7 +291,7 @@ def test_held_declined_avoid_exits():
             enriched=[msft],
             run_id=1,
             held_symbols={'MSFT'},
-            holdings={'MSFT': {'quantity': 5, 'current_value': 500.0, 'gain_pct': -5.0}},
+            holdings={'MSFT': 5},
             symbols_of_held_stocks_with_failing_scores={'MSFT'}
         )
 
@@ -291,11 +303,13 @@ def test_held_declined_avoid_exits():
 def test_held_declined_buy_does_not_add_position():
     """Held declined stock with BUY verdict → not added to buy decisions (treated as HOLD)."""
     from strategy_executor.deliberation import DeliberationMixin
+    from strategy_executor.consensus import ConsensusEngine
 
     class TestExecutor(DeliberationMixin):
         def __init__(self):
             self.db = MagicMock()
             self.db.create_strategy_decision.return_value = 1
+            self.consensus_engine = ConsensusEngine()
 
     executor = TestExecutor()
 
@@ -314,7 +328,7 @@ def test_held_declined_buy_does_not_add_position():
             enriched=[msft],
             run_id=1,
             held_symbols={'MSFT'},
-            holdings={'MSFT': {'quantity': 5, 'current_value': 500.0, 'gain_pct': 2.0}},
+            holdings={'MSFT': 5},
             symbols_of_held_stocks_with_failing_scores={'MSFT'}
         )
 

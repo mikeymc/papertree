@@ -25,53 +25,32 @@ class TestIssueFixes:
         return db
 
     def test_issue1_two_phase_cash_tracking(self, mock_db):
-        """Test Issue 1: Two-phase execution prevents cash overflow."""
-        # Setup
-        executor = StrategyExecutor(mock_db)
+        """Test Issue 1: Position sizing allocates within portfolio value using equal weight."""
+        sizer = PositionSizer(mock_db)
 
-        # Mock portfolio with $10,000 cash
-        mock_db.get_portfolio_summary.return_value = {
-            'total_value': 10000,
-            'cash': 10000,
-            'holdings': {}
-        }
-
-        # Three buy decisions that each want $4,000 (total $12k > $10k available)
-        buy_decisions = [
-            {'symbol': 'AAPL', 'consensus_score': 85, 'consensus_reasoning': 'Strong fundamentals'},
-            {'symbol': 'GOOGL', 'consensus_score': 80, 'consensus_reasoning': 'Good value'},
-            {'symbol': 'MSFT', 'consensus_score': 75, 'consensus_reasoning': 'Solid growth'}
+        # Three candidates equal-weighted in $10k portfolio → ~$3,333 each
+        candidates = [
+            {'symbol': 'AAPL', 'price': 100.0, 'conviction': 85},
+            {'symbol': 'GOOGL', 'price': 100.0, 'conviction': 80},
+            {'symbol': 'MSFT', 'price': 100.0, 'conviction': 75},
         ]
 
-        strategy = {
-            'portfolio_id': 1,
-            'position_sizing': {'method': 'equal_weight', 'max_position_pct': 5.0}
-        }
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=10000.0,
+            holdings={},
+            method='equal_weight',
+            rules={'max_position_pct': 100, 'min_position_value': 100},
+            cash_available=10000.0
+        )
 
-        # Mock position sizer to return $4,000 positions
-        with patch.object(executor.position_sizer, 'calculate_position') as mock_calc:
-            from strategy_executor import PositionSize
-            mock_calc.return_value = PositionSize(
-                shares=40,
-                estimated_value=4000,
-                position_pct=4.0,
-                reasoning="equal_weight: $4,000"
-            )
-
-            # Calculate all positions
-            positions = executor._calculate_all_positions(
-                buy_decisions=buy_decisions,
-                portfolio_id=1,
-                available_cash=10000,
-                method='equal_weight',
-                rules={'max_position_pct': 5.0},
-                run_id=1
-            )
-
-            # Should prioritize highest conviction and fit within budget
-            assert len(positions) == 2  # Only 2 fit in $10k budget
-            assert positions[0]['symbol'] == 'AAPL'  # Highest conviction first
-            assert positions[1]['symbol'] == 'GOOGL'  # Second highest
+        # All 3 get roughly equal allocations within portfolio value
+        assert len(buys) == 3
+        total_buy_value = sum(b['position'].estimated_value for b in buys)
+        assert total_buy_value <= 10000.0, f"Total buys ${total_buy_value} exceeds portfolio value"
+        # Buys are sorted by conviction (highest first)
+        assert buys[0]['symbol'] == 'AAPL'
 
     def test_issue2_dividend_tracking(self, mock_db):
         """Test Issue 2: Dividend tracking and attribution."""
@@ -107,79 +86,30 @@ class TestIssueFixes:
         assert perf['dividend_yield_pct'] == 5.0
 
     def test_issue3_holding_reevaluation(self, mock_db):
-        """Test Issue 3: Re-evaluation of held positions."""
-        # Setup
-        evaluator = Mock()
-        lynch_criteria = Mock()
+        """Test Issue 3: Universe compliance detects held positions failing filters."""
+        checker = ExitConditionChecker(mock_db)
 
-        # Mock the database to return current price
-        mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = (150.0,)  # Price for AAPL
-        mock_conn = Mock()
-        mock_conn.cursor.return_value = mock_cursor
-        mock_db.get_connection.return_value = mock_conn
-
-        reevaluator = ExitConditionChecker(mock_db)
-
-        # Mock holdings: AAPL held for 40 days, MSFT held for 20 days
-        mock_db.get_portfolio_holdings.return_value = {'AAPL': 10, 'MSFT': 15}
-        mock_db.get_position_entry_dates.return_value = {
-            'AAPL': {
-                'first_buy_date': date.today() - timedelta(days=40),
-                'last_evaluated_date': None,
-                'days_held': 40
-            },
-            'MSFT': {
-                'first_buy_date': date.today() - timedelta(days=20),
-                'last_evaluated_date': None,
-                'days_held': 20
-            }
-        }
-
+        held_symbols = {'AAPL', 'MSFT'}
         # AAPL no longer passes universe filters
-        evaluator.filter_universe.return_value = ['MSFT']  # AAPL not in list
+        filtered_candidates = ['MSFT', 'GOOG']
+        holdings = {'AAPL': 10, 'MSFT': 15}
 
-        # MSFT still scores well
-        lynch_criteria.evaluate_stock.return_value = {'overall_score': 75}
+        exits = checker.check_universe_compliance(held_symbols, filtered_candidates, holdings)
 
-        # Re-evaluation config with 30-day grace period
-        config = {
-            'enabled': True,
-            'check_universe_filters': True,
-            'check_scoring_requirements': False,  # Only check universe for simplicity
-            'grace_period_days': 30
-        }
-
-        conditions = {
-            'universe': {'filters': []},
-            'scoring_requirements': [
-                {'character': 'lynch', 'min_score': 60}
-            ]
-        }
-
-        # Check holdings
-        exits = reevaluator.check_holdings(1, conditions, config)
-
-        # Should flag AAPL for exit (beyond grace period, fails filters)
-        # Should NOT flag MSFT (within grace period)
         assert len(exits) == 1
         assert exits[0].symbol == 'AAPL'
-        assert 'universe filters' in exits[0].reason.lower()
+        assert 'universe' in exits[0].reason.lower()
 
     def test_issue4_position_additions_higher_threshold(self, mock_db):
         """Test Issue 4: Higher thresholds for position additions."""
         import pandas as pd
 
-        # Mock lynch_criteria configuration loading
-        mock_db.get_lynch_algo_configs.return_value = []
-
         executor = StrategyExecutor(mock_db)
 
-        # Mock the lynch_criteria with both evaluate_stock and evaluate_batch
+        # Mock the lynch_criteria to return score of 72
         mock_lynch = Mock()
 
         def eval_batch(df, config):
-            """Return scored DataFrame - Lynch scores 72, Buffett scores 50."""
             result = df[['symbol']].copy()
             result['overall_score'] = 72.0
             result['overall_status'] = 'BUY'
@@ -188,10 +118,9 @@ class TestIssueFixes:
         mock_lynch.evaluate_batch = Mock(side_effect=eval_batch)
         executor._lynch_criteria = mock_lynch
 
-        # Mock database method calls
         mock_db.append_to_run_log = Mock()
 
-        # Mock StockVectors to return proper stock data
+        # Mock StockVectors
         mock_vectors_class = Mock()
         mock_vectors_instance = Mock()
         mock_vectors_instance.load_vectors.return_value = pd.DataFrame({
@@ -215,18 +144,17 @@ class TestIssueFixes:
         }
 
         # Score as new position (should pass: 72 >= 60)
-        with patch('stock_vectors.StockVectors', mock_vectors_class):
-            new_scored = executor._score_candidates(
+        with patch('scoring.vectors.StockVectors', mock_vectors_class):
+            new_passed, new_declined = executor._score_candidates(
                 candidates=['AAPL'],
                 conditions=conditions,
                 run_id=1,
                 is_addition=False
             )
-        assert len(new_scored) == 1
-        assert new_scored[0]['position_type'] == 'new'
+        assert len(new_passed) == 1
+        assert new_passed[0]['position_type'] == 'new'
 
         # Score as addition (should fail: 72 < 75)
-        # Reset the mock so load_vectors returns fresh data
         mock_vectors_instance.load_vectors.return_value = pd.DataFrame({
             'symbol': ['AAPL'],
             'price': [150.0],
@@ -234,14 +162,14 @@ class TestIssueFixes:
             'debt_to_equity': [0.5],
             'institutional_ownership': [0.6],
         })
-        with patch('stock_vectors.StockVectors', mock_vectors_class):
-            addition_scored = executor._score_candidates(
+        with patch('scoring.vectors.StockVectors', mock_vectors_class):
+            addition_passed, addition_declined = executor._score_candidates(
                 candidates=['AAPL'],
                 conditions=conditions,
                 run_id=1,
                 is_addition=True
             )
-        assert len(addition_scored) == 0  # Score 72 < 75 required for additions
+        assert len(addition_passed) == 0  # Score 72 < 75 required for additions
 
     def test_integration_all_fixes(self, mock_db):
         """Integration test: All four fixes working together."""
