@@ -309,20 +309,22 @@ class PortfoliosMixin:
             # This uses FIFO-like logic: we calculate the weighted average cost basis
             cursor.execute("""
                 SELECT
-                    symbol,
+                    pt.symbol,
                     SUM(CASE
-                        WHEN transaction_type = 'BUY' THEN quantity
-                        WHEN transaction_type = 'SELL' THEN -quantity
+                        WHEN pt.transaction_type = 'BUY' THEN pt.quantity
+                        WHEN pt.transaction_type = 'SELL' THEN -pt.quantity
                         ELSE 0
                     END) as net_qty,
-                    SUM(CASE WHEN transaction_type = 'BUY' THEN quantity * price_per_share ELSE 0 END) /
-                        NULLIF(SUM(CASE WHEN transaction_type = 'BUY' THEN quantity ELSE 0 END), 0) as avg_purchase_price
-                FROM portfolio_transactions
-                WHERE portfolio_id = %s
-                GROUP BY symbol
+                    SUM(CASE WHEN pt.transaction_type = 'BUY' THEN pt.quantity * pt.price_per_share ELSE 0 END) /
+                        NULLIF(SUM(CASE WHEN pt.transaction_type = 'BUY' THEN pt.quantity ELSE 0 END), 0) as avg_purchase_price,
+                    s.company_name
+                FROM portfolio_transactions pt
+                LEFT JOIN stocks s ON pt.symbol = s.symbol
+                WHERE pt.portfolio_id = %s
+                GROUP BY pt.symbol, s.company_name
                 HAVING SUM(CASE
-                        WHEN transaction_type = 'BUY' THEN quantity
-                        WHEN transaction_type = 'SELL' THEN -quantity
+                        WHEN pt.transaction_type = 'BUY' THEN pt.quantity
+                        WHEN pt.transaction_type = 'SELL' THEN -pt.quantity
                         ELSE 0
                     END) > 0
             """, (portfolio_id,))
@@ -333,9 +335,8 @@ class PortfoliosMixin:
             detailed_holdings = []
 
             if prices_map:
-                symbols = [row[0] for row in holdings_data]
                 # Use provided map
-                for symbol, quantity, avg_purchase_price in holdings_data:
+                for symbol, quantity, avg_purchase_price, company_name in holdings_data:
                     current_price = prices_map.get(symbol)
 
                     if current_price and avg_purchase_price:
@@ -346,6 +347,7 @@ class PortfoliosMixin:
 
                         detailed_holdings.append({
                             'symbol': symbol,
+                            'name': company_name or symbol,
                             'quantity': quantity,
                             'avg_purchase_price': avg_purchase_price,
                             'current_price': current_price,
@@ -361,7 +363,7 @@ class PortfoliosMixin:
                 symbols = [row[0] for row in holdings_data]
                 prices_map = fetch_current_prices_batch(symbols, db=self)
 
-                for symbol, quantity, avg_purchase_price in holdings_data:
+                for symbol, quantity, avg_purchase_price, company_name in holdings_data:
                     current_price = prices_map.get(symbol)
 
                     if current_price and avg_purchase_price:
@@ -372,6 +374,7 @@ class PortfoliosMixin:
 
                         detailed_holdings.append({
                             'symbol': symbol,
+                            'name': company_name or symbol,
                             'quantity': quantity,
                             'avg_purchase_price': avg_purchase_price,
                             'current_price': current_price,
@@ -385,7 +388,7 @@ class PortfoliosMixin:
                 symbols = [row[0] for row in holdings_data]
                 prices_map = self.get_prices_batch(symbols)
 
-                for symbol, quantity, avg_purchase_price in holdings_data:
+                for symbol, quantity, avg_purchase_price, company_name in holdings_data:
                     current_price = prices_map.get(symbol)
                     if current_price and avg_purchase_price:
                         total_cost = quantity * avg_purchase_price
@@ -395,6 +398,7 @@ class PortfoliosMixin:
 
                         detailed_holdings.append({
                             'symbol': symbol,
+                            'name': company_name or symbol,
                             'quantity': quantity,
                             'avg_purchase_price': avg_purchase_price,
                             'current_price': current_price,

@@ -666,7 +666,8 @@ function HoldingsTab({ portfolio }) {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Symbol</TableHead>
+                        <TableHead className="w-[100px]">Symbol</TableHead>
+                        <TableHead>Name</TableHead>
                         <TableHead className="text-right">Shares</TableHead>
                         <TableHead className="text-right">Purchase Price</TableHead>
                         <TableHead className="text-right">Current Price</TableHead>
@@ -685,6 +686,11 @@ function HoldingsTab({ portfolio }) {
                                     <Link to={`/stock/${holding.symbol}`} className="hover:underline text-primary">
                                         {holding.symbol}
                                     </Link>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="font-medium text-sm truncate max-w-[200px]" title={holding.name}>
+                                        {holding.name}
+                                    </div>
                                 </TableCell>
                                 <TableCell className="text-right">{holding.quantity}</TableCell>
                                 <TableCell className="text-right">{formatCurrency(holding.avg_purchase_price)}</TableCell>

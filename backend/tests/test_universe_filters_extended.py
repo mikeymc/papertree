@@ -1,3 +1,4 @@
+import pytest
 import pandas as pd
 from unittest.mock import MagicMock
 from strategy_executor.universe_filter import UniverseFilter
