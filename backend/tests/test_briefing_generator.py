@@ -15,10 +15,12 @@ def mock_db():
     db.get_strategy_run.return_value = {
         'id': 1,
         'strategy_id': 10,
-        'stocks_screened': 500,
-        'stocks_scored': 25,
-        'theses_generated': 10,
-        'trades_executed': 3,
+        'universe_size': 500,
+        'candidates': 25,
+        'qualifiers': 15,
+        'theses': 10,
+        'targets': 5,
+        'trades': 3,
         'portfolio_value': 102500.0,
     }
 
@@ -126,9 +128,9 @@ def test_assemble_structured_data(mock_db, performance_data):
             performance=performance_data,
         )
 
-    assert result['stocks_screened'] == 500
-    assert result['stocks_scored'] == 25
-    assert result['trades_executed'] == 3
+    assert result['universe_size'] == 500
+    assert result['candidates'] == 25
+    assert result['trades'] == 3
 
     buys = json.loads(result['buys_json'])
     assert len(buys) == 2
@@ -198,7 +200,7 @@ def test_generate_handles_gemini_failure(mock_db, performance_data):
 
     # Should still return a briefing, just without AI summary
     assert result['run_id'] == 1
-    assert result['stocks_screened'] == 500
+    assert result['universe_size'] == 500
     assert 'unable to generate' in result['executive_summary'].lower() or result['executive_summary'] != ''
 
 
@@ -225,7 +227,7 @@ def test_generate_with_no_trades(mock_db, performance_data):
             'position_value': None,
         },
     ]
-    mock_db.get_strategy_run.return_value['trades_executed'] = 0
+    mock_db.get_strategy_run.return_value['trades'] = 0
 
     generator = BriefingGenerator(mock_db)
 

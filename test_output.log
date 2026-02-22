@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.0, pytest-7.4.3, pluggy-1.6.0 -- /Users/mikey/workspace/lynch-stock-screener/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/mikey/workspace/lynch-stock-screener
+configfile: pytest.ini
+plugins: playwright-0.7.2, anyio-4.12.0, base-url-2.1.0, cov-7.0.0
+collecting ... collected 4 items
+
+backend/tests/test_briefings_api.py::test_get_portfolio_briefings 
+[DEBUG] DatabaseCore.__init__ called for lynch_stocks_backend_test
+
+[BACKEND TEST DB] Setting up empty test database for unit tests...
+[BACKEND TEST DB] Creating empty test database...
+[BACKEND TEST DB] ✓ Empty test database created: lynch_stocks_backend_test
+[BACKEND TEST DB] Schema will be initialized by Database class
+Connecting to PostgreSQL: lynch@localhost:5432/lynch_stocks_backend_test
+PASSED
+backend/tests/test_briefings_api.py::test_get_portfolio_briefings_empty PASSED
+backend/tests/test_briefings_api.py::test_get_single_briefing PASSED
+backend/tests/test_briefings_api.py::test_get_single_briefing_not_found PASSED
+[BACKEND TEST DB] Cleaning up test database...
+[BACKEND TEST DB] ✓ Test database dropped
+
+
+============================== 4 passed in 2.70s ===============================

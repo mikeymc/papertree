@@ -18,11 +18,9 @@ sys.modules["fred_service"] = MagicMock()
 sys.modules["characters"] = MagicMock()
 sys.modules["stock_context"] = MagicMock()
 
-import backend.database
-sys.modules['database'] = backend.database
-from backend.database import Database
-from backend.agent_tools import ToolExecutor
-from backend.smart_chat_agent import SmartChatAgent
+from database import Database
+from agent_tools import ToolExecutor
+from smart_chat_agent import SmartChatAgent
 
 @pytest.fixture
 def mock_db():
@@ -33,7 +31,7 @@ def mock_db():
 
 @pytest.fixture
 def mock_portfolio_service():
-    with patch('backend.agent_tools.portfolio_service') as mock:
+    with patch('agent_tools.portfolio_tools.portfolio_service') as mock:
         yield mock
 
 def test_create_portfolio_tool(mock_db):

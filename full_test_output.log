@@ -19,7 +19,7 @@ backend/tests/test_agent_robustness.py::test_chat_stream_temperature_and_retry P
 backend/tests/test_alert_logic.py::test_alert_logic FAILED               [  1%]
 backend/tests/test_alerts_e2e.py::test_worker_check_alerts PASSED        [  1%]
 backend/tests/test_alerts_e2e.py::test_alert_creation_and_retrieval PASSED [  1%]
-backend/tests/test_alerts_e2e.py::test_agent_manage_alerts_tool FAILED   [  1%]
+backend/tests/test_alerts_e2e.py::test_agent_manage_alerts_tool PASSED   [  1%]
 backend/tests/test_algo_api.py::test_algorithm_api[weighted] PASSED      [  1%]
 backend/tests/test_algorithm_optimizer.py::TestAlgorithmOptimizer::test_bayesian_optimize_with_mock_data PASSED [  2%]
 backend/tests/test_algorithm_optimizer.py::TestThresholdConstraints::test_lynch_peg_thresholds_lower_is_better PASSED [  2%]
@@ -80,7 +80,7 @@ backend/tests/test_briefings_api.py::test_get_portfolio_briefings_empty PASSED [
 backend/tests/test_briefings_api.py::test_get_single_briefing ERROR      [  9%]
 backend/tests/test_briefings_api.py::test_get_single_briefing_not_found PASSED [  9%]
 backend/tests/test_briefings_db.py::test_save_briefing PASSED            [  9%]
-backend/tests/test_briefings_db.py::test_get_briefings_for_portfolio FAILED [  9%]
+backend/tests/test_briefings_db.py::test_get_briefings_for_portfolio PASSED [  9%]
 backend/tests/test_briefings_db.py::test_get_briefing_by_run PASSED      [  9%]
 backend/tests/test_briefings_db.py::test_get_briefing_by_run_not_found PASSED [  9%]
 backend/tests/test_briefings_db.py::test_save_briefing_unique_run_id PASSED [  9%]
@@ -130,15 +130,15 @@ backend/tests/test_consensus_thresholds.py::TestConsensusIntegration::test_veto_
 backend/tests/test_consensus_thresholds.py::TestConsensusIntegration::test_weighted_consensus_threshold PASSED [ 15%]
 backend/tests/test_correlation.py::test_correlation_analysis SKIPPED     [ 15%]
 backend/tests/test_country_filter.py::test_country_filtering PASSED      [ 15%]
-backend/tests/test_dashboard_endpoints.py::TestMarketIndexEndpoint::test_unsupported_index_returns_400 ERROR [ 15%]
-backend/tests/test_dashboard_endpoints.py::TestMarketIndexEndpoint::test_invalid_period_returns_400 ERROR [ 16%]
-backend/tests/test_dashboard_endpoints.py::TestMarketMoversEndpoint::test_get_movers_default ERROR [ 16%]
-backend/tests/test_dashboard_endpoints.py::TestMarketMoversEndpoint::test_get_movers_weekly ERROR [ 16%]
-backend/tests/test_dashboard_endpoints.py::TestMarketMoversEndpoint::test_get_movers_weekly_no_error ERROR [ 16%]
-backend/tests/test_dashboard_endpoints.py::TestDashboardEndpoint::test_dashboard_requires_auth ERROR [ 16%]
-backend/tests/test_dashboard_endpoints.py::TestMarketIndexPartialData::test_get_market_index_partial_data ERROR [ 16%]
-backend/tests/test_dashboard_endpoints.py::TestDashboardEarningsEndpoint::test_get_earnings_days_param ERROR [ 16%]
-backend/tests/test_dashboard_endpoints.py::TestDashboardEarningsEndpoint::test_get_earnings_scope_all ERROR [ 17%]
+backend/tests/test_dashboard_endpoints.py::TestMarketIndexEndpoint::test_unsupported_index_returns_400 PASSED [ 15%]
+backend/tests/test_dashboard_endpoints.py::TestMarketIndexEndpoint::test_invalid_period_returns_400 PASSED [ 16%]
+backend/tests/test_dashboard_endpoints.py::TestMarketMoversEndpoint::test_get_movers_default PASSED [ 16%]
+backend/tests/test_dashboard_endpoints.py::TestMarketMoversEndpoint::test_get_movers_weekly PASSED [ 16%]
+backend/tests/test_dashboard_endpoints.py::TestMarketMoversEndpoint::test_get_movers_weekly_no_error PASSED [ 16%]
+backend/tests/test_dashboard_endpoints.py::TestDashboardEndpoint::test_dashboard_requires_auth PASSED [ 16%]
+backend/tests/test_dashboard_endpoints.py::TestMarketIndexPartialData::test_get_market_index_partial_data PASSED [ 16%]
+backend/tests/test_dashboard_endpoints.py::TestDashboardEarningsEndpoint::test_get_earnings_days_param PASSED [ 16%]
+backend/tests/test_dashboard_endpoints.py::TestDashboardEarningsEndpoint::test_get_earnings_scope_all PASSED [ 17%]
 backend/tests/test_data_fetcher.py::test_fetch_stock_data_from_cache PASSED [ 17%]
 backend/tests/test_data_fetcher.py::test_fetch_stock_data_not_cached PASSED [ 17%]
 backend/tests/test_data_fetcher.py::test_fetch_stock_data_force_refresh PASSED [ 17%]
@@ -433,8 +433,8 @@ backend/tests/test_portfolio_tools.py::test_create_portfolio_tool PASSED [ 54%]
 backend/tests/test_portfolio_tools.py::test_get_my_portfolios_tool PASSED [ 54%]
 backend/tests/test_portfolio_tools.py::test_get_portfolio_status_unauthorized PASSED [ 54%]
 backend/tests/test_portfolio_tools.py::test_get_portfolio_status_success PASSED [ 54%]
-backend/tests/test_portfolio_tools.py::test_buy_stock_tool ERROR         [ 54%]
-backend/tests/test_portfolio_tools.py::test_sell_stock_tool ERROR        [ 54%]
+backend/tests/test_portfolio_tools.py::test_buy_stock_tool PASSED        [ 54%]
+backend/tests/test_portfolio_tools.py::test_sell_stock_tool PASSED       [ 54%]
 backend/tests/test_portfolio_tools.py::test_smart_chat_agent_injection FAILED [ 54%]
 backend/tests/test_portfolios.py::TestPortfolioCRUD::test_create_portfolio PASSED [ 55%]
 backend/tests/test_portfolios.py::TestPortfolioCRUD::test_create_portfolio_with_custom_initial_cash PASSED [ 55%]
@@ -636,8 +636,8 @@ backend/tests/test_strategy_executor_fixes.py::TestIssueFixes::test_issue2_divid
 backend/tests/test_strategy_executor_fixes.py::TestIssueFixes::test_issue3_holding_reevaluation FAILED [ 80%]
 backend/tests/test_strategy_executor_fixes.py::TestIssueFixes::test_issue4_position_additions_higher_threshold FAILED [ 80%]
 backend/tests/test_strategy_executor_fixes.py::TestIssueFixes::test_integration_all_fixes PASSED [ 80%]
-backend/tests/test_strategy_idempotency.py::test_execute_trades_idempotency_market_closed ERROR [ 80%]
-backend/tests/test_strategy_idempotency.py::test_execute_trades_idempotency_sells ERROR [ 80%]
+backend/tests/test_strategy_idempotency.py::test_execute_trades_idempotency_market_closed PASSED [ 80%]
+backend/tests/test_strategy_idempotency.py::test_execute_trades_idempotency_sells PASSED [ 80%]
 backend/tests/test_strategy_scenarios.py::TestDeliberationWithBothTheses::test_both_analysts_say_buy_and_deliberation_agrees PASSED [ 80%]
 backend/tests/test_strategy_scenarios.py::TestDeliberationWithBothTheses::test_neither_analyst_bullish_skips_deliberation PASSED [ 81%]
 backend/tests/test_strategy_scenarios.py::TestDeliberationWithBothTheses::test_deliberation_verdict_avoid_on_held_stock_emits_exit PASSED [ 81%]
@@ -695,10 +695,10 @@ backend/tests/test_ticker_patterns.py::test_international_ticker_patterns PASSED
 backend/tests/test_trade_execution.py::TestMarketHours::test_market_open_during_extended_hours_morning FAILED [ 87%]
 backend/tests/test_trade_execution.py::TestMarketHours::test_market_open_during_regular_hours FAILED [ 87%]
 backend/tests/test_trade_execution.py::TestMarketHours::test_market_open_during_extended_hours_evening FAILED [ 88%]
-backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_before_extended_hours FAILED [ 88%]
-backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_after_extended_hours FAILED [ 88%]
-backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_on_saturday FAILED [ 88%]
-backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_on_sunday FAILED [ 88%]
+backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_before_extended_hours PASSED [ 88%]
+backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_after_extended_hours PASSED [ 88%]
+backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_on_saturday PASSED [ 88%]
+backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_on_sunday PASSED [ 88%]
 backend/tests/test_trade_execution.py::TestMarketHours::test_market_boundary_4am_is_open FAILED [ 88%]
 backend/tests/test_trade_execution.py::TestMarketHours::test_market_boundary_8pm_is_open FAILED [ 88%]
 backend/tests/test_trade_execution.py::TestPriceFetching::test_fetch_price_from_yfinance FAILED [ 89%]
@@ -795,85 +795,15 @@ backend/tests/test_briefings_api.py:45: in seed_briefing_data
     cursor.execute("""
 .venv/lib/python3.14/site-packages/psycopg/cursor.py:117: in execute
     raise ex.with_traceback(None)
-E   psycopg.errors.UndefinedColumn: column "stocks_screened" of relation "strategy_briefings" does not exist
-E   LINE 3:         (id, run_id, strategy_id, portfolio_id, stocks_scree...
-E                                                           ^
+E   psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "strategy_briefings_pkey"
+E   DETAIL:  Key (id)=(1) already exists.
 __________________ ERROR at setup of test_get_single_briefing __________________
 backend/tests/test_briefings_api.py:45: in seed_briefing_data
     cursor.execute("""
 .venv/lib/python3.14/site-packages/psycopg/cursor.py:117: in execute
     raise ex.with_traceback(None)
-E   psycopg.errors.UndefinedColumn: column "stocks_screened" of relation "strategy_briefings" does not exist
-E   LINE 3:         (id, run_id, strategy_id, portfolio_id, stocks_scree...
-E                                                           ^
-_ ERROR at setup of TestMarketIndexEndpoint.test_unsupported_index_returns_400 _
-backend/tests/test_dashboard_endpoints.py:43: in app
-    flask_app.app.config['TESTING'] = True
-E   AttributeError: 'Flask' object has no attribute 'app'
-__ ERROR at setup of TestMarketIndexEndpoint.test_invalid_period_returns_400 ___
-backend/tests/test_dashboard_endpoints.py:43: in app
-    flask_app.app.config['TESTING'] = True
-E   AttributeError: 'Flask' object has no attribute 'app'
-______ ERROR at setup of TestMarketMoversEndpoint.test_get_movers_default ______
-backend/tests/test_dashboard_endpoints.py:43: in app
-    flask_app.app.config['TESTING'] = True
-E   AttributeError: 'Flask' object has no attribute 'app'
-______ ERROR at setup of TestMarketMoversEndpoint.test_get_movers_weekly _______
-backend/tests/test_dashboard_endpoints.py:43: in app
-    flask_app.app.config['TESTING'] = True
-E   AttributeError: 'Flask' object has no attribute 'app'
-__ ERROR at setup of TestMarketMoversEndpoint.test_get_movers_weekly_no_error __
-backend/tests/test_dashboard_endpoints.py:43: in app
-    flask_app.app.config['TESTING'] = True
-E   AttributeError: 'Flask' object has no attribute 'app'
-_____ ERROR at setup of TestDashboardEndpoint.test_dashboard_requires_auth _____
-backend/tests/test_dashboard_endpoints.py:43: in app
-    flask_app.app.config['TESTING'] = True
-E   AttributeError: 'Flask' object has no attribute 'app'
-_ ERROR at setup of TestMarketIndexPartialData.test_get_market_index_partial_data _
-backend/tests/test_dashboard_endpoints.py:43: in app
-    flask_app.app.config['TESTING'] = True
-E   AttributeError: 'Flask' object has no attribute 'app'
-_ ERROR at setup of TestDashboardEarningsEndpoint.test_get_earnings_days_param _
-backend/tests/test_dashboard_endpoints.py:43: in app
-    flask_app.app.config['TESTING'] = True
-E   AttributeError: 'Flask' object has no attribute 'app'
-_ ERROR at setup of TestDashboardEarningsEndpoint.test_get_earnings_scope_all __
-backend/tests/test_dashboard_endpoints.py:43: in app
-    flask_app.app.config['TESTING'] = True
-E   AttributeError: 'Flask' object has no attribute 'app'
-____________________ ERROR at setup of test_buy_stock_tool _____________________
-backend/tests/test_portfolio_tools.py:36: in mock_portfolio_service
-    with patch('backend.agent_tools.portfolio_service') as mock:
-../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/unittest/mock.py:1503: in __enter__
-    original, local = self.get_original()
-../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/unittest/mock.py:1473: in get_original
-    raise AttributeError(
-E   AttributeError: <module 'backend.agent_tools' from '/Users/mikey/workspace/lynch-stock-screener/backend/agent_tools/__init__.py'> does not have the attribute 'portfolio_service'
-____________________ ERROR at setup of test_sell_stock_tool ____________________
-backend/tests/test_portfolio_tools.py:36: in mock_portfolio_service
-    with patch('backend.agent_tools.portfolio_service') as mock:
-../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/unittest/mock.py:1503: in __enter__
-    original, local = self.get_original()
-../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/unittest/mock.py:1473: in get_original
-    raise AttributeError(
-E   AttributeError: <module 'backend.agent_tools' from '/Users/mikey/workspace/lynch-stock-screener/backend/agent_tools/__init__.py'> does not have the attribute 'portfolio_service'
-_______ ERROR at setup of test_execute_trades_idempotency_market_closed ________
-backend/tests/test_strategy_idempotency.py:30: in executor
-    with patch('backend.strategy_executor.executor.PositionSizer'):
-../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/unittest/mock.py:1487: in __enter__
-    self.target = self.getter()
-../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/pkgutil.py:473: in resolve_name
-    result = getattr(result, p)
-E   AttributeError: module 'backend.strategy_executor' has no attribute 'executor'
-___________ ERROR at setup of test_execute_trades_idempotency_sells ____________
-backend/tests/test_strategy_idempotency.py:30: in executor
-    with patch('backend.strategy_executor.executor.PositionSizer'):
-../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/unittest/mock.py:1487: in __enter__
-    self.target = self.getter()
-../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/pkgutil.py:473: in resolve_name
-    result = getattr(result, p)
-E   AttributeError: module 'backend.strategy_executor' has no attribute 'executor'
+E   psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "strategy_briefings_pkey"
+E   DETAIL:  Key (id)=(1) already exists.
 =================================== FAILURES ===================================
 ________________ test_create_strategy_with_addition_thresholds _________________
 backend/tests/test_addition_thresholds_agent.py:29: in test_create_strategy_with_addition_thresholds
@@ -1371,9 +1301,9 @@ INFO     database.core:core.py:125 Database schema initialized successfully
 INFO     database.core:core.py:127 Releasing Postgres schema migration lock...
 INFO     database.core:core.py:149 Starting background writer thread...
 INFO     database.core:core.py:152 Database writer thread started successfully
-INFO     worker.core:core.py:110 Worker macbookpro.lan-64176 initialized (Tier: light)
-INFO     database.core:core.py:289 Writer loop started with initial database connection
+INFO     worker.core:core.py:110 Worker macbookpro.lan-72518 initialized (Tier: light)
 INFO     backend.tests.test_alert_logic:test_alert_logic.py:35 Loaded 12 test cases.
+INFO     database.core:core.py:289 Writer loop started with initial database connection
 INFO     google_genai.models:models.py:5195 AFC is enabled with max remote calls: 10.
 INFO     google_genai.models:models.py:5195 AFC is enabled with max remote calls: 10.
 INFO     google_genai.models:models.py:5195 AFC is enabled with max remote calls: 10.
@@ -1386,14 +1316,6 @@ INFO     google_genai.models:models.py:5195 AFC is enabled with max remote calls
 INFO     google_genai.models:models.py:5195 AFC is enabled with max remote calls: 10.
 INFO     google_genai.models:models.py:5195 AFC is enabled with max remote calls: 10.
 INFO     google_genai.models:models.py:5195 AFC is enabled with max remote calls: 10.
-________________________ test_agent_manage_alerts_tool _________________________
-backend/tests/test_alerts_e2e.py:115: in test_agent_manage_alerts_tool
-    test_db.create_alert.assert_called_with(1, "GOOG", "price", {"threshold": 2000, "operator": "below"})
-../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/unittest/mock.py:985: in assert_called_with
-    raise AssertionError(_error_message()) from cause
-E   AssertionError: expected call not found.
-E   Expected: create_alert(1, 'GOOG', 'price', {'threshold': 2000, 'operator': 'below'})
-E     Actual: create_alert(user_id=1, symbol='GOOG', condition_type='price', condition_params={'threshold': 2000, 'operator': 'below'})
 ____________ test_lynch_analysis_endpoint_generates_fresh_analysis _____________
 backend/tests/test_app.py:175: in test_lynch_analysis_endpoint_generates_fresh_analysis
     assert response.status_code == 200
@@ -1402,11 +1324,11 @@ E    +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.s
 ----------------------------- Captured stdout call -----------------------------
 Error generating thesis for AAPL: 'NoneType' object has no attribute 'id'
 ------------------------------ Captured log call -------------------------------
-INFO     app.analysis:analysis.py:281 [Thesis][AAPL] Fetched stock metrics in 1.06ms
+INFO     app.analysis:analysis.py:281 [Thesis][AAPL] Fetched stock metrics in 1.13ms
 INFO     app.analysis:analysis.py:309 [Thesis][AAPL] Starting thesis generation request
-INFO     app.analysis:analysis.py:340 [Thesis][AAPL] Fetched SEC sections in 1.28ms (Size: 0.00 MB)
-INFO     app.analysis:analysis.py:346 [Thesis][AAPL] Fetched material events in 1.41ms
-INFO     app.analysis:analysis.py:351 [Thesis][AAPL] Fetched news articles in 1.30ms
+INFO     app.analysis:analysis.py:340 [Thesis][AAPL] Fetched SEC sections in 1.06ms (Size: 0.00 MB)
+INFO     app.analysis:analysis.py:346 [Thesis][AAPL] Fetched material events in 1.42ms
+INFO     app.analysis:analysis.py:351 [Thesis][AAPL] Fetched news articles in 1.28ms
 INFO     stock_analyst.analysis:analysis.py:48 [Thesis][AAPL] (Character: lynch) Constructing prompt (Model: gemini-3-pro-preview)
 _____________________ test_lynch_analysis_refresh_endpoint _____________________
 backend/tests/test_app.py:236: in test_lynch_analysis_refresh_endpoint
@@ -1434,14 +1356,10 @@ INFO     strategy_executor.briefing:briefing.py:29 [Briefing] Starting generatio
 INFO     strategy_executor.briefing:briefing.py:130 [Briefing] Run 1 breakdown: 2 Buys, 1 Sells, 1 Holds (sampled), 0 Watchlist (top 20)
 WARNING  strategy_executor.briefing:briefing.py:268 Failed to generate executive summary: API error
 INFO     strategy_executor.briefing:briefing.py:187 [Briefing] Successfully generated briefing for run 1
-_______________________ test_get_briefings_for_portfolio _______________________
-backend/tests/test_briefings_db.py:106: in test_get_briefings_for_portfolio
-    assert briefings[0]['stocks_screened'] == 500
-E   KeyError: 'stocks_screened'
 ______________________ test_lynch_analysis_has_timestamp _______________________
 backend/tests/test_database.py:319: in test_lynch_analysis_has_timestamp
     assert before_save <= generated_at <= after_save
-E   assert datetime.datetime(2026, 2, 22, 0, 32, 33, 832406) <= datetime.datetime(2026, 2, 21, 19, 32, 33, 833275)
+E   assert datetime.datetime(2026, 2, 22, 0, 54, 36, 981468) <= datetime.datetime(2026, 2, 21, 19, 54, 36, 982276)
 _______________ test_calculate_earnings_growth_insufficient_data _______________
 backend/tests/test_earnings_analyzer.py:93: in test_calculate_earnings_growth_insufficient_data
     assert result is None
@@ -1672,6 +1590,9 @@ PHASE 5: EXIT DETECTION
 ============================================================
   Universe compliance: 1 positions no longer pass filters
     AAPL: No longer passes universe filters
+----------------------------- Captured stderr call -----------------------------
+/Users/mikey/workspace/lynch-stock-screener/backend/scoring/vectors.py:200: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return pd.read_sql_query(query, engine, params=tuple(params) if params else None)
 ------------------------------ Captured log call -------------------------------
 INFO     strategy_executor.utils:utils.py:18 [Run 99] Starting universe filtering phase
 INFO     strategy_executor.utils:utils.py:18 [Run 99] Screened 1 total passing symbols (0 new to score, 1 additions to score)
@@ -1921,7 +1842,7 @@ E    +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.s
 ------------------------------ Captured log call -------------------------------
 ERROR    app.portfolios:portfolios.py:166 Error executing trade for portfolio 16: Object of type MagicMock is not JSON serializable
 _______________________ test_smart_chat_agent_injection ________________________
-backend/tests/test_portfolio_tools.py:173: in test_smart_chat_agent_injection
+backend/tests/test_portfolio_tools.py:171: in test_smart_chat_agent_injection
     agent.client.models.generate_content.side_effect = side_effect_func
 E   AttributeError: 'method' object has no attribute 'side_effect' and no __dict__ for setting new attributes
 _______________________ TestPositionSizer.test_basic_buy _______________________
@@ -2138,8 +2059,8 @@ _______ TestSECDataFetcherIncremental.test_new_filings_logged_correctly ________
 backend/tests/test_sec_data_fetcher.py:351: in test_new_filings_logged_correctly
     assert mock_db.save_sec_filing.call_count == 2
 E   AssertionError: assert 0 == 2
-E    +  where 0 = <Mock name='mock.save_sec_filing' id='6041902720'>.call_count
-E    +    where <Mock name='mock.save_sec_filing' id='6041902720'> = <Mock id='6041902048'>.save_sec_filing
+E    +  where 0 = <Mock name='mock.save_sec_filing' id='6039923952'>.call_count
+E    +    where <Mock name='mock.save_sec_filing' id='6039923952'> = <Mock id='6039923280'>.save_sec_filing
 ________ Test503RetryLogic.test_generate_analysis_stream_retries_on_503 ________
 backend/tests/test_stock_analyst_retry.py:86: in test_generate_analysis_stream_retries_on_503
     result = list(stock_analyst.generate_analysis_stream(
@@ -2295,6 +2216,9 @@ Loading strategy 1...
 ============================================================
 PHASE 1: UNIVERSE FILTERING
 ============================================================
+----------------------------- Captured stderr call -----------------------------
+/Users/mikey/workspace/lynch-stock-screener/backend/scoring/vectors.py:200: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return pd.read_sql_query(query, engine, params=tuple(params) if params else None)
 ------------------------------ Captured log call -------------------------------
 INFO     strategy_executor.utils:utils.py:18 [Run 1] Starting universe filtering phase
 ERROR    strategy_executor.core:core.py:370 Strategy execution failed: 'Mock' object is not iterable
@@ -2322,6 +2246,9 @@ Loading strategy 1...
 ============================================================
 PHASE 1: UNIVERSE FILTERING
 ============================================================
+----------------------------- Captured stderr call -----------------------------
+/Users/mikey/workspace/lynch-stock-screener/backend/scoring/vectors.py:200: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return pd.read_sql_query(query, engine, params=tuple(params) if params else None)
 ------------------------------ Captured log call -------------------------------
 INFO     strategy_executor.utils:utils.py:18 [Run 1] Starting universe filtering phase
 ERROR    strategy_executor.core:core.py:370 Strategy execution failed: 'Mock' object is not iterable
@@ -2339,6 +2266,9 @@ backend/scoring/vectors.py:200: in _load_stock_metrics
 .venv/lib/python3.14/site-packages/pandas/io/sql.py:2729: in read_query
     columns = [col_desc[0] for col_desc in cursor.description]
 E   TypeError: 'Mock' object is not iterable
+----------------------------- Captured stderr call -----------------------------
+/Users/mikey/workspace/lynch-stock-screener/backend/scoring/vectors.py:200: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return pd.read_sql_query(query, engine, params=tuple(params) if params else None)
 _________________ TestUniverseFilter.test_price_filter_applied _________________
 backend/tests/test_strategy_executor.py:797: in test_price_filter_applied
     symbols = evaluator.filter_universe(conditions)
@@ -2353,6 +2283,9 @@ backend/scoring/vectors.py:200: in _load_stock_metrics
 .venv/lib/python3.14/site-packages/pandas/io/sql.py:2729: in read_query
     columns = [col_desc[0] for col_desc in cursor.description]
 E   TypeError: 'Mock' object is not iterable
+----------------------------- Captured stderr call -----------------------------
+/Users/mikey/workspace/lynch-stock-screener/backend/scoring/vectors.py:200: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return pd.read_sql_query(query, engine, params=tuple(params) if params else None)
 ______________ TestIssueFixes.test_issue1_two_phase_cash_tracking ______________
 backend/tests/test_strategy_executor_fixes.py:52: in test_issue1_two_phase_cash_tracking
     with patch.object(executor.position_sizer, 'calculate_position') as mock_calc:
@@ -2360,7 +2293,7 @@ backend/tests/test_strategy_executor_fixes.py:52: in test_issue1_two_phase_cash_
     original, local = self.get_original()
 ../../.local/share/uv/python/cpython-3.14.0-macos-aarch64-none/lib/python3.14/unittest/mock.py:1473: in get_original
     raise AttributeError(
-E   AttributeError: <strategy_executor.position_sizing.PositionSizer object at 0x16714c050> does not have the attribute 'calculate_position'
+E   AttributeError: <strategy_executor.position_sizing.PositionSizer object at 0x356d13e10> does not have the attribute 'calculate_position'
 _______________ TestIssueFixes.test_issue3_holding_reevaluation ________________
 backend/tests/test_strategy_executor_fixes.py:161: in test_issue3_holding_reevaluation
     exits = reevaluator.check_holdings(1, conditions, config)
@@ -2492,104 +2425,84 @@ E   AttributeError: 'ToolExecutor' object has no attribute '_get_strategy_decisi
 ________ TestMarketHours.test_market_open_during_extended_hours_morning ________
 backend/tests/test_trade_execution.py:19: in test_market_open_during_extended_hours_morning
     assert is_market_open(et_time) is True
-E   AssertionError: assert <MagicMock name='mock.is_market_open()' id='6009024400'> is True
-E    +  where <MagicMock name='mock.is_market_open()' id='6009024400'> = <MagicMock name='mock.is_market_open' id='6023883680'>(datetime.datetime(2026, 1, 20, 6, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
+E   AssertionError: assert False is True
+E    +  where False = <MagicMock name='mock.is_market_open' id='14379732672'>(datetime.datetime(2026, 1, 20, 6, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
 ____________ TestMarketHours.test_market_open_during_regular_hours _____________
 backend/tests/test_trade_execution.py:27: in test_market_open_during_regular_hours
     assert is_market_open(et_time) is True
-E   AssertionError: assert <MagicMock name='mock.is_market_open()' id='6009024400'> is True
-E    +  where <MagicMock name='mock.is_market_open()' id='6009024400'> = <MagicMock name='mock.is_market_open' id='6023883680'>(datetime.datetime(2026, 1, 20, 10, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
+E   AssertionError: assert False is True
+E    +  where False = <MagicMock name='mock.is_market_open' id='14379732672'>(datetime.datetime(2026, 1, 20, 10, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
 ________ TestMarketHours.test_market_open_during_extended_hours_evening ________
 backend/tests/test_trade_execution.py:35: in test_market_open_during_extended_hours_evening
     assert is_market_open(et_time) is True
-E   AssertionError: assert <MagicMock name='mock.is_market_open()' id='6009024400'> is True
-E    +  where <MagicMock name='mock.is_market_open()' id='6009024400'> = <MagicMock name='mock.is_market_open' id='6023883680'>(datetime.datetime(2026, 1, 20, 19, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
-___________ TestMarketHours.test_market_closed_before_extended_hours ___________
-backend/tests/test_trade_execution.py:43: in test_market_closed_before_extended_hours
-    assert is_market_open(et_time) is False
-E   AssertionError: assert <MagicMock name='mock.is_market_open()' id='6009024400'> is False
-E    +  where <MagicMock name='mock.is_market_open()' id='6009024400'> = <MagicMock name='mock.is_market_open' id='6023883680'>(datetime.datetime(2026, 1, 20, 3, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
-___________ TestMarketHours.test_market_closed_after_extended_hours ____________
-backend/tests/test_trade_execution.py:51: in test_market_closed_after_extended_hours
-    assert is_market_open(et_time) is False
-E   AssertionError: assert <MagicMock name='mock.is_market_open()' id='6009024400'> is False
-E    +  where <MagicMock name='mock.is_market_open()' id='6009024400'> = <MagicMock name='mock.is_market_open' id='6023883680'>(datetime.datetime(2026, 1, 20, 21, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
-________________ TestMarketHours.test_market_closed_on_saturday ________________
-backend/tests/test_trade_execution.py:59: in test_market_closed_on_saturday
-    assert is_market_open(et_time) is False
-E   AssertionError: assert <MagicMock name='mock.is_market_open()' id='6009024400'> is False
-E    +  where <MagicMock name='mock.is_market_open()' id='6009024400'> = <MagicMock name='mock.is_market_open' id='6023883680'>(datetime.datetime(2026, 1, 24, 10, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
-_________________ TestMarketHours.test_market_closed_on_sunday _________________
-backend/tests/test_trade_execution.py:67: in test_market_closed_on_sunday
-    assert is_market_open(et_time) is False
-E   AssertionError: assert <MagicMock name='mock.is_market_open()' id='6009024400'> is False
-E    +  where <MagicMock name='mock.is_market_open()' id='6009024400'> = <MagicMock name='mock.is_market_open' id='6023883680'>(datetime.datetime(2026, 1, 25, 10, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
+E   AssertionError: assert False is True
+E    +  where False = <MagicMock name='mock.is_market_open' id='14379732672'>(datetime.datetime(2026, 1, 20, 19, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
 _______________ TestMarketHours.test_market_boundary_4am_is_open _______________
 backend/tests/test_trade_execution.py:75: in test_market_boundary_4am_is_open
     assert is_market_open(et_time) is True
-E   AssertionError: assert <MagicMock name='mock.is_market_open()' id='6009024400'> is True
-E    +  where <MagicMock name='mock.is_market_open()' id='6009024400'> = <MagicMock name='mock.is_market_open' id='6023883680'>(datetime.datetime(2026, 1, 20, 4, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
+E   AssertionError: assert False is True
+E    +  where False = <MagicMock name='mock.is_market_open' id='14379732672'>(datetime.datetime(2026, 1, 20, 4, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
 _______________ TestMarketHours.test_market_boundary_8pm_is_open _______________
 backend/tests/test_trade_execution.py:83: in test_market_boundary_8pm_is_open
     assert is_market_open(et_time) is True
-E   AssertionError: assert <MagicMock name='mock.is_market_open()' id='6009024400'> is True
-E    +  where <MagicMock name='mock.is_market_open()' id='6009024400'> = <MagicMock name='mock.is_market_open' id='6023883680'>(datetime.datetime(2026, 1, 20, 20, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
+E   AssertionError: assert False is True
+E    +  where False = <MagicMock name='mock.is_market_open' id='14379732672'>(datetime.datetime(2026, 1, 20, 20, 0, tzinfo=zoneinfo.ZoneInfo(key='America/New_York')))
 _______________ TestPriceFetching.test_fetch_price_from_yfinance _______________
 backend/tests/test_trade_execution.py:100: in test_fetch_price_from_yfinance
     assert price == 150.50
-E   AssertionError: assert <MagicMock name='mock.fetch_current_price()' id='6010366880'> == 150.5
+E   AssertionError: assert <MagicMock name='mock.fetch_current_price()' id='6048735520'> == 150.5
 ______________ TestPriceFetching.test_fetch_price_fallback_to_db _______________
 backend/tests/test_trade_execution.py:120: in test_fetch_price_fallback_to_db
     assert price == 145.00
-E   AssertionError: assert <MagicMock name='mock.fetch_current_price()' id='6010366880'> == 145.0
+E   AssertionError: assert <MagicMock name='mock.fetch_current_price()' id='6048735520'> == 145.0
 _______ TestPriceFetching.test_fetch_price_returns_none_when_unavailable _______
 backend/tests/test_trade_execution.py:133: in test_fetch_price_returns_none_when_unavailable
     assert price is None
-E   AssertionError: assert <MagicMock name='mock.fetch_current_price()' id='6010366880'> is None
+E   AssertionError: assert <MagicMock name='mock.fetch_current_price()' id='6048735520'> is None
 __________ TestTradeValidation.test_validate_buy_with_sufficient_cash __________
 backend/tests/test_trade_execution.py:155: in test_validate_buy_with_sufficient_cash
     assert result['valid'] is True
-E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6007058992'> is True
+E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6048741232'> is True
 _________ TestTradeValidation.test_validate_buy_with_insufficient_cash _________
 backend/tests/test_trade_execution.py:174: in test_validate_buy_with_insufficient_cash
     assert result['valid'] is False
-E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6007058992'> is False
+E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6048741232'> is False
 _______ TestTradeValidation.test_validate_sell_with_sufficient_holdings ________
 backend/tests/test_trade_execution.py:197: in test_validate_sell_with_sufficient_holdings
     assert result['valid'] is True
-E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6007058992'> is True
+E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6048741232'> is True
 ______ TestTradeValidation.test_validate_sell_with_insufficient_holdings _______
 backend/tests/test_trade_execution.py:219: in test_validate_sell_with_insufficient_holdings
     assert result['valid'] is False
-E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6007058992'> is False
+E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6048741232'> is False
 ___________ TestTradeValidation.test_validate_sell_with_no_holdings ____________
 backend/tests/test_trade_execution.py:238: in test_validate_sell_with_no_holdings
     assert result['valid'] is False
-E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6007058992'> is False
+E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6048741232'> is False
 _________ TestTradeValidation.test_validate_requires_positive_quantity _________
 backend/tests/test_trade_execution.py:256: in test_validate_requires_positive_quantity
     assert result['valid'] is False
-E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6007058992'> is False
+E   AssertionError: assert <MagicMock name='mock.validate_trade().__getitem__()' id='6048741232'> is False
 __________________ TestExecuteTrade.test_execute_buy_success ___________________
 backend/tests/test_trade_execution.py:279: in test_execute_buy_success
     assert result['success'] is True
-E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='6023887712'> is True
+E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='5988788480'> is True
 _________ TestExecuteTrade.test_execute_trade_fails_when_market_closed _________
 backend/tests/test_trade_execution.py:308: in test_execute_trade_fails_when_market_closed
     assert result['success'] is False
-E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='6023887712'> is False
+E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='5988788480'> is False
 _______ TestExecuteTrade.test_execute_trade_fails_when_price_unavailable _______
 backend/tests/test_trade_execution.py:328: in test_execute_trade_fails_when_price_unavailable
     assert result['success'] is False
-E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='6023887712'> is False
+E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='5988788480'> is False
 __________________ TestExecuteTrade.test_execute_sell_success __________________
 backend/tests/test_trade_execution.py:351: in test_execute_sell_success
     assert result['success'] is True
-E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='6023887712'> is True
+E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='5988788480'> is True
 ________________ TestExecuteTrade.test_execute_trade_with_note _________________
 backend/tests/test_trade_execution.py:376: in test_execute_trade_with_note
     assert result['success'] is True
-E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='6023887712'> is True
+E   AssertionError: assert <MagicMock name='mock.execute_trade().__getitem__()' id='5988788480'> is True
 _______________ TestTradingAlerts.test_automated_trade_execution _______________
 backend/tests/test_trading_alerts.py:80: in test_automated_trade_execution
     self.mock_portfolio_service.execute_trade.assert_called_once()
@@ -2597,7 +2510,7 @@ backend/tests/test_trading_alerts.py:80: in test_automated_trade_execution
     raise AssertionError(msg)
 E   AssertionError: Expected 'execute_trade' to have been called once. Called 0 times.
 ------------------------------ Captured log call -------------------------------
-INFO     worker.core:core.py:110 Worker macbookpro.lan-64176 initialized (Tier: light)
+INFO     worker.core:core.py:110 Worker macbookpro.lan-72518 initialized (Tier: light)
 INFO     worker.alert_jobs:alert_jobs.py:20 Running check_alerts job 1
 INFO     worker.alert_jobs:alert_jobs.py:24 Checking 1 active alerts
 INFO     google_genai.models:models.py:5195 AFC is enabled with max remote calls: 10.
@@ -2640,8 +2553,8 @@ __________________ test_deliberation_exits_on_held_positions ___________________
 backend/tests/test_trading_phases.py:294: in test_deliberation_exits_on_held_positions
     assert deliberation_exits[0].reason.startswith('Deliberation')
 E   AssertionError: assert False
-E    +  where False = <built-in method startswith of str object at 0x358a7bf30>('Deliberation')
-E    +    where <built-in method startswith of str object at 0x358a7bf30> = 'No bullish case: Lynch=AVOID, Buffett=AVOID'.startswith
+E    +  where False = <built-in method startswith of str object at 0x1688c4810>('Deliberation')
+E    +    where <built-in method startswith of str object at 0x1688c4810> = 'No bullish case: Lynch=AVOID, Buffett=AVOID'.startswith
 E    +      where 'No bullish case: Lynch=AVOID, Buffett=AVOID' = ExitSignal(symbol='AAPL', quantity=0, reason='No bullish case: Lynch=AVOID, Buffett=AVOID', current_value=None, gain_pct=None, exit_type='full').reason
 ----------------------------- Captured stdout call -----------------------------
     Skipping deliberation: Lynch=AVOID, Buffett=AVOID
@@ -2714,6 +2627,9 @@ backend/scoring/vectors.py:103: in load_vectors
 .venv/lib/python3.14/site-packages/pandas/core/indexes/base.py:3819: in get_loc
     raise KeyError(key) from err
 E   KeyError: 'symbol'
+----------------------------- Captured stderr call -----------------------------
+/Users/mikey/workspace/lynch-stock-screener/backend/scoring/vectors.py:200: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return pd.read_sql_query(query, engine, params=tuple(params) if params else None)
 ------------------------------ Captured log call -------------------------------
 INFO     scoring.vectors:vectors.py:100 [StockVectors] Loaded 0 stocks from stock_metrics
 ____________________________ test_peg_ratio_mapping ____________________________
@@ -2741,6 +2657,9 @@ backend/scoring/vectors.py:103: in load_vectors
 .venv/lib/python3.14/site-packages/pandas/core/indexes/base.py:3819: in get_loc
     raise KeyError(key) from err
 E   KeyError: 'symbol'
+----------------------------- Captured stderr call -----------------------------
+/Users/mikey/workspace/lynch-stock-screener/backend/scoring/vectors.py:200: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return pd.read_sql_query(query, engine, params=tuple(params) if params else None)
 ------------------------------ Captured log call -------------------------------
 INFO     scoring.vectors:vectors.py:100 [StockVectors] Loaded 0 stocks from stock_metrics
 ___________________________ test_price_52w_fallback ____________________________
@@ -2768,16 +2687,19 @@ backend/scoring/vectors.py:103: in load_vectors
 .venv/lib/python3.14/site-packages/pandas/core/indexes/base.py:3819: in get_loc
     raise KeyError(key) from err
 E   KeyError: 'symbol'
+----------------------------- Captured stderr call -----------------------------
+/Users/mikey/workspace/lynch-stock-screener/backend/scoring/vectors.py:200: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return pd.read_sql_query(query, engine, params=tuple(params) if params else None)
 ------------------------------ Captured log call -------------------------------
 INFO     scoring.vectors:vectors.py:100 [StockVectors] Loaded 0 stocks from stock_metrics
 ______________________ test_chart_analysis_has_timestamp _______________________
 backend/tests/test_user_chart_analysis.py:120: in test_chart_analysis_has_timestamp
     assert before_save <= generated_at <= after_save
-E   assert datetime.datetime(2026, 2, 22, 0, 34, 22, 819626) <= datetime.datetime(2026, 2, 21, 19, 34, 22, 820283)
+E   assert datetime.datetime(2026, 2, 22, 0, 56, 30, 362845) <= datetime.datetime(2026, 2, 21, 19, 56, 30, 363548)
 ______________________ test_lynch_analysis_has_timestamp _______________________
 backend/tests/test_user_lynch_analysis.py:96: in test_lynch_analysis_has_timestamp
     assert before_save <= generated_at <= after_save
-E   assert datetime.datetime(2026, 2, 22, 0, 34, 22, 902566) <= datetime.datetime(2026, 2, 21, 19, 34, 22, 903230)
+E   assert datetime.datetime(2026, 2, 22, 0, 56, 30, 454629) <= datetime.datetime(2026, 2, 21, 19, 56, 30, 455358)
 _________________________ test_algorithm_validation_50 _________________________
 backend/tests/test_validation_50.py:19: in test_algorithm_validation_50
     assert summary['successful'] > 0
@@ -2793,104 +2715,104 @@ WARNING  scoring.core:core.py:84 No algorithm configuration found - using hardco
 INFO     algorithm_validator:algorithm_validator.py:40 Fetched 503 S&P 500 symbols from Wikipedia
 INFO     algorithm_validator:algorithm_validator.py:74 Starting backtest validation for 50 stocks, 1 years back
 WARNING  backtester:backtester.py:66 No weekly price data for MMM
-WARNING  backtester:backtester.py:66 No weekly price data for AOS
 WARNING  algorithm_validator:algorithm_validator.py:111 [1/50] MMM: Insufficient historical data
-WARNING  algorithm_validator:algorithm_validator.py:111 [2/50] AOS: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for ABBV
-WARNING  algorithm_validator:algorithm_validator.py:111 [3/50] ABBV: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for ABT
+WARNING  algorithm_validator:algorithm_validator.py:111 [2/50] ABT: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AOS
+WARNING  algorithm_validator:algorithm_validator.py:111 [3/50] AOS: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for ACN
 WARNING  algorithm_validator:algorithm_validator.py:111 [4/50] ACN: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for ABT
-WARNING  algorithm_validator:algorithm_validator.py:111 [5/50] ABT: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AMD
-WARNING  algorithm_validator:algorithm_validator.py:111 [6/50] AMD: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for ABBV
+WARNING  algorithm_validator:algorithm_validator.py:111 [5/50] ABBV: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for ADBE
-WARNING  algorithm_validator:algorithm_validator.py:111 [7/50] ADBE: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for A
-WARNING  algorithm_validator:algorithm_validator.py:111 [8/50] A: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AFL
-WARNING  algorithm_validator:algorithm_validator.py:111 [9/50] AFL: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [6/50] ADBE: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AMD
+WARNING  algorithm_validator:algorithm_validator.py:111 [7/50] AMD: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for AES
-WARNING  algorithm_validator:algorithm_validator.py:111 [10/50] AES: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [8/50] AES: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for A
+WARNING  algorithm_validator:algorithm_validator.py:111 [9/50] A: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AFL
+WARNING  algorithm_validator:algorithm_validator.py:111 [10/50] AFL: Insufficient historical data
 INFO     algorithm_validator:algorithm_validator.py:121 Progress: 10/50 (20.0%), ETA: 0.0 minutes
 WARNING  backtester:backtester.py:66 No weekly price data for ABNB
 WARNING  algorithm_validator:algorithm_validator.py:111 [11/50] ABNB: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AKAM
-WARNING  algorithm_validator:algorithm_validator.py:111 [12/50] AKAM: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for ALB
-WARNING  algorithm_validator:algorithm_validator.py:111 [13/50] ALB: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for APD
-WARNING  algorithm_validator:algorithm_validator.py:111 [14/50] APD: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [12/50] APD: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AKAM
+WARNING  algorithm_validator:algorithm_validator.py:111 [13/50] AKAM: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for ALB
+WARNING  algorithm_validator:algorithm_validator.py:111 [14/50] ALB: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for ARE
 WARNING  algorithm_validator:algorithm_validator.py:111 [15/50] ARE: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for ALGN
 WARNING  algorithm_validator:algorithm_validator.py:111 [16/50] ALGN: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for ALLE
 WARNING  algorithm_validator:algorithm_validator.py:111 [17/50] ALLE: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for ALL
 WARNING  backtester:backtester.py:66 No weekly price data for LNT
-WARNING  algorithm_validator:algorithm_validator.py:111 [18/50] ALL: Insufficient historical data
-WARNING  algorithm_validator:algorithm_validator.py:111 [19/50] LNT: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [18/50] LNT: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for ALL
+WARNING  algorithm_validator:algorithm_validator.py:111 [19/50] ALL: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for GOOGL
 WARNING  algorithm_validator:algorithm_validator.py:111 [20/50] GOOGL: Insufficient historical data
 INFO     algorithm_validator:algorithm_validator.py:121 Progress: 20/50 (40.0%), ETA: 0.0 minutes
 WARNING  backtester:backtester.py:66 No weekly price data for GOOG
-WARNING  backtester:backtester.py:66 No weekly price data for MO
 WARNING  algorithm_validator:algorithm_validator.py:111 [21/50] GOOG: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for MO
 WARNING  algorithm_validator:algorithm_validator.py:111 [22/50] MO: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AMCR
 WARNING  backtester:backtester.py:66 No weekly price data for AMZN
-WARNING  algorithm_validator:algorithm_validator.py:111 [23/50] AMCR: Insufficient historical data
-WARNING  algorithm_validator:algorithm_validator.py:111 [24/50] AMZN: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [23/50] AMZN: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AMCR
+WARNING  algorithm_validator:algorithm_validator.py:111 [24/50] AMCR: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for AEE
 WARNING  algorithm_validator:algorithm_validator.py:111 [25/50] AEE: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AXP
-WARNING  algorithm_validator:algorithm_validator.py:111 [26/50] AXP: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AIG
-WARNING  algorithm_validator:algorithm_validator.py:111 [27/50] AIG: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AMT
 WARNING  backtester:backtester.py:66 No weekly price data for AEP
-WARNING  algorithm_validator:algorithm_validator.py:111 [28/50] AMT: Insufficient historical data
-WARNING  algorithm_validator:algorithm_validator.py:111 [29/50] AEP: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [26/50] AEP: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AXP
+WARNING  algorithm_validator:algorithm_validator.py:111 [27/50] AXP: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AIG
+WARNING  algorithm_validator:algorithm_validator.py:111 [28/50] AIG: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AMT
+WARNING  algorithm_validator:algorithm_validator.py:111 [29/50] AMT: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for AWK
 WARNING  algorithm_validator:algorithm_validator.py:111 [30/50] AWK: Insufficient historical data
 INFO     algorithm_validator:algorithm_validator.py:121 Progress: 30/50 (60.0%), ETA: 0.0 minutes
 WARNING  backtester:backtester.py:66 No weekly price data for AMP
 WARNING  algorithm_validator:algorithm_validator.py:111 [31/50] AMP: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AMGN
 WARNING  backtester:backtester.py:66 No weekly price data for AME
+WARNING  algorithm_validator:algorithm_validator.py:111 [32/50] AME: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AMGN
+WARNING  algorithm_validator:algorithm_validator.py:111 [33/50] AMGN: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for APH
-WARNING  algorithm_validator:algorithm_validator.py:111 [32/50] AMGN: Insufficient historical data
-WARNING  algorithm_validator:algorithm_validator.py:111 [33/50] AME: Insufficient historical data
-WARNING  algorithm_validator:algorithm_validator.py:111 [34/50] APH: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for ADI
+WARNING  algorithm_validator:algorithm_validator.py:111 [34/50] APH: Insufficient historical data
 WARNING  algorithm_validator:algorithm_validator.py:111 [35/50] ADI: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for AON
 WARNING  algorithm_validator:algorithm_validator.py:111 [36/50] AON: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AAPL
-WARNING  algorithm_validator:algorithm_validator.py:111 [37/50] AAPL: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for APA
+WARNING  algorithm_validator:algorithm_validator.py:111 [37/50] APA: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for APO
 WARNING  algorithm_validator:algorithm_validator.py:111 [38/50] APO: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for APA
-WARNING  algorithm_validator:algorithm_validator.py:111 [39/50] APA: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for AMAT
-WARNING  algorithm_validator:algorithm_validator.py:111 [40/50] AMAT: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AAPL
+WARNING  algorithm_validator:algorithm_validator.py:111 [39/50] AMAT: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [40/50] AAPL: Insufficient historical data
 INFO     algorithm_validator:algorithm_validator.py:121 Progress: 40/50 (80.0%), ETA: 0.0 minutes
-WARNING  backtester:backtester.py:66 No weekly price data for APTV
-WARNING  algorithm_validator:algorithm_validator.py:111 [41/50] APTV: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for ACGL
-WARNING  algorithm_validator:algorithm_validator.py:111 [42/50] ACGL: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for APP
-WARNING  algorithm_validator:algorithm_validator.py:111 [43/50] APP: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for ADM
-WARNING  algorithm_validator:algorithm_validator.py:111 [44/50] ADM: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for ANET
-WARNING  algorithm_validator:algorithm_validator.py:111 [45/50] ANET: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AJG
-WARNING  algorithm_validator:algorithm_validator.py:111 [46/50] AJG: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [41/50] APP: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for APTV
+WARNING  algorithm_validator:algorithm_validator.py:111 [42/50] APTV: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for ACGL
+WARNING  algorithm_validator:algorithm_validator.py:111 [43/50] ACGL: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for ARES
+WARNING  algorithm_validator:algorithm_validator.py:111 [44/50] ARES: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for ADM
+WARNING  algorithm_validator:algorithm_validator.py:111 [45/50] ADM: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for ANET
+WARNING  algorithm_validator:algorithm_validator.py:111 [46/50] ANET: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AJG
+WARNING  algorithm_validator:algorithm_validator.py:111 [47/50] AJG: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for AIZ
-WARNING  algorithm_validator:algorithm_validator.py:111 [47/50] ARES: Insufficient historical data
 WARNING  algorithm_validator:algorithm_validator.py:111 [48/50] AIZ: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for T
 WARNING  algorithm_validator:algorithm_validator.py:111 [49/50] T: Insufficient historical data
@@ -2912,23 +2834,23 @@ INFO     scoring.core:core.py:54 Reloading Lynch criteria settings from database
 WARNING  scoring.core:core.py:84 No algorithm configuration found - using hardcoded defaults
 INFO     algorithm_validator:algorithm_validator.py:40 Fetched 503 S&P 500 symbols from Wikipedia
 INFO     algorithm_validator:algorithm_validator.py:74 Starting backtest validation for 10 stocks, 1 years back
-WARNING  backtester:backtester.py:66 No weekly price data for ABT
-WARNING  algorithm_validator:algorithm_validator.py:111 [1/10] ABT: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for MMM
-WARNING  algorithm_validator:algorithm_validator.py:111 [2/10] MMM: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for ABT
+WARNING  algorithm_validator:algorithm_validator.py:111 [1/10] MMM: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [2/10] ABT: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for AOS
 WARNING  algorithm_validator:algorithm_validator.py:111 [3/10] AOS: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for ABBV
-WARNING  algorithm_validator:algorithm_validator.py:111 [4/10] ABBV: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for ACN
-WARNING  algorithm_validator:algorithm_validator.py:111 [5/10] ACN: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for ABBV
+WARNING  algorithm_validator:algorithm_validator.py:111 [4/10] ACN: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [5/10] ABBV: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for ADBE
 WARNING  algorithm_validator:algorithm_validator.py:111 [6/10] ADBE: Insufficient historical data
-WARNING  backtester:backtester.py:66 No weekly price data for AMD
-WARNING  algorithm_validator:algorithm_validator.py:111 [7/10] AMD: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for AES
-WARNING  algorithm_validator:algorithm_validator.py:111 [8/10] AES: Insufficient historical data
+WARNING  algorithm_validator:algorithm_validator.py:111 [7/10] AES: Insufficient historical data
+WARNING  backtester:backtester.py:66 No weekly price data for AMD
 WARNING  backtester:backtester.py:66 No weekly price data for AFL
+WARNING  algorithm_validator:algorithm_validator.py:111 [8/10] AMD: Insufficient historical data
 WARNING  algorithm_validator:algorithm_validator.py:111 [9/10] AFL: Insufficient historical data
 WARNING  backtester:backtester.py:66 No weekly price data for A
 WARNING  algorithm_validator:algorithm_validator.py:111 [10/10] A: Insufficient historical data
@@ -3057,9 +2979,9 @@ INFO     scoring.vectors:vectors.py:100 [StockVectors] Loaded 0 stocks from stoc
 __________ test_worker_data_fetcher_can_be_used_with_material_events ___________
 backend/tests/test_worker_data_fetcher.py:55: in test_worker_data_fetcher_can_be_used_with_material_events
     assert events_fetcher.data_fetcher is worker.data_fetcher
-E   AssertionError: assert <MagicMock name='mock.MaterialEventsFetcher().data_fetcher' id='14464193200'> is <data_fetcher.DataFetcher object at 0x16830bc50>
-E    +  where <MagicMock name='mock.MaterialEventsFetcher().data_fetcher' id='14464193200'> = <MagicMock name='mock.MaterialEventsFetcher()' id='14464190176'>.data_fetcher
-E    +  and   <data_fetcher.DataFetcher object at 0x16830bc50> = <worker.BackgroundWorker object at 0x168e83790>.data_fetcher
+E   AssertionError: assert <MagicMock name='mock.MaterialEventsFetcher().data_fetcher' id='6009865616'> is <data_fetcher.DataFetcher object at 0x165358a10>
+E    +  where <MagicMock name='mock.MaterialEventsFetcher().data_fetcher' id='6009865616'> = <MagicMock name='mock.MaterialEventsFetcher()' id='6009874352'>.data_fetcher
+E    +  and   <data_fetcher.DataFetcher object at 0x165358a10> = <worker.BackgroundWorker object at 0x16891bce0>.data_fetcher
 ------------------------------ Captured log call -------------------------------
 INFO     database.core:core.py:46 Creating database connection pool: localhost:5432/lynch_stocks_backend_test (pool_size=10, min=5)
 INFO     database.core:core.py:59 Database connection pool created successfully
@@ -3071,23 +2993,10 @@ INFO     database.core:core.py:125 Database schema initialized successfully
 INFO     database.core:core.py:127 Releasing Postgres schema migration lock...
 INFO     database.core:core.py:149 Starting background writer thread...
 INFO     database.core:core.py:152 Database writer thread started successfully
-INFO     worker.core:core.py:110 Worker macbookpro.lan-64176 initialized (Tier: light)
+INFO     worker.core:core.py:110 Worker macbookpro.lan-72518 initialized (Tier: light)
 INFO     database.core:core.py:289 Writer loop started with initial database connection
 ERROR    edgar_fetcher.core:core.py:117 [EdgarFetcher] Error pre-fetching CIK mappings: 403 Client Error: Forbidden for url: https://www.sec.gov/files/company_tickers.json
 INFO     sec_8k_client:sec_8k_client.py:68 [MaterialEventsFetcher] SEC8KClient initialized with user agent: test-agent
-=============================== warnings summary ===============================
-backend/tests/test_exit_detection.py::test_phase5_consolidation_all_sources_merged
-backend/tests/test_strategy_executor.py::TestStrategyExecutorIntegration::test_full_pipeline_buy_decision
-backend/tests/test_strategy_executor.py::TestStrategyExecutorIntegration::test_thesis_verdict_filtering
-backend/tests/test_strategy_executor.py::TestUniverseFilter::test_empty_filters_returns_all_symbols
-backend/tests/test_strategy_executor.py::TestUniverseFilter::test_price_filter_applied
-backend/tests/test_universe_filters_extended.py::test_universe_filter_dividend_yield
-backend/tests/test_universe_filters_extended.py::test_peg_ratio_mapping
-backend/tests/test_universe_filters_extended.py::test_price_52w_fallback
-  /Users/mikey/workspace/lynch-stock-screener/backend/scoring/vectors.py:200: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
-    return pd.read_sql_query(query, engine, params=tuple(params) if params else None)
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ============================
 FAILED backend/tests/test_addition_thresholds_agent.py::test_create_strategy_with_addition_thresholds
 FAILED backend/tests/test_addition_thresholds_agent.py::test_update_strategy_with_addition_thresholds
@@ -3096,12 +3005,10 @@ FAILED backend/tests/test_admin_filtering.py::TestAdminJobFiltering::test_filter
 FAILED backend/tests/test_admin_filtering.py::TestAdminJobFiltering::test_filter_by_nonexistent_type
 FAILED backend/tests/test_admin_filtering.py::TestAdminJobFiltering::test_filter_sql_injection_prevention
 FAILED backend/tests/test_alert_logic.py::test_alert_logic - NameError: name ...
-FAILED backend/tests/test_alerts_e2e.py::test_agent_manage_alerts_tool - Asse...
 FAILED backend/tests/test_app.py::test_lynch_analysis_endpoint_generates_fresh_analysis
 FAILED backend/tests/test_app.py::test_lynch_analysis_refresh_endpoint - asse...
 FAILED backend/tests/test_briefing_generator.py::test_assemble_structured_data
 FAILED backend/tests/test_briefing_generator.py::test_generate_handles_gemini_failure
-FAILED backend/tests/test_briefings_db.py::test_get_briefings_for_portfolio
 FAILED backend/tests/test_database.py::test_lynch_analysis_has_timestamp - as...
 FAILED backend/tests/test_earnings_analyzer.py::test_calculate_earnings_growth_insufficient_data
 FAILED backend/tests/test_earnings_extractor.py::test_extract_earnings_ground_truth[vz_8k.json-expected0]
@@ -3226,10 +3133,6 @@ FAILED backend/tests/test_strategy_tools.py::test_get_strategy_decisions_unautho
 FAILED backend/tests/test_trade_execution.py::TestMarketHours::test_market_open_during_extended_hours_morning
 FAILED backend/tests/test_trade_execution.py::TestMarketHours::test_market_open_during_regular_hours
 FAILED backend/tests/test_trade_execution.py::TestMarketHours::test_market_open_during_extended_hours_evening
-FAILED backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_before_extended_hours
-FAILED backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_after_extended_hours
-FAILED backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_on_saturday
-FAILED backend/tests/test_trade_execution.py::TestMarketHours::test_market_closed_on_sunday
 FAILED backend/tests/test_trade_execution.py::TestMarketHours::test_market_boundary_4am_is_open
 FAILED backend/tests/test_trade_execution.py::TestMarketHours::test_market_boundary_8pm_is_open
 FAILED backend/tests/test_trade_execution.py::TestPriceFetching::test_fetch_price_from_yfinance
@@ -3267,17 +3170,4 @@ FAILED backend/tests/test_vectorized_scoring.py::TestVectorizedScoring::test_buf
 FAILED backend/tests/test_worker_data_fetcher.py::test_worker_data_fetcher_can_be_used_with_material_events
 ERROR backend/tests/test_briefings_api.py::test_get_portfolio_briefings - psy...
 ERROR backend/tests/test_briefings_api.py::test_get_single_briefing - psycopg...
-ERROR backend/tests/test_dashboard_endpoints.py::TestMarketIndexEndpoint::test_unsupported_index_returns_400
-ERROR backend/tests/test_dashboard_endpoints.py::TestMarketIndexEndpoint::test_invalid_period_returns_400
-ERROR backend/tests/test_dashboard_endpoints.py::TestMarketMoversEndpoint::test_get_movers_default
-ERROR backend/tests/test_dashboard_endpoints.py::TestMarketMoversEndpoint::test_get_movers_weekly
-ERROR backend/tests/test_dashboard_endpoints.py::TestMarketMoversEndpoint::test_get_movers_weekly_no_error
-ERROR backend/tests/test_dashboard_endpoints.py::TestDashboardEndpoint::test_dashboard_requires_auth
-ERROR backend/tests/test_dashboard_endpoints.py::TestMarketIndexPartialData::test_get_market_index_partial_data
-ERROR backend/tests/test_dashboard_endpoints.py::TestDashboardEarningsEndpoint::test_get_earnings_days_param
-ERROR backend/tests/test_dashboard_endpoints.py::TestDashboardEarningsEndpoint::test_get_earnings_scope_all
-ERROR backend/tests/test_portfolio_tools.py::test_buy_stock_tool - AttributeE...
-ERROR backend/tests/test_portfolio_tools.py::test_sell_stock_tool - Attribute...
-ERROR backend/tests/test_strategy_idempotency.py::test_execute_trades_idempotency_market_closed
-ERROR backend/tests/test_strategy_idempotency.py::test_execute_trades_idempotency_sells
-= 176 failed, 588 passed, 3 skipped, 8 warnings, 15 errors in 126.45s (0:02:06) =
+======= 170 failed, 607 passed, 3 skipped, 2 errors in 130.74s (0:02:10) =======

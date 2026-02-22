@@ -99,6 +99,20 @@ class StockVectors:
         df = self._load_stock_metrics(country_filter)
         logger.info(f"[StockVectors] Loaded {len(df)} stocks from stock_metrics")
         
+        if df.empty:
+            df['earnings_cagr'] = None
+            df['revenue_cagr'] = None
+            df['income_consistency_score'] = None
+            df['revenue_consistency_score'] = None
+            df['roe'] = None
+            df['owner_earnings'] = None
+            df['debt_to_earnings'] = None
+            df['pe_52_week_min'] = None
+            df['pe_52_week_max'] = None
+            df['pe_52_week_position'] = None
+            df['peg_ratio'] = None
+            return df
+
         # Step 2: Load Annual Earnings History (Used by Growth & Buffett metrics)
         earnings_df = self._load_annual_earnings(df['symbol'].tolist())
         

@@ -2,18 +2,15 @@
 -- PostgreSQL database dump
 --
 
-\restrict XwWQAhzsk3qLfCPhpAqKdfJHQ97xVVL6Np3cECfCC6zxF5JRNJaLDJyeSwlwToY
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 18.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
+-- search_path reset removed to allow access to public schema
 SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
@@ -23,48 +20,8 @@ SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
---
--- Name: _yoyo_log; Type: TABLE; Schema: public; Owner: lynch
---
 
-CREATE TABLE public._yoyo_log (
-    id character varying(36) NOT NULL,
-    migration_hash character varying(64),
-    migration_id character varying(255),
-    operation character varying(10),
-    username character varying(255),
-    hostname character varying(255),
-    comment character varying(255),
-    created_at_utc timestamp without time zone
-);
-
-
-ALTER TABLE public._yoyo_log OWNER TO lynch;
-
---
--- Name: _yoyo_migration; Type: TABLE; Schema: public; Owner: lynch
---
-
-CREATE TABLE public._yoyo_migration (
-    migration_hash character varying(64) NOT NULL,
-    migration_id character varying(255),
-    applied_at_utc timestamp without time zone
-);
-
-
-ALTER TABLE public._yoyo_migration OWNER TO lynch;
-
---
--- Name: _yoyo_version; Type: TABLE; Schema: public; Owner: lynch
---
-
-CREATE TABLE public._yoyo_version (
-    version integer NOT NULL,
-    installed_at_utc timestamp without time zone
-);
-
-
-ALTER TABLE public._yoyo_version OWNER TO lynch;
+-- Redundant yoyo metadata tables removed to avoid conflict with yoyo's auto-init
 
 --
 -- Name: agent_conversations; Type: TABLE; Schema: public; Owner: lynch
@@ -2043,18 +2000,8 @@ CREATE TABLE public.worker_heartbeats (
 
 ALTER TABLE public.worker_heartbeats OWNER TO lynch;
 
---
--- Name: yoyo_lock; Type: TABLE; Schema: public; Owner: lynch
---
 
-CREATE TABLE public.yoyo_lock (
-    locked integer DEFAULT 1 NOT NULL,
-    ctime timestamp without time zone,
-    pid integer NOT NULL
-);
-
-
-ALTER TABLE public.yoyo_lock OWNER TO lynch;
+-- yoyo_lock table removed
 
 --
 -- Name: agent_conversations id; Type: DEFAULT; Schema: public; Owner: lynch
@@ -2336,28 +2283,8 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 ALTER TABLE ONLY public.watchlist ALTER COLUMN id SET DEFAULT nextval('public.watchlist_id_seq'::regclass);
 
 
---
--- Name: _yoyo_log _yoyo_log_pkey; Type: CONSTRAINT; Schema: public; Owner: lynch
---
 
-ALTER TABLE ONLY public._yoyo_log
-    ADD CONSTRAINT _yoyo_log_pkey PRIMARY KEY (id);
-
-
---
--- Name: _yoyo_migration _yoyo_migration_pkey; Type: CONSTRAINT; Schema: public; Owner: lynch
---
-
-ALTER TABLE ONLY public._yoyo_migration
-    ADD CONSTRAINT _yoyo_migration_pkey PRIMARY KEY (migration_hash);
-
-
---
--- Name: _yoyo_version _yoyo_version_pkey; Type: CONSTRAINT; Schema: public; Owner: lynch
---
-
-ALTER TABLE ONLY public._yoyo_version
-    ADD CONSTRAINT _yoyo_version_pkey PRIMARY KEY (version);
+-- yoyo metadata constraints removed
 
 
 --
@@ -2976,12 +2903,8 @@ ALTER TABLE ONLY public.worker_heartbeats
     ADD CONSTRAINT worker_heartbeats_pkey PRIMARY KEY (worker_id);
 
 
---
--- Name: yoyo_lock yoyo_lock_pkey; Type: CONSTRAINT; Schema: public; Owner: lynch
---
 
-ALTER TABLE ONLY public.yoyo_lock
-    ADD CONSTRAINT yoyo_lock_pkey PRIMARY KEY (locked);
+-- yoyo_lock constraint removed
 
 
 --
@@ -3579,7 +3502,6 @@ ALTER TABLE ONLY public.weekly_prices
 -- PostgreSQL database dump complete
 --
 
-\unrestrict XwWQAhzsk3qLfCPhpAqKdfJHQ97xVVL6Np3cECfCC6zxF5JRNJaLDJyeSwlwToY
 
 
 -- Pre-populate default system user

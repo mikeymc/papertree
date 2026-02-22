@@ -12,9 +12,10 @@ logger = logging.getLogger(__name__)
 class UniverseFilter:
     """Parses and evaluates strategy conditions against stock data."""
 
-    def __init__(self, db):
+
+    def __init__(self, db, stock_vectors=None):
         self.db = db
-        self.stock_vectors = StockVectors(db)
+        self.stock_vectors = stock_vectors or StockVectors(db)
 
     def filter_universe(self, conditions: Dict[str, Any]) -> List[str]:
         """Apply universe filters to return candidate symbols.
@@ -187,3 +188,4 @@ class UniverseFilter:
         except Exception as e:
             logger.error(f"[UniverseFilter] Error applying filter {field} {operator} {value}: {e}")
             return df
+

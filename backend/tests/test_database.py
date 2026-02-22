@@ -305,10 +305,11 @@ def test_lynch_analysis_has_timestamp(test_db):
     test_db.save_stock_basic("AAPL", "Apple Inc.", "NASDAQ", "Technology")
     test_db.flush()  # Ensure stock exists before saving analysis
 
-    before_save = datetime.now()
+    from datetime import timezone
+    before_save = datetime.now(timezone.utc).replace(tzinfo=None)
     test_db.save_lynch_analysis(1, "AAPL", "Test analysis", "gemini-pro")
     test_db.flush()  # Ensure data is committed
-    after_save = datetime.now()
+    after_save = datetime.now(timezone.utc).replace(tzinfo=None)
 
     retrieved = test_db.get_lynch_analysis(1, "AAPL")
 

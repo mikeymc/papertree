@@ -73,23 +73,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'max_overflow': 10,
 }
 
-# Use SQLAlchemy-backed sessions (persists across deployments)
-session_db = SQLAlchemy(app)
-
-app.config['SESSION_TYPE'] = 'sqlalchemy'
-app.config['SESSION_SQLALCHEMY'] = session_db
-app.config['SESSION_PERMANENT'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
-
-# Session cookie settings
-# Only use secure cookies in production (HTTPS)
-is_production = os.getenv('ENVIRONMENT', 'development') == 'production'
-app.config['SESSION_COOKIE_SECURE'] = is_production
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-
-# Initialize session (creates sessions table if not exists)
-Session(app)
+# Configure CORS with credentials support
 
 # Configure CORS with credentials support
 frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
@@ -148,6 +132,26 @@ deps.db = Database(
     user=db_user,
     password=db_password
 )
+
+# Use SQLAlchemy-backed sessions (persists across deployments)
+# Initialize AFTER Database migrations have run to avoid table conflicts
+session_db = SQLAlchemy(app)
+
+app.config['SESSION_TYPE'] = 'sqlalchemy'
+app.config['SESSION_SQLALCHEMY'] = session_db
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+
+# Session cookie settings
+# Only use secure cookies in production (HTTPS)
+is_production = os.getenv('ENVIRONMENT', 'development') == 'production'
+app.config['SESSION_COOKIE_SECURE'] = is_production
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Initialize session (creates sessions table if not exists)
+Session(app)
+
 deps.fetcher = DataFetcher(deps.db)
 deps.analyzer = EarningsAnalyzer(deps.db)
 deps.criteria = LynchCriteria(deps.db, deps.analyzer)
