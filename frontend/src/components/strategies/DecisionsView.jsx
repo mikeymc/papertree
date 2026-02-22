@@ -95,6 +95,81 @@ export function DecisionsView({ runId, runs, onRunChange }) {
     )
 }
 
+function parseDeliberation(text) {
+    // Split on speaker lines like "**Peter Lynch:**" or "**Warren Buffett:**"
+    // Also extract the final consensus section
+    const parts = []
+    const consensusMatch = text.match(/##\s*Final Consensus\s*([\s\S]*)$/i)
+    const mainText = consensusMatch ? text.slice(0, consensusMatch.index) : text
+    const consensusText = consensusMatch ? consensusMatch[1].trim() : null
+
+    // Split on bold speaker markers
+    const speakerRegex = /\*\*(Peter Lynch|Warren Buffett|Lynch|Buffett)\*\*:?\s*/gi
+    const segments = mainText.split(speakerRegex)
+
+    // segments[0] is text before first speaker (usually empty or intro)
+    // Then alternating: speaker name, speaker text
+    for (let i = 1; i < segments.length; i += 2) {
+        const speaker = segments[i]
+        const content = segments[i + 1]?.trim()
+        if (speaker && content) {
+            const isLynch = /lynch/i.test(speaker)
+            parts.push({ speaker: isLynch ? 'Peter Lynch' : 'Warren Buffett', content, isLynch })
+        }
+    }
+
+    return { turns: parts, consensus: consensusText }
+}
+
+function DeliberationConversation({ text, verdict }) {
+    const { turns, consensus } = parseDeliberation(text)
+
+    const verdictColor = verdict === 'BUY'
+        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+        : verdict === 'AVOID'
+            ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+
+    if (turns.length === 0) {
+        // Fallback: render as markdown if parsing fails
+        return (
+            <div className="p-8 prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown>{text}</ReactMarkdown>
+            </div>
+        )
+    }
+
+    return (
+        <div className="p-6 space-y-4">
+            {turns.map((turn, i) => (
+                <div key={i} className={`flex gap-3 ${turn.isLynch ? '' : 'flex-row-reverse'}`}>
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${turn.isLynch ? 'bg-blue-600' : 'bg-amber-600'}`}>
+                        {turn.isLynch ? 'PL' : 'WB'}
+                    </div>
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${turn.isLynch ? 'bg-blue-50 dark:bg-blue-950/30 text-foreground rounded-tl-none' : 'bg-amber-50 dark:bg-amber-950/30 text-foreground rounded-tr-none'}`}>
+                        <p className={`text-[10px] font-bold mb-1 ${turn.isLynch ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {turn.speaker}
+                        </p>
+                        <p className="whitespace-pre-line">{turn.content}</p>
+                    </div>
+                </div>
+            ))}
+
+            {consensus && (
+                <div className="mt-6 pt-4 border-t">
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Final Consensus</p>
+                    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold mb-3 ${verdictColor}`}>
+                        {verdict}
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        {consensus.replace(/\*\*\[?(BUY|WATCH|AVOID)\]?\*\*/gi, '').replace(/^Reasoning:\s*/i, '').trim()}
+                    </p>
+                </div>
+            )}
+        </div>
+    )
+}
+
 function DecisionCard({ decision }) {
     const isBuy = decision.final_decision === 'BUY'
     const [showDeliberation, setShowDeliberation] = useState(false)
@@ -180,17 +255,15 @@ function DecisionCard({ decision }) {
                                     <MessageSquare size={20} />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-xl font-bold">Analysis Deliberation: {decision.symbol}</DialogTitle>
+                                    <DialogTitle className="text-xl font-bold">Deliberation: {decision.symbol}</DialogTitle>
                                     <DialogDescription>
-                                        Qualitative debate between Lynch and Buffett agents
+                                        Lynch and Buffett debate the investment case
                                     </DialogDescription>
                                 </div>
                             </div>
                         </DialogHeader>
                         <ScrollArea className="h-[calc(85vh-180px)] w-full border-b">
-                            <div className="p-8 prose prose-sm max-w-none dark:prose-invert">
-                                <ReactMarkdown>{rawReasoning}</ReactMarkdown>
-                            </div>
+                            <DeliberationConversation text={rawReasoning} verdict={decision.consensus_verdict || decision.final_decision} />
                         </ScrollArea>
                         <DialogFooter className="border-t p-4 px-6 bg-muted/30">
                             <Button variant="outline" size="sm" onClick={() => setShowDeliberation(false)}>
