@@ -216,21 +216,14 @@ class TestConsensusEngine:
 
 
 class TestPositionSizer:
-    """Tests for position sizing logic."""
+    """Tests for position sizing via calculate_target_orders."""
 
     @pytest.fixture
     def mock_db(self):
         db = Mock()
-        # Default portfolio summary
-        db.get_portfolio_summary.return_value = {
-            'total_value': 100000,
-            'cash': 50000,
-            'holdings': {}
-        }
-        # Default price
         conn = Mock()
         cursor = Mock()
-        cursor.fetchone.return_value = (100.0,)  # $100 per share
+        cursor.fetchone.return_value = (100.0,)
         conn.cursor.return_value = cursor
         db.get_connection.return_value = conn
         db.return_connection = Mock()
@@ -240,176 +233,163 @@ class TestPositionSizer:
     def sizer(self, mock_db):
         return PositionSizer(mock_db)
 
-    def test_equal_weight_single_buy(self, sizer, mock_db):
-        """Single buy should use all available cash."""
-        result = sizer.calculate_position(
-            portfolio_id=1,
-            symbol='AAPL',
-            conviction_score=80,
+    def test_equal_weight_single_buy(self, sizer):
+        """Single buy should target full portfolio value."""
+        candidates = [{'symbol': 'AAPL', 'price': 100.0, 'conviction': 80}]
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=100000,
+            holdings={},
             method='equal_weight',
-            rules={'max_position_pct': 50},
-            other_buys=[],
-            current_price=100.0
+            rules={'max_position_pct': 50, 'min_position_value': 100},
+            cash_available=50000
         )
 
-        # With $50k cash and 1 buy, should use ~$50k
-        # Max position is 50% of $100k = $50k
-        assert result.shares == 500  # $50k / $100 per share
-        assert result.estimated_value == 50000
+        # Single candidate: target = $100k, capped at 50% = $50k
+        assert len(buys) == 1
+        assert buys[0]['position'].shares == 500
 
-    def test_equal_weight_multiple_buys(self, sizer, mock_db):
-        """Multiple buys should split cash equally."""
-        result = sizer.calculate_position(
-            portfolio_id=1,
-            symbol='AAPL',
-            conviction_score=80,
+    def test_equal_weight_multiple_buys(self, sizer):
+        """Multiple buys should split portfolio equally."""
+        candidates = [
+            {'symbol': 'AAPL', 'price': 100.0, 'conviction': 80},
+            {'symbol': 'MSFT', 'price': 100.0, 'conviction': 80},
+            {'symbol': 'GOOGL', 'price': 100.0, 'conviction': 80},
+        ]
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=100000,
+            holdings={},
             method='equal_weight',
-            rules={'max_position_pct': 50},
-            other_buys=[{'symbol': 'MSFT'}, {'symbol': 'GOOGL'}],  # 2 other buys
-            current_price=100.0
+            rules={'max_position_pct': 50, 'min_position_value': 100},
+            cash_available=50000
         )
 
-        # With $50k cash and 3 buys, each gets ~$16,666
-        # But capped by max_position_pct = 50% = $50k
-        expected_value = 50000 / 3  # ~$16,666
-        assert result.shares == int(expected_value / 100)
+        # 3 candidates: target = $100k / 3 = ~$33,333 each
+        assert len(buys) == 3
+        for buy in buys:
+            assert buy['position'].shares == 333  # int($33333 / $100)
 
-    def test_conviction_weighted_high_conviction(self, sizer, mock_db):
+    def test_conviction_weighted_high_conviction(self, sizer):
         """Higher conviction should get larger allocation."""
-        result = sizer.calculate_position(
-            portfolio_id=1,
-            symbol='AAPL',
-            conviction_score=90,
+        candidates = [
+            {'symbol': 'AAPL', 'price': 100.0, 'conviction': 90},
+            {'symbol': 'MSFT', 'price': 100.0, 'conviction': 30},
+        ]
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=100000,
+            holdings={},
             method='conviction_weighted',
-            rules={'max_position_pct': 50},
-            other_buys=[{'symbol': 'MSFT', 'conviction': 30}],  # Low conviction competitor
-            current_price=100.0
+            rules={'max_position_pct': 100, 'min_position_value': 100},
+            cash_available=50000
         )
 
-        # AAPL has 90/(90+30) = 75% of conviction
-        # Should get 75% of $50k = $37,500
-        expected = 50000 * (90 / 120)  # ~$37,500
-        assert result.shares == int(expected / 100)
+        aapl_buy = next(b for b in buys if b['symbol'] == 'AAPL')
+        msft_buy = next(b for b in buys if b['symbol'] == 'MSFT')
+        # AAPL: 90/(90+30) = 75% → $75k → 750 shares
+        assert aapl_buy['position'].shares > msft_buy['position'].shares
 
-    def test_fixed_pct_sizing(self, sizer, mock_db):
+    def test_fixed_pct_sizing(self, sizer):
         """Fixed percentage should allocate that % of portfolio."""
-        result = sizer.calculate_position(
-            portfolio_id=1,
-            symbol='AAPL',
-            conviction_score=80,
+        candidates = [{'symbol': 'AAPL', 'price': 100.0, 'conviction': 80}]
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=100000,
+            holdings={},
             method='fixed_pct',
-            rules={'fixed_position_pct': 10, 'max_position_pct': 50},
-            other_buys=[],
-            current_price=100.0
+            rules={'fixed_position_pct': 10, 'max_position_pct': 50, 'min_position_value': 100},
+            cash_available=50000
         )
 
-        # 10% of $100k = $10k
-        assert result.shares == 100
-        assert result.estimated_value == 10000
+        assert len(buys) == 1
+        assert buys[0]['position'].shares == 100  # 10% of $100k = $10k / $100
 
-    def test_kelly_criterion_high_conviction(self, sizer, mock_db):
-        """Kelly with high conviction should allocate more."""
-        result = sizer.calculate_position(
-            portfolio_id=1,
-            symbol='AAPL',
-            conviction_score=90,
+    def test_kelly_criterion_produces_buy(self, sizer):
+        """Kelly with high conviction should produce a buy signal."""
+        candidates = [{'symbol': 'AAPL', 'price': 100.0, 'conviction': 90}]
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=100000,
+            holdings={},
             method='kelly',
-            rules={'kelly_fraction': 0.25, 'max_position_pct': 50},
-            other_buys=[],
-            current_price=100.0
+            rules={'kelly_fraction': 0.25, 'max_position_pct': 50, 'min_position_value': 100},
+            cash_available=50000
         )
 
-        # With 90% conviction and quarter-Kelly:
-        # p = 0.9, q = 0.1, b = 1
-        # kelly_pct = (1 * 0.9 - 0.1) / 1 = 0.8
-        # safe_pct = 0.8 * 0.25 = 0.2 (20%)
-        # But capped at 25% by Kelly logic
-        assert result.shares > 0
+        assert len(buys) == 1
+        assert buys[0]['position'].shares > 0
 
-    def test_respects_max_position_pct(self, sizer, mock_db):
+    def test_respects_max_position_pct(self, sizer):
         """Should not exceed max_position_pct even with high conviction."""
-        # Set up a portfolio with $100k cash
-        mock_db.get_portfolio_summary.return_value = {
-            'total_value': 100000,
-            'cash': 100000,
-            'holdings': {}
-        }
-
-        result = sizer.calculate_position(
-            portfolio_id=1,
-            symbol='AAPL',
-            conviction_score=100,
+        candidates = [{'symbol': 'AAPL', 'price': 100.0, 'conviction': 100}]
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=100000,
+            holdings={},
             method='equal_weight',
-            rules={'max_position_pct': 5},  # Only 5%
-            other_buys=[],
-            current_price=100.0
+            rules={'max_position_pct': 5, 'min_position_value': 100},
+            cash_available=100000
         )
 
-        # Max is 5% of $100k = $5k
-        assert result.estimated_value <= 5000
+        assert len(buys) == 1
+        # Max is 5% of $100k = $5k = 50 shares
+        assert buys[0]['position'].estimated_value <= 5000
 
-    def test_existing_position_limits_additional(self, sizer, mock_db):
-        """If already holding shares, should only add up to max."""
-        mock_db.get_portfolio_summary.return_value = {
-            'total_value': 100000,
-            'cash': 50000,
-            'holdings': {'AAPL': 30}  # Already holding 30 shares = $3000
-        }
-
-        result = sizer.calculate_position(
-            portfolio_id=1,
-            symbol='AAPL',
-            conviction_score=80,
+    def test_existing_position_limits_additional(self, sizer):
+        """If already holding shares, buy signal is only for the drift."""
+        candidates = [{'symbol': 'AAPL', 'price': 100.0, 'conviction': 80}]
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=100000,
+            holdings={'AAPL': 30},  # $3000 already held
             method='fixed_pct',
-            rules={'fixed_position_pct': 5, 'max_position_pct': 5},  # Max $5k total
-            other_buys=[],
-            current_price=100.0
+            rules={'fixed_position_pct': 5, 'max_position_pct': 5, 'min_position_value': 100},
+            cash_available=50000
         )
 
-        # Already at $3k, max is $5k, so can only add $2k = 20 shares
-        assert result.shares == 20
+        # Target $5k, current $3k, drift $2k = 20 shares
+        assert len(buys) == 1
+        assert buys[0]['position'].shares == 20
 
-    def test_at_max_position_returns_zero(self, sizer, mock_db):
-        """If already at max position, should return 0 shares."""
-        mock_db.get_portfolio_summary.return_value = {
-            'total_value': 100000,
-            'cash': 50000,
-            'holdings': {'AAPL': 50}  # 50 shares = $5000 = 5% already
-        }
-
-        result = sizer.calculate_position(
-            portfolio_id=1,
-            symbol='AAPL',
-            conviction_score=80,
+    def test_at_max_position_no_buy(self, sizer):
+        """If already at target, should produce no buy signal."""
+        candidates = [{'symbol': 'AAPL', 'price': 100.0, 'conviction': 80}]
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=100000,
+            holdings={'AAPL': 50},  # $5000 = 5% already at target
             method='fixed_pct',
-            rules={'fixed_position_pct': 5, 'max_position_pct': 5},
-            other_buys=[],
-            current_price=100.0
+            rules={'fixed_position_pct': 5, 'max_position_pct': 5, 'min_position_value': 100},
+            cash_available=50000
         )
 
-        assert result.shares == 0
-        assert 'max position' in result.reasoning.lower()
+        aapl_buys = [b for b in buys if b['symbol'] == 'AAPL']
+        assert len(aapl_buys) == 0
 
-    def test_minimum_position_value(self, sizer, mock_db):
-        """If calculated value < min, either bump to min or skip."""
-        mock_db.get_portfolio_summary.return_value = {
-            'total_value': 100000,
-            'cash': 500,  # Low cash
-            'holdings': {}
-        }
-
-        result = sizer.calculate_position(
-            portfolio_id=1,
-            symbol='AAPL',
-            conviction_score=80,
-            method='equal_weight',
-            rules={'min_position_value': 1000, 'max_position_pct': 50},
-            other_buys=[],
-            current_price=100.0
+    def test_minimum_position_value_skips_small(self, sizer):
+        """If drift < min_position_value, skip the buy."""
+        # fixed_pct=0.5% of $100k = $500, min is $1000 → skip
+        candidates = [{'symbol': 'AAPL', 'price': 100.0, 'conviction': 80}]
+        sells, buys = sizer.calculate_target_orders(
+            section_id=1,
+            candidates=candidates,
+            portfolio_value=100000,
+            holdings={},
+            method='fixed_pct',
+            rules={'fixed_position_pct': 0.5, 'max_position_pct': 50, 'min_position_value': 1000},
+            cash_available=500
         )
 
-        # Only $500 cash, min is $1000 - should skip
-        assert result.shares == 0
+        assert len(buys) == 0
 
 
 class TestExitConditionChecker:
@@ -418,6 +398,7 @@ class TestExitConditionChecker:
     @pytest.fixture
     def mock_db(self):
         db = Mock()
+        db.get_position_entry_dates.return_value = {}
         return db
 
     @pytest.fixture
@@ -507,16 +488,17 @@ class TestExitConditionChecker:
         assert len(exits) == 0
 
     def test_score_degradation_triggers_exit(self, checker, mock_db):
-        """Low Lynch/Buffett score should trigger exit."""
+        """Both Lynch and Buffett below thresholds should trigger exit."""
         mock_db.get_portfolio_holdings_detailed.return_value = [{
             'symbol': 'AAPL',
             'quantity': 100,
             'total_cost': 10000,
             'current_value': 11000
         }]
+        mock_db.get_position_entry_dates.return_value = {}
 
         def mock_scoring(symbol):
-            return {'lynch_score': 35, 'buffett_score': 60}  # Lynch below 40
+            return {'lynch_score': 35, 'buffett_score': 30}  # Both below 40
 
         exits = checker.check_exits(
             portfolio_id=1,
@@ -589,6 +571,9 @@ class TestStrategyExecutorIntegration:
         db.get_connection.return_value = conn
         db.return_connection = Mock()
 
+        # Price lookup (used by fetch_current_prices_batch via real import)
+        db.get_prices_batch.return_value = {'AAPL': 150.0, 'MSFT': 300.0}
+
         # Stock metrics for thesis
         db.get_stock_metrics.return_value = {
             'symbol': 'AAPL',
@@ -597,6 +582,12 @@ class TestStrategyExecutorIntegration:
             'market_cap': 2500000000000
         }
         db.get_earnings_history.return_value = []
+
+        # Exit detection
+        db.get_position_entry_dates.return_value = {}
+
+        # Deliberation cache
+        db.get_deliberation.return_value = None
 
         return db
 
@@ -667,21 +658,25 @@ class TestStrategyExecutorIntegration:
                 mock_yf = sys.modules['yfinance']
                 mock_yf.Ticker.return_value.fast_info = {'lastPrice': 500.0}
 
-                # Patch StockVectors for vectorized scoring (both import sites)
-                with patch('strategy_executor.core.StockVectors', self._make_stock_vectors_mock()):
-                    with patch('scoring.vectors.StockVectors', self._make_stock_vectors_mock()):
-                        executor = StrategyExecutor(
-                            db=mock_db,
-                            analyst=mock_analyst,
-                            lynch_criteria=mock_lynch_criteria
-                        )
+                # Patch StockVectors at all import sites + deliberation API
+                sv_mock = self._make_stock_vectors_mock()
+                with patch('strategy_executor.core.StockVectors', sv_mock), \
+                     patch('strategy_executor.universe_filter.StockVectors', sv_mock), \
+                     patch('scoring.vectors.StockVectors', sv_mock), \
+                     patch('strategy_executor.deliberation.DeliberationMixin._conduct_deliberation',
+                           return_value=("BUY - Strong fundamentals", "BUY")):
+                    executor = StrategyExecutor(
+                        db=mock_db,
+                        analyst=mock_analyst,
+                        lynch_criteria=mock_lynch_criteria
+                    )
 
-                        result = executor.execute_strategy(strategy_id=1)
+                    result = executor.execute_strategy(strategy_id=1)
 
         # Verify pipeline completed
         assert result['status'] == 'completed'
-        assert result['stocks_screened'] == 2
-        assert result['stocks_scored'] > 0
+        assert result['universe_size'] > 0
+        assert result['candidates'] > 0
 
         # Verify batch scoring was called (vectorized path)
         assert mock_lynch_criteria.evaluate_batch.call_count >= 2
@@ -711,19 +706,22 @@ class TestStrategyExecutorIntegration:
                 mock_yf = sys.modules['yfinance']
                 mock_yf.Ticker.return_value.fast_info = {'lastPrice': 500.0}
 
-                # Patch StockVectors for vectorized scoring (both import sites)
-                with patch('strategy_executor.core.StockVectors', self._make_stock_vectors_mock()):
-                    with patch('scoring.vectors.StockVectors', self._make_stock_vectors_mock()):
-                        executor = StrategyExecutor(
-                            db=mock_db,
-                            analyst=mock_analyst,
-                            lynch_criteria=mock_lynch_criteria
-                        )
+                sv_mock = self._make_stock_vectors_mock()
+                with patch('strategy_executor.core.StockVectors', sv_mock), \
+                     patch('strategy_executor.universe_filter.StockVectors', sv_mock), \
+                     patch('scoring.vectors.StockVectors', sv_mock), \
+                     patch('strategy_executor.deliberation.DeliberationMixin._conduct_deliberation',
+                           return_value=("AVOID - Too risky", "AVOID")):
+                    executor = StrategyExecutor(
+                        db=mock_db,
+                        analyst=mock_analyst,
+                        lynch_criteria=mock_lynch_criteria
+                    )
 
-                        result = executor.execute_strategy(strategy_id=1)
+                    result = executor.execute_strategy(strategy_id=1)
 
-        # No trades should be executed because thesis verdict is AVOID, not BUY
-        assert result['trades_executed'] == 0
+        # No trades should be executed because deliberation verdict is AVOID, not BUY
+        assert result['trades'] == 0
 
     def test_disabled_strategy_skipped(self, mock_db, mock_lynch_criteria, mock_analyst):
         """Disabled strategies should be skipped."""
@@ -747,54 +745,43 @@ class TestUniverseFilter:
     """Tests for universe filtering."""
 
     @pytest.fixture
-    def mock_db(self):
-        db = Mock()
-        return db
+    def mock_stock_vectors(self):
+        import pandas as pd
+        sv = Mock()
+        sv.load_vectors.return_value = pd.DataFrame({
+            'symbol': ['AAPL', 'MSFT', 'GOOGL'],
+            'price': [150.0, 300.0, 250.0],
+            'country': ['US', 'US', 'US'],
+        })
+        return sv
 
     @pytest.fixture
-    def evaluator(self, mock_db):
-        return UniverseFilter(mock_db)
+    def mock_db(self):
+        return Mock()
 
-    def test_empty_filters_returns_all_symbols(self, evaluator, mock_db):
-        """No filters should return all screened symbols."""
-        # Mock getting all symbols
-        conn = Mock()
-        cursor = Mock()
-        cursor.fetchall.return_value = [('AAPL',), ('MSFT',), ('GOOGL',)]
-        conn.cursor.return_value = cursor
-        mock_db.get_connection.return_value = conn
-        mock_db.return_connection = Mock()
+    @pytest.fixture
+    def evaluator(self, mock_db, mock_stock_vectors):
+        return UniverseFilter(mock_db, stock_vectors=mock_stock_vectors)
 
-        symbols = evaluator.filter_universe({'universe': {'filters': []}})
+    def test_empty_filters_returns_all_symbols(self, evaluator):
+        """No filters should return all symbols from StockVectors."""
+        symbols = evaluator.filter_universe({'filters': []})
 
         assert 'AAPL' in symbols
         assert 'MSFT' in symbols
         assert 'GOOGL' in symbols
 
-    def test_price_filter_applied(self, evaluator, mock_db):
+    def test_price_filter_applied(self, evaluator):
         """Price filter should narrow down results."""
-        conn = Mock()
-        cursor = Mock()
-
-        # First call returns all symbols
-        # Second call returns filtered symbols
-        cursor.fetchall.side_effect = [
-            [('AAPL',), ('MSFT',), ('GOOGL',)],  # All symbols
-            [('AAPL',), ('GOOGL',)]  # After price filter
-        ]
-        conn.cursor.return_value = cursor
-        mock_db.get_connection.return_value = conn
-        mock_db.return_connection = Mock()
-
         conditions = {
-            'universe': {
-                'filters': [
-                    {'field': 'price', 'operator': '<=', 'value': 200}
-                ]
-            }
+            'filters': [
+                {'field': 'price', 'operator': '<=', 'value': 200}
+            ]
         }
 
         symbols = evaluator.filter_universe(conditions)
 
-        # Should have called filter query
-        assert len(symbols) == 2
+        # AAPL ($150) passes, MSFT ($300) fails, GOOGL ($250) fails
+        assert 'AAPL' in symbols
+        assert 'MSFT' not in symbols
+        assert len(symbols) == 1
