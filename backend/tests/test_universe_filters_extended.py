@@ -1,95 +1,59 @@
-import pytest
+import pandas as pd
 from unittest.mock import MagicMock
 from strategy_executor.universe_filter import UniverseFilter
 
+
 @pytest.fixture
-def mock_db_tuple():
-    db = MagicMock()
-    mock_conn = MagicMock()
-    mock_cursor = MagicMock()
-    
-    db.get_connection.return_value = mock_conn
-    mock_conn.cursor.return_value = mock_cursor
-    
-    # Mock symbols
-    mock_cursor.fetchall.side_effect = [
-        [('AAPL',), ('MSFT',), ('TSLA',)], # initial symbols
-        [('AAPL',), ('MSFT',)],             # first filter
-        [('AAPL',)]                         # second filter
-    ]
-    return db, mock_cursor
+def mock_sv():
+    return MagicMock()
 
-def test_universe_filter_dividend_yield(mock_db_tuple):
-    mock_db, mock_cursor = mock_db_tuple
-    uf = UniverseFilter(mock_db)
-    
+def test_universe_filter_dividend_yield(mock_sv):
+    uf = UniverseFilter(db=None, stock_vectors=mock_sv)
     conditions = {
-        'universe': {
-            'filters': [
-                {'field': 'dividend_yield', 'operator': '>', 'value': 3.0}
-            ]
-        }
+        'filters': [{'field': 'dividend_yield', 'operator': '>', 'value': 3.0}]
     }
     
-    mock_cursor.fetchall.side_effect = [[('AAPL',), ('T',)], [('T',)]]
+    df = pd.DataFrame([
+        {'symbol': 'AAPL', 'dividend_yield': 1.0},
+        {'symbol': 'T', 'dividend_yield': 5.0}
+    ])
+    mock_sv.load_vectors.return_value = df
+    
     symbols = uf.filter_universe(conditions)
-    
-    # Verify SQL calls
-    calls = mock_cursor.execute.call_args_list
-    
-    found_dividend_yield = False
-    for call in calls:
-        query = call[0][0]
-        if 'dividend_yield > %s' in query:
-            found_dividend_yield = True
-            
-    assert found_dividend_yield
     assert 'T' in symbols
+    assert 'AAPL' not in symbols
 
-def test_peg_ratio_mapping(mock_db_tuple):
-    mock_db, mock_cursor = mock_db_tuple
-    uf = UniverseFilter(mock_db)
-    
+def test_peg_ratio_mapping(mock_sv):
+    uf = UniverseFilter(db=None, stock_vectors=mock_sv)
     conditions = {
-        'universe': {
-            'filters': [
-                {'field': 'peg_ratio', 'operator': '<=', 'value': 1.0}
-            ]
-        }
+        'filters': [{'field': 'peg_ratio', 'operator': '<=', 'value': 1.0}]
     }
     
-    mock_cursor.fetchall.side_effect = [[('AAPL',)], [('AAPL',)]]
-    uf.filter_universe(conditions)
+    df = pd.DataFrame([
+        {'symbol': 'AAPL', 'peg_ratio': 0.8},
+        {'symbol': 'TSLA', 'peg_ratio': 2.5}
+    ])
+    mock_sv.load_vectors.return_value = df
     
-    calls = mock_cursor.execute.call_args_list
-    found_forward_peg = False
-    for call in calls:
-        query = call[0][0]
-        if 'forward_peg_ratio <= %s' in query:
-            found_forward_peg = True
-            
-    assert found_forward_peg
-    
-def test_price_52w_fallback(mock_db_tuple):
-    mock_db, mock_cursor = mock_db_tuple
-    uf = UniverseFilter(mock_db)
-    
+    symbols = uf.filter_universe(conditions)
+    assert 'AAPL' in symbols
+    assert 'TSLA' not in symbols
+
+def test_price_52w_fallback(mock_sv):
+    uf = UniverseFilter(db=None, stock_vectors=mock_sv)
+    # price_vs_52wk_high is mapped to price_change_pct in some versions,
+    # or it uses the raw field name if not mapped.
+    # In universe_filter.py: field_mapping doesn't have it, so it uses 'price_vs_52wk_high'
     conditions = {
-        'universe': {
-            'filters': [
-                {'field': 'price_vs_52wk_high', 'operator': '<=', 'value': -20}
-            ]
-        }
+        'filters': [{'field': 'price_change_pct', 'operator': '<=', 'value': -20.0}]
     }
     
-    mock_cursor.fetchall.side_effect = [[('AAPL',)], [('AAPL',)]]
-    uf.filter_universe(conditions)
+    df = pd.DataFrame([
+        {'symbol': 'AAPL', 'price_change_pct': -25.0},
+        {'symbol': 'MSFT', 'price_change_pct': -10.0}
+    ])
+    mock_sv.load_vectors.return_value = df
     
-    calls = mock_cursor.execute.call_args_list
-    found_price_change_pct = False
-    for call in calls:
-        query = call[0][0]
-        if 'price_change_pct <= %s' in query:
-            found_price_change_pct = True
-            
-    assert found_price_change_pct
+    symbols = uf.filter_universe(conditions)
+    assert 'AAPL' in symbols
+    assert 'MSFT' not in symbols

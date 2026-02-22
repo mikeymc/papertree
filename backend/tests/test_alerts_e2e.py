@@ -13,27 +13,11 @@ from unittest.mock import MagicMock
 # Add backend directory to path so imports like 'from price_history_fetcher' work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Mock google.genai specifically
-mock_genai = MagicMock()
-sys.modules["google.genai"] = mock_genai
-sys.modules["google.genai.types"] = MagicMock()
+# sys.path handled by conftest.py
 
-# Mock all fetcher dependencies to allow worker.py import
-sys.modules["price_history_fetcher"] = MagicMock()
-sys.modules["sec_data_fetcher"] = MagicMock()
-sys.modules["news_fetcher"] = MagicMock()
-sys.modules["material_events_fetcher"] = MagicMock()
-sys.modules["sec_rate_limiter"] = MagicMock()
-# Mock yfinance cache which is imported early in worker.py
-sys.modules["yfinance.cache"] = MagicMock()
-
-import backend.database
-# Ensure 'database' module resolves to 'backend.database' so patching works
-sys.modules['database'] = backend.database
-
-from backend.database import Database
-from backend.agent_tools import ToolExecutor
-from backend.worker import BackgroundWorker as Worker
+from database import Database
+from agent_tools import ToolExecutor
+from worker import BackgroundWorker as Worker
 
 # ... (fixture remains same) ...
 
@@ -41,7 +25,7 @@ def test_worker_check_alerts(test_db):
     """Test the worker job checking alerts."""
     # Patch Database class to return our test_db mock when Worker initializes
     # We patch backend.database.Database because we aliased 'database' to 'backend.database'
-    with patch('backend.database.Database', return_value=test_db):
+    with patch('database.Database', return_value=test_db):
         worker = Worker()
     
     # Mock active alerts
@@ -112,7 +96,7 @@ def test_agent_manage_alerts_tool(test_db):
     )
     
     assert "Successfully created alert" in result.get("message", "")
-    test_db.create_alert.assert_called_with(1, "GOOG", "price", {"threshold": 2000, "operator": "below"})
+    test_db.create_alert.assert_called_with(user_id=1, symbol="GOOG", condition_type="price", condition_params={"threshold": 2000, "operator": "below"})
 
     # Test List
     test_db.get_alerts.return_value = [{

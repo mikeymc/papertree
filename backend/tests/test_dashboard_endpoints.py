@@ -37,11 +37,12 @@ def app(mock_db):
         'FINNHUB_API_KEY': 'test_key',
         'SESSION_SECRET_KEY': 'test_secret'
     }):
-        with patch('backend.database.Database', return_value=mock_db):
-            # Import app after patching
-            from backend import app as flask_app
-            flask_app.app.config['TESTING'] = True
-            yield flask_app.app
+        with patch('database.Database', return_value=mock_db):
+            from app import app as flask_app
+            import app.deps as deps
+            deps.db = mock_db
+            flask_app.config['TESTING'] = True
+            yield flask_app
 
 
 @pytest.fixture
@@ -68,39 +69,38 @@ class TestMarketIndexEndpoint:
         assert 'error' in data
 
 
+@pytest.fixture
+def mock_movers_deps():
+    """Helper to mock movers dependencies."""
+    import pandas as pd
+    mock_scored_df = pd.DataFrame([
+        {'symbol': 'AAPL', 'price': 150.0, 'price_change_pct': 2.5, 'overall_status': 'PASS'}
+    ])
+    
+    with patch('app.deps.stock_vectors.load_vectors') as mock_load:
+        mock_load.return_value = pd.DataFrame()
+        with patch('app.deps.criteria.evaluate_batch') as mock_eval:
+            mock_eval.return_value = mock_scored_df
+            yield mock_load, mock_eval
+
+
 class TestMarketMoversEndpoint:
     """Tests for GET /api/market/movers"""
 
-    def test_get_movers_default(self, client, mock_db):
+    def test_get_movers_default(self, client, mock_movers_deps):
         """Test getting market movers with defaults."""
-        # Mock cursor with dict_row behavior
-        mock_cursor = MagicMock()
-        mock_cursor.fetchall.return_value = [
-            {'symbol': 'AAPL', 'company_name': 'Apple', 'current_price': 150.0, 'change_pct': 2.5}
-        ]
-        mock_conn = MagicMock()
-        mock_conn.cursor.return_value = mock_cursor
-        mock_db.get_connection.return_value = mock_conn
-
         response = client.get('/api/market/movers')
         assert response.status_code == 200
         data = response.get_json()
         assert 'gainers' in data
         assert 'losers' in data
-        assert 'period' in data
         assert data['period'] == '1d'
+        assert len(data['gainers']) > 0
+        assert data['gainers'][0]['symbol'] == 'AAPL'
 
-    def test_get_movers_weekly(self, client, mock_db):
+    def test_get_movers_weekly(self, client, mock_db, mock_movers_deps):
         """Test getting market movers with 1w period (historical query)."""
-        import pandas as pd
-        from datetime import date
-        
-        # 1. Mock the scoring part (vectorized evaluate_batch)
-        mock_scored_df = pd.DataFrame([
-            {'symbol': 'AAPL', 'price': 150.0, 'price_change_pct': 2.5, 'overall_status': 'PASS'}
-        ])
-        
-        # 2. Mock the DB historical price query
+        # Mock the DB historical price query
         mock_cursor = MagicMock()
         mock_cursor.fetchall.return_value = [
             {'symbol': 'AAPL', 'historical_price': 140.0}
@@ -109,12 +109,13 @@ class TestMarketMoversEndpoint:
         mock_conn.cursor.return_value = mock_cursor
         mock_db.get_connection.return_value = mock_conn
         
-        with patch('app.deps.stock_vectors.load_vectors') as mock_load:
-            mock_load.return_value = MagicMock()
-            with patch('app.deps.criteria.evaluate_batch') as mock_eval:
-                mock_eval.return_value = mock_scored_df
+        response = client.get('/api/market/movers?period=1w')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['period'] == '1w'
+        assert len(data['gainers']) > 0
                 
-    def test_get_movers_weekly_no_error(self, client, mock_db):
+    def test_get_movers_weekly_no_error(self, client, mock_db, mock_movers_deps):
         """Verify that 1w period doesn't cause a 500 SQL error."""
         # Minimal mockup to avoid 500 before SQL execution
         mock_cursor = MagicMock()
@@ -123,10 +124,8 @@ class TestMarketMoversEndpoint:
         mock_conn.cursor.return_value = mock_cursor
         mock_db.get_connection.return_value = mock_conn
         
-        # We don't care about the result content here, just that it doesn't 500
-        # The 500 was coming from the cursor.execute() call specifically
         response = client.get('/api/market/movers?period=1w')
-        assert response.status_code != 500
+        assert response.status_code == 200
 
 
 class TestDashboardEndpoint:

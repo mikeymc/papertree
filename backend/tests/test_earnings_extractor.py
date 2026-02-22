@@ -58,7 +58,7 @@ def test_extract_earnings_ground_truth(filename, expected):
     Test that the EarningsExtractor correctly extracts financial metrics 
     from known 8-K fixtures.
     """
-    from backend.earnings_extractor import EarningsExtractor
+    from earnings_extractor import EarningsExtractor
     
     fixture_data = load_fixture(filename)
     text_content = fixture_data["content_text"]

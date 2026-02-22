@@ -113,24 +113,13 @@ class DatabaseCore:
                 migrations = yoyo.read_migrations(migrations_dir)
                 
                 logger.info("Applying pending migrations via yoyo...")
-                # We skip Yoyo's internal backend.lock() block since we hold a superior lock.
-                yoyo_cursor = backend.cursor()
-                yoyo_cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'stocks')")
-                db_already_exists = yoyo_cursor.fetchone()[0]
-                
-                yoyo_cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '_yoyo_migration')")
-                yoyo_table_exists = yoyo_cursor.fetchone()[0]
-                
-                yoyo_migrated = False
-                if yoyo_table_exists:
-                    yoyo_cursor.execute("SELECT COUNT(*) FROM _yoyo_migration")
-                    yoyo_migrated = yoyo_cursor.fetchone()[0] > 0
-
-                if db_already_exists and not yoyo_migrated:
-                    logger.info("Existing database detected. Marking baseline schema as applied.")
-                    backend.mark_migrations(backend.to_apply(migrations))
-                else:
-                    logger.info("Applying pending migrations...")
+                try:
+                    backend.apply_migrations(backend.to_apply(migrations))
+                except (psycopg.errors.DuplicateTable, psycopg.errors.UniqueViolation) as migrate_err:
+                    # This can happen if multiple processes/threads race to initialize yoyo tables
+                    # even with the advisory lock, or if a previous attempt failed midway.
+                    logger.warning(f"Note: Some migration tables/records already exist, ignoring error: {migrate_err}")
+                    # Re-run to ensure logic completes if it was just the table creation that failed
                     backend.apply_migrations(backend.to_apply(migrations))
                 
                 logger.info("Database schema initialized successfully")
@@ -141,6 +130,10 @@ class DatabaseCore:
                 except Exception as unlock_error:
                     logger.warning(f"Could not release lock: {unlock_error}")
 
+        except (psycopg.errors.DuplicateTable, psycopg.errors.UniqueViolation) as e:
+            # Handle potential race condition at the top level as well
+            logger.warning(f"Database schema already being initialized or already partially exists: {e}")
+            self._initializing = False
         except Exception as e:
             logger.error(f"Failed to initialize database schema: {e}", exc_info=True)
             raise

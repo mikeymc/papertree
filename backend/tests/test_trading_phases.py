@@ -16,10 +16,18 @@ sys.modules["news_fetcher"] = MagicMock()
 sys.modules["material_events_fetcher"] = MagicMock()
 sys.modules["sec_rate_limiter"] = MagicMock()
 sys.modules["yfinance.cache"] = MagicMock()
-sys.modules["portfolio_service"] = MagicMock()
 
 from strategy_executor import StrategyExecutor
 from strategy_executor.models import ExitSignal
+from strategy_executor.position_sizing import PositionSizer
+from strategy_executor.models import PositionSize
+
+
+@pytest.fixture(autouse=True)
+def mock_portfolio_service():
+    """Localize portfolio_service mock to prevent leakage."""
+    with patch.dict('sys.modules', {'portfolio_service': MagicMock()}):
+        yield
 
 
 @pytest.fixture

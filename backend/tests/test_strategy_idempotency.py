@@ -7,18 +7,9 @@ import os
 # Add backend directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Mock dependencies
-sys.modules["google.genai"] = MagicMock()
-sys.modules["google.genai.types"] = MagicMock()
-sys.modules["price_history_fetcher"] = MagicMock()
-sys.modules["sec_data_fetcher"] = MagicMock()
-sys.modules["news_fetcher"] = MagicMock()
-sys.modules["material_events_fetcher"] = MagicMock()
-sys.modules["sec_rate_limiter"] = MagicMock()
-sys.modules["yfinance.cache"] = MagicMock()
-sys.modules["portfolio_service"] = MagicMock()
+# sys.path handled by conftest.py
 
-from backend.strategy_executor.executor import StrategyExecutor
+from strategy_executor import StrategyExecutor
 
 @pytest.fixture
 def mock_db():
@@ -27,16 +18,20 @@ def mock_db():
 
 @pytest.fixture
 def executor(mock_db):
-    with patch('backend.strategy_executor.executor.PositionSizer'):
+    with patch('strategy_executor.PositionSizer'):
         exe = StrategyExecutor(mock_db)
         return exe
 
 def test_execute_trades_idempotency_market_closed(executor, mock_db):
     """Test that duplicate alerts are not created when market is closed."""
     import portfolio_service
+    from strategy_executor.models import PositionSize
     
     # Setup mocks
     portfolio_service.is_market_open.return_value = False
+    mock_db.get_portfolio.return_value = {'id': 1, 'user_id': 42}
+    mock_db.get_portfolio_summary.return_value = {'cash': 10000, 'total_value': 10000}
+    mock_db.get_portfolio_holdings.return_value = {}
     
     portfolio_id = 1
     user_id = 42
@@ -48,12 +43,10 @@ def test_execute_trades_idempotency_market_closed(executor, mock_db):
         'position_sizing': {'method': 'fixed_pct'}
     }
     
-    mock_db.get_portfolio.return_value = {'user_id': user_id}
-    mock_db.get_portfolio_summary.return_value = {'cash': 10000}
-    
-    # Mock existing alerts: Symbol 'AAPL' already has a BUY queued
+    # Existing alerts (idempotency base)
     mock_db.get_alerts.return_value = [
         {
+            'id': 301,
             'symbol': 'AAPL',
             'action_type': 'market_buy',
             'status': 'active',
@@ -68,11 +61,13 @@ def test_execute_trades_idempotency_market_closed(executor, mock_db):
     ]
     
     # Mock position sizing (shares > 0)
-    mock_pos_sizer = executor.position_sizer
-    mock_pos_sizer.calculate_position.side_effect = [
-        MagicMock(shares=10, estimated_value=1500.0, position_pct=1.5, status='queued', reasoning="Test"),
-        MagicMock(shares=5, estimated_value=2000.0, position_pct=2.0, status='queued', reasoning="Test")
-    ]
+    pos1 = PositionSize(shares=10, estimated_value=1500.0, position_pct=1.5, reasoning="Test")
+    pos2 = PositionSize(shares=5, estimated_value=2000.0, position_pct=2.0, reasoning="Test")
+    
+    executor.position_sizer.calculate_target_orders = MagicMock(return_value=([], [
+        {'symbol': 'AAPL', 'position': pos1, 'decision': buy_decisions[0]},
+        {'symbol': 'GOOG', 'position': pos2, 'decision': buy_decisions[1]}
+    ]))
     
     # Run execution
     executor._execute_trades(
@@ -83,48 +78,51 @@ def test_execute_trades_idempotency_market_closed(executor, mock_db):
     )
     
     # Verify results
-    # AAPL should be skipped (duplicate)
-    # GOOG should be created
-    
-    # create_alert should only be called ONCE for GOOG
+    # create_alert should only be called ONCE for GOOG (AAPL skipped as duplicate)
     assert mock_db.create_alert.call_count == 1
     args, kwargs = mock_db.create_alert.call_args
     assert kwargs['symbol'] == 'GOOG'
     assert kwargs['action_type'] == 'market_buy'
-    
-    # Verify AAPL was not called
-    for call in mock_db.create_alert.call_args_list:
-        assert call.kwargs['symbol'] != 'AAPL'
 
 def test_execute_trades_idempotency_sells(executor, mock_db):
-    """Test that duplicate SELL alerts are not created."""
+    """Test that duplicate sell alerts are not created when market is closed."""
     import portfolio_service
-    from backend.strategy_executor.models import ExitSignal
+    from strategy_executor.models import ExitSignal
     
     portfolio_service.is_market_open.return_value = False
+    mock_db.get_portfolio.return_value = {'id': 1, 'user_id': 42}
+    mock_db.get_portfolio_summary.return_value = {'cash': 10000, 'total_value': 10000}
+    mock_db.get_portfolio_holdings.return_value = {'MSFT': 10}
     
     portfolio_id = 1
     user_id = 42
-    run_id = 100
+    run_id = 200
     
-    strategy = {'portfolio_id': portfolio_id}
-    mock_db.get_portfolio.return_value = {'user_id': user_id}
-    mock_db.get_portfolio_summary.return_value = {'cash': 10000}
+    strategy = {
+        'id': 1,
+        'portfolio_id': portfolio_id,
+        'position_sizing': {'method': 'fixed_pct'}
+    }
     
-    # Mock existing alerts: TSLA already has a SELL queued
+    # Existing sell alert
     mock_db.get_alerts.return_value = [
         {
-            'symbol': 'TSLA',
+            'id': 401,
+            'symbol': 'MSFT',
             'action_type': 'market_sell',
             'status': 'active',
             'portfolio_id': portfolio_id
         }
     ]
     
+    # Exits: MSFT (duplicate) and TSLA (new)
     exits = [
-        ExitSignal(symbol='TSLA', quantity=50, reason='Profit taking', current_value=5000.0, gain_pct=10.0),
-        ExitSignal(symbol='MSFT', quantity=20, reason='Stop loss', current_value=6000.0, gain_pct=-5.0)
+        ExitSignal(symbol='MSFT', quantity=10, reason="Test", current_value=3000.0),
+        ExitSignal(symbol='TSLA', quantity=5, reason="Test", current_value=1000.0)
     ]
+    
+    # Mock position sizing to return no new buys
+    executor.position_sizer.calculate_target_orders = MagicMock(return_value=([], []))
     
     # Run execution
     executor._execute_trades(
@@ -134,8 +132,9 @@ def test_execute_trades_idempotency_sells(executor, mock_db):
         run_id=run_id
     )
     
-    # Verify: create_alert called only for MSFT
+    # Verify results
+    # create_alert should only be called ONCE for TSLA
     assert mock_db.create_alert.call_count == 1
-    assert mock_db.create_alert.call_args.kwargs['symbol'] == 'MSFT'
-    assert mock_db.create_alert.call_args.kwargs['action_type'] == 'market_sell'
-
+    args, kwargs = mock_db.create_alert.call_args
+    assert kwargs['symbol'] == 'TSLA'
+    assert kwargs['action_type'] == 'market_sell'

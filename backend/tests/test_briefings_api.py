@@ -44,13 +44,13 @@ def seed_briefing_data(authenticated_client):
     """)
     cursor.execute("""
         INSERT INTO strategy_briefings
-        (id, run_id, strategy_id, portfolio_id, stocks_screened, stocks_scored,
-         theses_generated, trades_executed, portfolio_value, portfolio_return_pct,
+        (id, run_id, strategy_id, portfolio_id, universe_size, candidates, qualifiers,
+         theses, targets, trades, portfolio_value, portfolio_return_pct,
          spy_return_pct, alpha, buys_json, sells_json, holds_json, watchlist_json,
          executive_summary, generated_at)
-        VALUES (1, 1, 1, 1, 500, 25, 10, 3, 102500.0, 2.5, 1.2, 1.3,
+        VALUES (1, 1, 1, 1, 1000, 500, 25, 10, 5, 3, 102500.0, 2.5, 1.2, 1.3,
                 '[]', '[]', '[]', '[]', 'Test summary.', NOW())
-        ON CONFLICT (run_id) DO NOTHING
+        ON CONFLICT (id) DO NOTHING
     """)
 
     conn.commit()
@@ -66,7 +66,7 @@ def test_get_portfolio_briefings(seed_briefing_data):
     assert response.status_code == 200
     data = response.get_json()
     assert len(data) == 1
-    assert data[0]['stocks_screened'] == 500
+    assert data[0]['candidates'] == 500
     assert data[0]['executive_summary'] == 'Test summary.'
 
 

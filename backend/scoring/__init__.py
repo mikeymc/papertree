@@ -1,7 +1,7 @@
 # ABOUTME: Package entry point composing LynchCriteria from mixin classes.
 # ABOUTME: Re-exports the composed class plus scoring constants and related classes.
 
-from scoring.core import LynchCriteriaCore, SCORE_THRESHOLDS
+from scoring.core import LynchCriteriaCore, SCORE_THRESHOLDS, ALGORITHM_METADATA
 from scoring.scoring_mixins import ScoringMixin
 from scoring.batch import BatchScoringMixin
 from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG

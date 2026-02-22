@@ -51,10 +51,12 @@ def test_save_briefing(setup_briefing_prereqs):
         'run_id': 1,
         'strategy_id': 1,
         'portfolio_id': 1,
-        'stocks_screened': 500,
-        'stocks_scored': 25,
-        'theses_generated': 10,
-        'trades_executed': 3,
+        'universe_size': 1000,
+        'candidates': 500,
+        'qualifiers': 25,
+        'theses': 10,
+        'targets': 5,
+        'trades': 3,
         'portfolio_value': 102500.0,
         'portfolio_return_pct': 2.5,
         'spy_return_pct': 1.2,
@@ -84,10 +86,12 @@ def test_get_briefings_for_portfolio(setup_briefing_prereqs):
         'run_id': 1,
         'strategy_id': 1,
         'portfolio_id': 1,
-        'stocks_screened': 500,
-        'stocks_scored': 25,
-        'theses_generated': 10,
-        'trades_executed': 3,
+        'universe_size': 1000,
+        'candidates': 500,
+        'qualifiers': 25,
+        'theses': 10,
+        'targets': 5,
+        'trades': 3,
         'portfolio_value': 102500.0,
         'portfolio_return_pct': 2.5,
         'spy_return_pct': 1.2,
@@ -103,8 +107,8 @@ def test_get_briefings_for_portfolio(setup_briefing_prereqs):
     # Retrieve
     briefings = db.get_briefings_for_portfolio(1)
     assert len(briefings) == 1
-    assert briefings[0]['stocks_screened'] == 500
-    assert briefings[0]['trades_executed'] == 3
+    assert briefings[0]['candidates'] == 500
+    assert briefings[0]['trades'] == 3
     assert briefings[0]['executive_summary'] == 'Test summary.'
     assert briefings[0]['portfolio_value'] == 102500.0
 
@@ -117,10 +121,12 @@ def test_get_briefing_by_run(setup_briefing_prereqs):
         'run_id': 1,
         'strategy_id': 1,
         'portfolio_id': 1,
-        'stocks_screened': 100,
-        'stocks_scored': 10,
-        'theses_generated': 5,
-        'trades_executed': 2,
+        'universe_size': 1000,
+        'candidates': 100,
+        'qualifiers': 10,
+        'theses': 5,
+        'targets': 2,
+        'trades': 2,
         'portfolio_value': 101000.0,
         'portfolio_return_pct': 1.0,
         'spy_return_pct': 0.5,
@@ -154,10 +160,12 @@ def test_save_briefing_unique_run_id(setup_briefing_prereqs):
         'run_id': 1,
         'strategy_id': 1,
         'portfolio_id': 1,
-        'stocks_screened': 100,
-        'stocks_scored': 10,
-        'theses_generated': 5,
-        'trades_executed': 2,
+        'universe_size': 1000,
+        'candidates': 100,
+        'qualifiers': 10,
+        'theses': 5,
+        'targets': 2,
+        'trades': 2,
         'portfolio_value': 101000.0,
         'buys_json': json.dumps([]),
         'sells_json': json.dumps([]),

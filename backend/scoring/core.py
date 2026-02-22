@@ -12,6 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 # Algorithm metadata for UI display
+ALGORITHM_METADATA = {
+    'weighted': {
+        'name': 'Weighted Scoring',
+        'short_desc': 'Lynch/Buffett weighted aggregate score',
+        'description': 'Combines PEG, Consistency, Debt, and Ownership into a single score.',
+        'recommended': True
+    }
+}
 
 
 SCORE_THRESHOLDS = {
