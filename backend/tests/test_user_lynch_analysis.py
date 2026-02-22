@@ -86,9 +86,9 @@ def test_lynch_analysis_has_timestamp(test_db):
     test_db.save_stock_basic("AAPL", "Apple Inc.", "NASDAQ", "Technology")
     test_db.flush()  # Ensure stock exists before saving analysis
 
-    before_save = datetime.now()
+    before_save = datetime.utcnow()
     test_db.save_lynch_analysis(user_id, "AAPL", "Test analysis", "gemini-3-pro-preview")
-    after_save = datetime.now()
+    after_save = datetime.utcnow()
 
     analysis = test_db.get_lynch_analysis(user_id, "AAPL")
     generated_at = analysis['generated_at']

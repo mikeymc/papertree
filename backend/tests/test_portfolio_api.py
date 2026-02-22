@@ -211,7 +211,7 @@ class TestDeletePortfolioEndpoint:
         other_portfolio_id = test_db.create_portfolio(other_user_id, "Other Portfolio")
 
         response = client.delete(f'/api/portfolios/{other_portfolio_id}')
-        assert response.status_code == 404  # Not found (ownership check)
+        assert response.status_code == 403  # Unauthorized (ownership check)
 
         # Verify NOT deleted
         assert test_db.get_portfolio(other_portfolio_id) is not None

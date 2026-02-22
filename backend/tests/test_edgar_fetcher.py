@@ -54,6 +54,7 @@ def test_fetch_company_facts(edgar_fetcher):
     """Test fetching company facts from SEC EDGAR API"""
     with patch('edgar_fetcher.core.requests.get') as mock_get:
         mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.json.return_value = {
             "cik": 320193,
             "entityName": "Apple Inc.",
@@ -185,6 +186,7 @@ def test_rate_limiting(edgar_fetcher):
 
     with patch('edgar_fetcher.core.requests.get') as mock_get:
         mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.json.return_value = {"cik": 320193, "facts": {}}
         mock_get.return_value = mock_response
 
@@ -230,6 +232,7 @@ def test_user_agent_required(edgar_fetcher):
     """Test that User-Agent header is included in requests"""
     with patch('edgar_fetcher.core.requests.get') as mock_get:
         mock_response = MagicMock()
+        mock_response.status_code = 200
         mock_response.json.return_value = {"cik": 320193, "facts": {}}
         mock_get.return_value = mock_response
 
@@ -247,12 +250,14 @@ def test_fetch_stock_fundamentals(edgar_fetcher):
     with patch('edgar_fetcher.core.requests.get') as mock_get:
         # Mock ticker-to-CIK response
         ticker_response = MagicMock()
+        ticker_response.status_code = 200
         ticker_response.json.return_value = {
             "0": {"cik_str": 320193, "ticker": "AAPL", "title": "Apple Inc."}
         }
 
         # Mock company facts response
         facts_response = MagicMock()
+        facts_response.status_code = 200
         facts_response.json.return_value = {
             "cik": 320193,
             "entityName": "Apple Inc.",

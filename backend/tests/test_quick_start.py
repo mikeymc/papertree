@@ -65,7 +65,7 @@ class TestQuickStartEndpoint:
             mock_fly.return_value.start_worker_for_job.return_value = 'worker-1'
 
             response = client.post('/api/strategies/quick-start', json={
-                'template_id': 'growth_at_reasonable_price'
+                'template_id': 'dream_team'
             })
 
             assert response.status_code == 201
@@ -85,14 +85,14 @@ class TestQuickStartEndpoint:
             mock_fly.return_value.start_worker_for_job.return_value = 'w-1'
 
             client.post('/api/strategies/quick-start', json={
-                'template_id': 'growth_at_reasonable_price'
+                'template_id': 'dream_team'
             })
 
-            # Verify create_strategy was called with GARP config values
+            # Verify create_strategy was called with template config values
             call_kwargs = mock_deps.db.create_strategy.call_args
             assert call_kwargs.kwargs['consensus_mode'] == 'both_agree'
             assert call_kwargs.kwargs['consensus_threshold'] == 70.0
-            assert call_kwargs.kwargs['schedule_cron'] == '0 14 * * 1-5'
+            assert call_kwargs.kwargs['schedule_cron'] == '0 9 * * 1-5'
 
     def test_quick_start_enables_strategy(self, client, seed_user):
         """Quick-start strategy should be enabled for scheduled runs."""
@@ -106,7 +106,7 @@ class TestQuickStartEndpoint:
             mock_fly.return_value.start_worker_for_job.return_value = 'w-1'
 
             client.post('/api/strategies/quick-start', json={
-                'template_id': 'value_stocks'
+                'template_id': 'buffett_fortress'
             })
 
             # Strategy should be enabled after creation
@@ -163,7 +163,7 @@ class TestQuickStartEndpoint:
             mock_fly.return_value.start_worker_for_job.return_value = 'w-1'
 
             client.post('/api/strategies/quick-start', json={
-                'template_id': 'small_cap_growth'
+                'template_id': 'small_cap_gems'
             })
 
             # Should create a strategy_execution job targeting the new strategy

@@ -110,9 +110,9 @@ def test_chart_analysis_has_timestamp(test_db):
     test_db.save_stock_basic("AAPL", "Apple Inc.", "NASDAQ", "Technology")
     test_db.flush()  # Ensure stock exists before saving analysis
 
-    before_save = datetime.now()
+    before_save = datetime.utcnow()
     test_db.set_chart_analysis(user_id, "AAPL", "growth", "Test analysis", "gemini-3-pro-preview")
-    after_save = datetime.now()
+    after_save = datetime.utcnow()
 
     analysis = test_db.get_chart_analysis(user_id, "AAPL", "growth")
     generated_at = analysis['generated_at']

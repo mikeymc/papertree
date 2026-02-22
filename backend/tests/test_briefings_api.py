@@ -19,8 +19,20 @@ def seed_briefing_data(authenticated_client):
     """Seed the database with briefing test data via the app's db."""
     from app import db
 
+    # Use high IDs (9900+) to avoid conflicts with other test fixtures
+    _PID = 9901  # portfolio id
+    _SID = 9901  # strategy id
+    _RID = 9901  # run id
+    _BID = 9901  # briefing id
+
     conn = db.get_connection()
     cursor = conn.cursor()
+
+    # Clean up any existing data from prior runs
+    cursor.execute("DELETE FROM strategy_briefings WHERE id = %s", (_BID,))
+    cursor.execute("DELETE FROM strategy_runs WHERE id = %s", (_RID,))
+    cursor.execute("DELETE FROM investment_strategies WHERE id = %s", (_SID,))
+    cursor.execute("DELETE FROM portfolios WHERE id = %s", (_PID,))
 
     cursor.execute("""
         INSERT INTO users (id, email, name, google_id)
@@ -29,29 +41,25 @@ def seed_briefing_data(authenticated_client):
     """)
     cursor.execute("""
         INSERT INTO portfolios (id, user_id, name, initial_cash)
-        VALUES (1, 1, 'Test Portfolio', 100000.0)
-        ON CONFLICT (id) DO NOTHING
-    """)
+        VALUES (%s, 1, 'Briefing Test Portfolio', 100000.0)
+    """, (_PID,))
     cursor.execute("""
         INSERT INTO investment_strategies (id, user_id, portfolio_id, name, conditions)
-        VALUES (1, 1, 1, 'Test Strategy', '{}')
-        ON CONFLICT (id) DO NOTHING
-    """)
+        VALUES (%s, 1, %s, 'Test Strategy', '{}')
+    """, (_SID, _PID))
     cursor.execute("""
         INSERT INTO strategy_runs (id, strategy_id, status)
-        VALUES (1, 1, 'completed')
-        ON CONFLICT (id) DO NOTHING
-    """)
+        VALUES (%s, %s, 'completed')
+    """, (_RID, _SID))
     cursor.execute("""
         INSERT INTO strategy_briefings
         (id, run_id, strategy_id, portfolio_id, universe_size, candidates, qualifiers,
          theses, targets, trades, portfolio_value, portfolio_return_pct,
          spy_return_pct, alpha, buys_json, sells_json, holds_json, watchlist_json,
          executive_summary, generated_at)
-        VALUES (1, 1, 1, 1, 1000, 500, 25, 10, 5, 3, 102500.0, 2.5, 1.2, 1.3,
+        VALUES (%s, %s, %s, %s, 1000, 500, 25, 10, 5, 3, 102500.0, 2.5, 1.2, 1.3,
                 '[]', '[]', '[]', '[]', 'Test summary.', NOW())
-        ON CONFLICT (id) DO NOTHING
-    """)
+    """, (_BID, _RID, _SID, _PID))
 
     conn.commit()
     db.return_connection(conn)
@@ -62,7 +70,7 @@ def seed_briefing_data(authenticated_client):
 def test_get_portfolio_briefings(seed_briefing_data):
     """Test GET /api/portfolios/<id>/briefings returns briefings."""
     client = seed_briefing_data
-    response = client.get('/api/portfolios/1/briefings')
+    response = client.get('/api/portfolios/9901/briefings')
     assert response.status_code == 200
     data = response.get_json()
     assert len(data) == 1
@@ -81,10 +89,10 @@ def test_get_portfolio_briefings_empty(authenticated_client):
 def test_get_single_briefing(seed_briefing_data):
     """Test GET /api/briefings/<id> returns a single briefing."""
     client = seed_briefing_data
-    response = client.get('/api/briefings/1')
+    response = client.get('/api/briefings/9901')
     assert response.status_code == 200
     data = response.get_json()
-    assert data['id'] == 1
+    assert data['id'] == 9901
     assert data['executive_summary'] == 'Test summary.'
 
 

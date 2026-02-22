@@ -12,8 +12,10 @@ def test_sec_8k_integration(db):
     user_agent = "Lynch Stock Screener test@example.com"
     client = SEC8KClient(user_agent)
 
-    # Test with AAPL
+    # Ensure stock exists (FK required by material_events table)
     test_symbol = "AAPL"
+    db.save_stock_basic(test_symbol, "Apple Inc.", "NASDAQ", "Technology")
+    db.flush()
     # Use a shorter window for testing to be faster, but AAPL files often
     filings = client.fetch_recent_8ks(test_symbol, days_back=90)
     

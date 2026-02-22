@@ -10,12 +10,6 @@ from datetime import date
 # Add backend directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Mock google.genai before importing app
-mock_genai = MagicMock()
-sys.modules["google.genai"] = mock_genai
-sys.modules["google.genai.types"] = MagicMock()
-
-
 @pytest.fixture
 def mock_db():
     """Create a mock database."""
@@ -33,16 +27,20 @@ def mock_db():
 @pytest.fixture
 def app(mock_db):
     """Create test Flask app."""
-    with patch.dict(os.environ, {
-        'FINNHUB_API_KEY': 'test_key',
-        'SESSION_SECRET_KEY': 'test_secret'
+    with patch.dict('sys.modules', {
+        'google.genai': MagicMock(),
+        'google.genai.types': MagicMock(),
     }):
-        with patch('database.Database', return_value=mock_db):
-            from app import app as flask_app
-            import app.deps as deps
-            deps.db = mock_db
-            flask_app.config['TESTING'] = True
-            yield flask_app
+        with patch.dict(os.environ, {
+            'FINNHUB_API_KEY': 'test_key',
+            'SESSION_SECRET_KEY': 'test_secret'
+        }):
+            with patch('database.Database', return_value=mock_db):
+                from app import app as flask_app
+                import app.deps as deps
+                deps.db = mock_db
+                flask_app.config['TESTING'] = True
+                yield flask_app
 
 
 @pytest.fixture

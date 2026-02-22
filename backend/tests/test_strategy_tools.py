@@ -9,6 +9,8 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'backend')))
 
+_MOCKED_MODULES = ["google.genai", "google.genai.types", "fred_service", "characters"]
+_saved = {m: sys.modules.get(m) for m in _MOCKED_MODULES}
 sys.modules["google.genai"] = MagicMock()
 sys.modules["google.genai.types"] = MagicMock()
 sys.modules["fred_service"] = MagicMock()
@@ -16,6 +18,12 @@ sys.modules["characters"] = MagicMock()
 
 from database import Database
 from agent_tools import ToolExecutor
+
+for _m in _MOCKED_MODULES:
+    if _saved[_m] is not None:
+        sys.modules[_m] = _saved[_m]
+    else:
+        sys.modules.pop(_m, None)
 
 
 @pytest.fixture
