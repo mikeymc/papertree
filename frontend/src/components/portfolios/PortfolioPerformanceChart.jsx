@@ -61,34 +61,11 @@ export default function PortfolioPerformanceChart({
         return filterSnapshotsByPeriod(snapshots, period)
     }, [snapshots, period])
 
-    if (loading) {
-        return (
-            <Card className="mb-6">
-                <CardContent className="py-8">
-                    <Skeleton className="h-64 w-full" />
-                </CardContent>
-            </Card>
-        )
-    }
-
-    if (!snapshots || snapshots.length === 0) {
-        return (
-            <Card className="mb-6">
-                <CardContent className="py-12 text-center text-muted-foreground">
-                    <LineChart className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>No performance data yet.</p>
-                    <p className="text-sm mt-1">Portfolio snapshots are taken every 15 minutes during market hours.</p>
-                </CardContent>
-            </Card>
-        )
-    }
-
     // Aggregate intraday snapshots to one point per trading day (last snapshot of each day)
     // If period is 1W, show all intraday snapshots for better resolution
     const daily = useMemo(() => {
-        if (period.label === '1W' && filteredSnapshots.length > 0) {
-            return filteredSnapshots;
-        }
+        if (!filteredSnapshots || filteredSnapshots.length === 0) return []
+        if (period.label === '1W') return filteredSnapshots;
 
         const dailyMap = {};
         for (const s of filteredSnapshots) {
@@ -184,6 +161,28 @@ export default function PortfolioPerformanceChart({
     const alpha = liveAlpha !== undefined ? liveAlpha : (latest.alpha || 0);
     const currentSpyReturn = currentReturn - alpha;
     const displayTotalValue = liveTotalValue !== undefined ? liveTotalValue : (latest.total_value || 0);
+
+    if (loading) {
+        return (
+            <Card className="mb-6">
+                <CardContent className="py-8">
+                    <Skeleton className="h-64 w-full" />
+                </CardContent>
+            </Card>
+        )
+    }
+
+    if (!snapshots || snapshots.length === 0) {
+        return (
+            <Card className="mb-6">
+                <CardContent className="py-12 text-center text-muted-foreground">
+                    <LineChart className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                    <p>No performance data yet.</p>
+                    <p className="text-sm mt-1">Portfolio snapshots are taken every 15 minutes during market hours.</p>
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card className="mb-6">

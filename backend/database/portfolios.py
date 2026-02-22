@@ -6,6 +6,7 @@ from datetime import datetime, timezone, date
 from typing import Optional, Dict, Any, List
 import json
 import psycopg.rows
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -1015,6 +1016,176 @@ class PortfoliosMixin:
         except Exception as e:
             logger.error(f"Error enriching portfolios: {e}")
             raise
+
+    def _extract_deliberation_reasoning(self, text: str) -> str:
+        """Extract the reasoning part from a deliberation text."""
+        if not text:
+            return ""
+        if "**Reasoning:**" in text:
+            return text.split("**Reasoning:**")[1].strip()
+        return text.strip()
+
+    def _extract_thesis_summary(self, text: str) -> str:
+        """Extract the summary part from an analyst thesis (after verdict)."""
+        if not text:
+            return ""
+        
+        # Priority 1: Explicit **Final Verdict:** prefix
+        if "**Final Verdict:**" in text:
+            parts = text.split("**Final Verdict:**")
+            verdict_and_reasoning = parts[1].strip()
+            # Strip leading bolded verdict if present (e.g. "**WATCH.**")
+            cleaned = re.sub(r'^\s*\*\*[^*]+\*\*\.?\s*', '', verdict_and_reasoning)
+            # Take only the first paragraph of the reasoning
+            return cleaned.split('\n\n')[0].strip()
+            
+        # Priority 2: Look for sections like ## Bottom Line or ## Summary
+        bottom_line_match = re.search(r'##\s*(Bottom Line|Summary|Conclusion)[^\n]*', text, re.IGNORECASE)
+        if bottom_line_match:
+            # We found the header line. Start looking at the text AFTER this line.
+            section_content = text[bottom_line_match.end():].strip()
+            if section_content:
+                paragraphs = [p.strip() for p in section_content.split('\n\n') if p.strip()]
+                if paragraphs:
+                    first_para = paragraphs[0]
+                    # Strip leading bolded verdict if present (e.g. "**BUY.**")
+                    cleaned = re.sub(r'^\s*\*\*[^*]+\*\*\.?\s*', '', first_para)
+                    # Also strip horizontal rule if it's right there
+                    cleaned = re.split(r'\n---', cleaned)[0].strip()
+                    return cleaned
+
+        # Priority 3: First bolded verdict at start of line
+        verdict_at_start = re.search(r'^\*\*(BUY|WATCH|AVOID|VETO)\.?\*\*\s*(.*)', text, re.MULTILINE | re.IGNORECASE)
+        if verdict_at_start:
+            content = verdict_at_start.group(2).strip()
+            return content.split('\n\n')[0].strip()
+
+        # Fallback: return the first non-empty paragraph that isn't a header
+        filtered = [p.strip() for p in text.split('\n\n') if p.strip()]
+        for p in filtered:
+            if not p.startswith('#'):
+                return p
+        return filtered[0] if filtered else text.strip()
+
+    def _extract_verdict(self, text: str) -> str:
+        """Extract the verdict from an analyst thesis."""
+        if not text:
+            return "UNKNOWN"
+            
+        # 1. Look for explicit verdict pattern (VERDICT: **BUY**)
+        verdict_match = re.search(r'(?:VERDICT|FINAL VERDICT):\s*\*\*(BUY|WATCH|AVOID|VETO)\*\*', text, re.IGNORECASE)
+        if verdict_match:
+            return verdict_match.group(1).upper()
+            
+        # 2. Look for verdict in Header (## Bottom Line: WATCH)
+        header_verdict = re.search(r'##\s*(?:Bottom Line|Summary|Conclusion):\s*(BUY|WATCH|AVOID|VETO)', text, re.IGNORECASE)
+        if header_verdict:
+            return header_verdict.group(1).upper()
+
+        # 3. Look for bolded verdict at start of paragraph/line
+        bold_verdict = re.search(r'(?:\*\*|\n)(BUY|WATCH|AVOID|VETO)\.?\*\*', text, re.IGNORECASE)
+        if bold_verdict:
+            return bold_verdict.group(1).upper()
+            
+        text_upper = text.upper()
+        # Fallback keyword search
+        first_500 = text_upper[:500]
+        if "BUY" in first_500 and "AVOID" not in first_500:
+            return "BUY"
+        if "AVOID" in first_500:
+            return "AVOID"
+        if "WATCH" in first_500 or "HOLD" in first_500:
+            return "WATCH"
+        return "UNKNOWN"
+
+
+
+    def get_holdings_reasoning(self, portfolio_id: int) -> Dict[str, Any]:
+        """Get the latest thesis summary and verdict for each currently held symbol, 
+        based on whether the strategy uses dual analysts or a single analyst.
+        """
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
+            
+            # 1. Get held symbols
+            cursor.execute("""
+                SELECT DISTINCT symbol
+                FROM portfolio_transactions
+                WHERE portfolio_id = %s
+                GROUP BY symbol
+                HAVING SUM(CASE WHEN transaction_type = 'BUY' THEN quantity ELSE -quantity END) > 0
+            """, (portfolio_id,))
+            held_symbols = [row['symbol'] for row in cursor.fetchall()]
+            
+            if not held_symbols:
+                return {}
+
+            # 2. Get strategy to determine analyst count
+            cursor.execute("""
+                SELECT conditions 
+                FROM investment_strategies 
+                WHERE portfolio_id = %s
+            """, (portfolio_id,))
+            strategy_row = cursor.fetchone()
+            
+            analysts = ['lynch']
+            if strategy_row and strategy_row['conditions']:
+                conditions = strategy_row['conditions']
+                if isinstance(conditions, str):
+                    try:
+                        conditions = json.loads(conditions)
+                    except json.JSONDecodeError:
+                        conditions = {}
+                analysts = conditions.get('analysts', ['lynch'])
+            
+            num_analysts = len(analysts)
+            
+            results = {}
+            if num_analysts >= 2:
+                # dual analysts -> use deliberations
+                cursor.execute("""
+                    SELECT DISTINCT ON (symbol)
+                        symbol, deliberation_text, final_verdict
+                    FROM deliberations
+                    WHERE symbol = ANY(%s)
+                    ORDER BY symbol, generated_at DESC
+                """, (held_symbols,))
+                rows = cursor.fetchall()
+                for row in rows:
+                    results[row['symbol']] = {
+                        'thesis_summary': self._extract_deliberation_reasoning(row['deliberation_text']),
+                        'consensus_verdict': row['final_verdict']
+                    }
+            else:
+                # single analyst -> use analyst thesis
+                analyst_id = analysts[0] if analysts else 'lynch'
+                cursor.execute("""
+                    SELECT DISTINCT ON (symbol)
+                        symbol, analysis_text, character_id
+                    FROM lynch_analyses
+                    WHERE symbol = ANY(%s) AND character_id = %s
+                    ORDER BY symbol, generated_at DESC
+                """, (held_symbols, analyst_id))
+                rows = cursor.fetchall()
+                for row in rows:
+                    results[row['symbol']] = {
+                        'thesis_summary': self._extract_thesis_summary(row['analysis_text']),
+                        'consensus_verdict': self._extract_verdict(row['analysis_text'])
+                    }
+            
+            # Add placeholders for any missing symbols
+            for symbol in held_symbols:
+                if symbol not in results:
+                    results[symbol] = {
+                        'thesis_summary': 'No detailed reasoning available.',
+                        'consensus_verdict': 'UNKNOWN'
+                    }
+                    
+            return results
+        finally:
+            self.return_connection(conn)
+
 
     def get_all_portfolios(self) -> List[Dict[str, Any]]:
         """Get all portfolios (for batch snapshot operations)"""

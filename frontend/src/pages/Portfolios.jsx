@@ -1,7 +1,7 @@
 // ABOUTME: Paper trading portfolios page with portfolio management and trade execution
 // ABOUTME: Displays portfolio cards, holdings, transactions, and performance charts
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import PortfolioCard from '@/components/PortfolioCard'
@@ -621,7 +621,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                 )}
 
                 <TabsContent value="holdings">
-                    <HoldingsTab portfolio={portfolio} />
+                    <HoldingsTab portfolio={portfolio} portfolioId={portfolio.id} isAutonomous={!!portfolio.strategy_id} />
                 </TabsContent>
 
                 {!portfolio.strategy_id && (
@@ -645,9 +645,18 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
     )
 }
 
-function HoldingsTab({ portfolio }) {
-    // Check if we have detailed holdings data
+function HoldingsTab({ portfolio, portfolioId, isAutonomous }) {
     const holdingsDetailed = portfolio?.holdings_detailed || []
+    const [reasoning, setReasoning] = useState({})
+    const [expandedSymbol, setExpandedSymbol] = useState(null)
+
+    useEffect(() => {
+        if (!isAutonomous || !portfolioId) return
+        fetch(`/api/portfolios/${portfolioId}/holdings-reasoning`)
+            .then(r => r.ok ? r.json() : {})
+            .then(setReasoning)
+            .catch(() => { })
+    }, [portfolioId, isAutonomous])
 
     if (holdingsDetailed.length === 0) {
         return (
@@ -679,30 +688,51 @@ function HoldingsTab({ portfolio }) {
                 <TableBody>
                     {holdingsDetailed.map((holding) => {
                         const isPositive = holding.gain_loss >= 0
+                        const holdingReason = reasoning[holding.symbol]
+                        const isExpanded = expandedSymbol === holding.symbol
                         return (
-                            <TableRow key={holding.symbol}>
-                                <TableCell className="font-medium">
-                                    <Link to={`/stock/${holding.symbol}`} className="hover:underline text-primary">
-                                        {holding.symbol}
-                                    </Link>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="font-medium text-sm truncate max-w-[200px]" title={holding.name}>
-                                        {holding.name}
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right">{holding.quantity}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(holding.avg_purchase_price)}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(holding.current_price)}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(holding.total_cost)}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(holding.current_value)}</TableCell>
-                                <TableCell className={`text-right font-medium ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                    {formatCurrency(holding.gain_loss)}
-                                </TableCell>
-                                <TableCell className={`text-right font-medium ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                                    {formatPercent(holding.gain_loss_percent)}
-                                </TableCell>
-                            </TableRow>
+                            <Fragment key={holding.symbol}>
+                                <TableRow
+                                    key={holding.symbol}
+                                    className={holdingReason ? 'cursor-pointer hover:bg-muted/50' : ''}
+                                    onClick={() => holdingReason && setExpandedSymbol(isExpanded ? null : holding.symbol)}
+                                >
+                                    <TableCell className="font-medium">
+                                        <div className="flex items-center gap-2">
+                                            <Link to={`/stock/${holding.symbol}`} className="hover:underline text-primary" onClick={e => e.stopPropagation()}>
+                                                {holding.symbol}
+                                            </Link>
+                                            {holdingReason && (
+                                                <span className="text-[10px] text-muted-foreground">{isExpanded ? '▲' : '▼'}</span>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="font-medium text-sm truncate max-w-[200px]" title={holding.name}>
+                                            {holding.name}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">{holding.quantity}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(holding.avg_purchase_price)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(holding.current_price)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(holding.total_cost)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(holding.current_value)}</TableCell>
+                                    <TableCell className={`text-right font-medium ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        {formatCurrency(holding.gain_loss)}
+                                    </TableCell>
+                                    <TableCell className={`text-right font-medium ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        {formatPercent(holding.gain_loss_percent)}
+                                    </TableCell>
+                                </TableRow>
+                                {isExpanded && holdingReason && (
+                                    <TableRow key={`${holding.symbol}-reason`}>
+                                        <TableCell colSpan={9} className="bg-muted/30 py-2 px-4 text-sm text-muted-foreground italic border-b">
+                                            <span className="font-semibold not-italic text-foreground mr-2">Why we own this:</span>
+                                            {holdingReason.thesis_summary}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </Fragment>
                         )
                     })}
                 </TableBody>
