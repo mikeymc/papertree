@@ -13,12 +13,78 @@ from scoring import LynchCriteria
 from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
 
 
+def _seed_stock_data(db):
+    """Insert test stocks with metrics and earnings history into the test database."""
+    stocks = [
+        ("AAPL", "Apple Inc.", "NASDAQ", "Technology", "US"),
+        ("MSFT", "Microsoft Corp.", "NASDAQ", "Technology", "US"),
+        ("JNJ", "Johnson & Johnson", "NYSE", "Healthcare", "US"),
+    ]
+    for symbol, name, exchange, sector, country in stocks:
+        db.save_stock_basic(symbol, name, exchange, sector, country)
+    db.flush()
+
+    metrics = {
+        "AAPL": {"price": 180.0, "market_cap": 2800000000000, "pe_ratio": 30.0,
+                 "debt_to_equity": 1.5, "institutional_ownership": 0.60,
+                 "dividend_yield": 0.5, "total_debt": 110000000000,
+                 "gross_margin": 44.0, "price_change_pct": 2.5},
+        "MSFT": {"price": 380.0, "market_cap": 2800000000000, "pe_ratio": 35.0,
+                 "debt_to_equity": 0.4, "institutional_ownership": 0.72,
+                 "dividend_yield": 0.7, "total_debt": 60000000000,
+                 "gross_margin": 69.0, "price_change_pct": 1.8},
+        "JNJ": {"price": 160.0, "market_cap": 400000000000, "pe_ratio": 16.0,
+                "debt_to_equity": 0.5, "institutional_ownership": 0.70,
+                "dividend_yield": 2.9, "total_debt": 30000000000,
+                "gross_margin": 68.0, "price_change_pct": -0.5},
+    }
+    for symbol, m in metrics.items():
+        db.save_stock_metrics(symbol, m)
+    db.flush()
+
+    # 5 years of annual earnings for growth/consistency/Buffett metrics
+    earnings = {
+        "AAPL": [
+            (2019, 2.97, 260e9, 55.3e9, 69.4e9, -10.5e9, 90488e6),
+            (2020, 3.28, 275e9, 57.4e9, 80.7e9, -7.3e9, 65339e6),
+            (2021, 5.61, 366e9, 94.7e9, 104.0e9, -11.1e9, 63090e6),
+            (2022, 6.11, 394e9, 99.8e9, 122.2e9, -10.7e9, 50672e6),
+            (2023, 6.13, 383e9, 97.0e9, 110.5e9, -10.9e9, 62146e6),
+        ],
+        "MSFT": [
+            (2019, 5.06, 125.8e9, 39.2e9, 52.2e9, -15.4e9, 102330e6),
+            (2020, 5.76, 143.0e9, 44.3e9, 60.7e9, -15.4e9, 118304e6),
+            (2021, 8.05, 168.1e9, 61.3e9, 76.7e9, -20.6e9, 141988e6),
+            (2022, 9.21, 198.3e9, 72.7e9, 89.0e9, -23.9e9, 166542e6),
+            (2023, 9.68, 212.0e9, 72.4e9, 87.6e9, -28.1e9, 206223e6),
+        ],
+        "JNJ": [
+            (2019, 5.63, 82.1e9, 15.1e9, 23.4e9, -3.5e9, 59471e6),
+            (2020, 5.51, 82.6e9, 14.7e9, 23.5e9, -4.0e9, 63278e6),
+            (2021, 7.81, 93.8e9, 20.9e9, 23.4e9, -4.5e9, 74023e6),
+            (2022, 6.73, 94.9e9, 17.9e9, 21.2e9, -4.3e9, 76804e6),
+            (2023, 7.33, 85.2e9, 35.2e9, 20.2e9, -4.0e9, 68774e6),
+        ],
+    }
+    for symbol, years in earnings.items():
+        for year, eps, rev, ni, ocf, capex, equity in years:
+            db.save_earnings_history(
+                symbol, year, eps, rev,
+                net_income=ni,
+                operating_cash_flow=ocf,
+                capital_expenditures=capex,
+                shareholder_equity=equity,
+            )
+    db.flush()
+
+
 class TestVectorizedScoring:
     """Test suite for vectorized scoring parity."""
-    
+
     @pytest.fixture
     def setup(self, db):
-        """Set up services using the shared db fixture."""
+        """Set up services and seed test data."""
+        _seed_stock_data(db)
         analyzer = EarningsAnalyzer(db)
         criteria = LynchCriteria(db, analyzer)
         vectors = StockVectors(db)
