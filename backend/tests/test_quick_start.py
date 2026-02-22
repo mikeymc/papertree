@@ -134,9 +134,9 @@ class TestQuickStartEndpoint:
         """Should return 401 when not authenticated."""
         import os
         import sys
+        import auth
 
         os.environ['DB_NAME'] = test_database
-        os.environ['DEV_AUTH_BYPASS'] = '0'
 
         backend_path = os.path.join(os.path.dirname(__file__), '..', '..', 'backend')
         sys.path.insert(0, os.path.abspath(backend_path))
@@ -144,12 +144,18 @@ class TestQuickStartEndpoint:
         from app import app
         app.config['TESTING'] = True
 
-        with app.test_client() as client:
-            response = client.post('/api/strategies/quick-start', json={
-                'template_id': 'value_stocks'
-            })
-            # Should redirect to login or return 401
-            assert response.status_code in [401, 302]
+        # DEV_AUTH_BYPASS is computed at import time, so patch it directly
+        original_bypass = auth.DEV_AUTH_BYPASS
+        auth.DEV_AUTH_BYPASS = False
+        try:
+            with app.test_client() as client:
+                response = client.post('/api/strategies/quick-start', json={
+                    'template_id': 'buffett_fortress'
+                })
+                # Should return 401 when not authenticated
+                assert response.status_code == 401
+        finally:
+            auth.DEV_AUTH_BYPASS = original_bypass
 
     def test_quick_start_triggers_strategy_execution_job(self, client, seed_user):
         """Quick-start should create a strategy_execution job for the new strategy."""

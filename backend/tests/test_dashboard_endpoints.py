@@ -131,8 +131,14 @@ class TestDashboardEndpoint:
 
     def test_dashboard_requires_auth(self, client):
         """Test that dashboard endpoint requires authentication."""
-        response = client.get('/api/dashboard')
-        assert response.status_code == 401
+        import auth
+        original_bypass = auth.DEV_AUTH_BYPASS
+        auth.DEV_AUTH_BYPASS = False
+        try:
+            response = client.get('/api/dashboard')
+            assert response.status_code == 401
+        finally:
+            auth.DEV_AUTH_BYPASS = original_bypass
 
 
 class TestMarketIndexPartialData:

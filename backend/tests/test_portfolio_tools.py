@@ -175,7 +175,8 @@ def test_smart_chat_agent_injection(mock_db):
             return responses.pop(0)
         return mock_final_response
 
-    agent.client.models.generate_content.side_effect = side_effect_func
+    agent._client = MagicMock()
+    agent._client.models.generate_content.side_effect = side_effect_func
     
     agent.chat(primary_symbol="AAPL", user_message="Buy 10 AAPL for me", user_id=42)
     
