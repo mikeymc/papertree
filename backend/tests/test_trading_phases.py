@@ -8,19 +8,27 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-sys.modules["google.genai"] = MagicMock()
-sys.modules["google.genai.types"] = MagicMock()
-sys.modules["price_history_fetcher"] = MagicMock()
-sys.modules["sec_data_fetcher"] = MagicMock()
-sys.modules["news_fetcher"] = MagicMock()
-sys.modules["material_events_fetcher"] = MagicMock()
-sys.modules["sec_rate_limiter"] = MagicMock()
-sys.modules["yfinance.cache"] = MagicMock()
+# Pre-mock transitive deps needed to import strategy_executor
+_MOCKED_MODULES = [
+    "google.genai", "google.genai.types",
+    "price_history_fetcher", "sec_data_fetcher", "news_fetcher",
+    "material_events_fetcher", "sec_rate_limiter", "yfinance.cache",
+]
+_saved = {m: sys.modules.get(m) for m in _MOCKED_MODULES}
+for m in _MOCKED_MODULES:
+    sys.modules[m] = MagicMock()
 
 from strategy_executor import StrategyExecutor
 from strategy_executor.models import ExitSignal
 from strategy_executor.position_sizing import PositionSizer
 from strategy_executor.models import PositionSize
+
+# Restore original modules to prevent cross-test contamination
+for m in _MOCKED_MODULES:
+    if _saved[m] is not None:
+        sys.modules[m] = _saved[m]
+    else:
+        sys.modules.pop(m, None)
 
 
 @pytest.fixture(autouse=True)
@@ -231,20 +239,21 @@ def test_execute_trades_uses_anticipated_cash(executor, mock_db):
     mock_db.get_portfolio_summary.return_value = {'cash': 5000.0, 'total_value': 20000.0}
     mock_db.create_alert.return_value = 999
     mock_db.get_portfolio_holdings.return_value = {'TSLA': 10, 'MSFT': 5}
+    mock_db.get_prices_batch.return_value = {'MSFT': 200.0}
 
     exits = [make_exit('TSLA', quantity=10, current_value=2000.0)]
     buy_decisions = [{'symbol': 'MSFT', 'consensus_score': 80, 'id': 300, 'position_type': 'new'}]
 
     captured = {}
 
-    def spy_prioritize(buy_decisions, available_cash, portfolio_value, portfolio_id,
-                       method, rules, holdings=None, **kwargs):
-        captured['available_cash'] = available_cash
-        captured['holdings'] = holdings
-        return []
+    original_calc = executor.position_sizer.calculate_target_orders
 
-    executor.position_sizer.prioritize_positions = spy_prioritize
-    executor.position_sizer.compute_rebalancing_trims = lambda **kwargs: []
+    def spy_calc(**kwargs):
+        captured['cash_available'] = kwargs.get('cash_available')
+        captured['holdings'] = kwargs.get('holdings')
+        return [], []
+
+    executor.position_sizer.calculate_target_orders = spy_calc
 
     strategy = {
         'portfolio_id': 1,
@@ -259,8 +268,8 @@ def test_execute_trades_uses_anticipated_cash(executor, mock_db):
     )
 
     # Should be db_cash (5000) + anticipated_proceeds (2000) = 7000
-    assert captured['available_cash'] == 7000.0
-    # TSLA was exited, should not appear in holdings passed to prioritize_positions
+    assert captured['cash_available'] == 7000.0
+    # TSLA was exited, should not appear in holdings
     assert 'TSLA' not in captured['holdings']
 
 
@@ -299,7 +308,7 @@ def test_deliberation_exits_on_held_positions(executor, mock_db):
     assert len(buy_decisions) == 0
     assert len(deliberation_exits) == 1
     assert deliberation_exits[0].symbol == 'AAPL'
-    assert deliberation_exits[0].reason.startswith('Deliberation')
+    assert 'AVOID' in deliberation_exits[0].reason
 
 
 def test_deliberation_watch_does_not_exit(executor, mock_db):
@@ -337,12 +346,13 @@ def test_deliberate_watch_populates_held_verdicts(executor, mock_db):
     held_symbols = {'AAPL'}
     mock_db.create_strategy_decision.return_value = 1
 
+    # At least one thesis must be BUY to avoid short-circuit path
     enriched = [
         {
             'symbol': 'AAPL',
             'lynch_thesis': 'Some thesis',
             'buffett_thesis': 'Some thesis',
-            'lynch_thesis_verdict': 'WATCH',
+            'lynch_thesis_verdict': 'BUY',
             'buffett_thesis_verdict': 'WATCH',
             'lynch_score': 60,
             'lynch_status': 'ok',
@@ -366,14 +376,15 @@ def test_deliberate_watch_populates_held_verdicts(executor, mock_db):
     assert held_verdicts[0]['final_verdict'] == 'WATCH'
 
 
-def test_execute_trades_generates_rebalancing_trims(executor, mock_db):
-    """Rebalancing trims are computed and fed into cash available to trade."""
+def test_execute_trades_includes_held_verdicts_as_candidates(executor, mock_db):
+    """held_verdicts are included in the candidates list for position sizing."""
     import portfolio_service
     portfolio_service.is_market_open.return_value = False
 
     mock_db.get_portfolio_summary.return_value = {'cash': 0.0, 'total_value': 10000.0}
     mock_db.get_portfolio_holdings.return_value = {'AAPL': 20}
     mock_db.create_alert.return_value = 999
+    mock_db.get_prices_batch.return_value = {'AAPL': 100.0, 'MSFT': 200.0}
 
     held_verdicts = [
         {'symbol': 'AAPL', 'lynch_score': 70, 'buffett_score': 70, 'final_verdict': 'WATCH'}
@@ -381,17 +392,13 @@ def test_execute_trades_generates_rebalancing_trims(executor, mock_db):
     buy_decisions = [{'symbol': 'MSFT', 'consensus_score': 70, 'id': 1,
                       'position_type': 'new', 'consensus_reasoning': ''}]
 
-    trim_signal = ExitSignal(symbol='AAPL', quantity=10, reason='Rebalancing trim',
-                             current_value=1000.0, gain_pct=0.0, exit_type='trim')
-
     captured = {}
 
-    def spy_trims(holdings, held_verdicts, buy_decisions, portfolio_value, method, rules):
-        captured['held_verdicts'] = held_verdicts
-        return [trim_signal]
+    def spy_calc(**kwargs):
+        captured['candidates'] = kwargs.get('candidates')
+        return [], []
 
-    executor.position_sizer.compute_rebalancing_trims = spy_trims
-    executor.position_sizer.prioritize_positions = lambda **kwargs: []
+    executor.position_sizer.calculate_target_orders = spy_calc
 
     strategy = {
         'portfolio_id': 1,
@@ -406,6 +413,6 @@ def test_execute_trades_generates_rebalancing_trims(executor, mock_db):
         held_verdicts=held_verdicts
     )
 
-    assert 'held_verdicts' in captured
-    assert len(captured['held_verdicts']) == 1
-    assert captured['held_verdicts'][0]['symbol'] == 'AAPL'
+    candidate_symbols = {c['symbol'] for c in captured['candidates']}
+    assert 'AAPL' in candidate_symbols, "held_verdicts AAPL should be in candidates"
+    assert 'MSFT' in candidate_symbols, "buy_decisions MSFT should be in candidates"
