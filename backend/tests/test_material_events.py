@@ -9,6 +9,8 @@ def test_material_events_crud(db):
     """Test saving and retrieving material events"""
     # Test data - simulate an 8-K filing with content_text
     test_symbol = "AAPL"
+    db.save_stock_basic(test_symbol, "Apple Inc.", "NASDAQ", "Technology")
+    db.flush()
     test_content = """Item 5.02 Departure of Directors or Certain Officers; Election of Directors
 
 On November 15, 2024, the Board of Directors of Apple Inc. appointed Jane Smith as Chief Financial Officer, effective December 1, 2024. Ms. Smith will succeed John Doe, who announced his retirement.

@@ -90,7 +90,10 @@ def test_calculate_earnings_growth_insufficient_data(analyzer, test_db):
 
     result = analyzer.calculate_earnings_growth("TEST")
 
-    assert result is None
+    # Insufficient valid data (no net_income) → returns dict with None values
+    assert result is not None
+    assert result['earnings_cagr'] is None
+    assert result['revenue_cagr'] is None
 
 
 def test_calculate_earnings_growth_no_data(analyzer, test_db):

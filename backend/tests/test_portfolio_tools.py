@@ -1,3 +1,5 @@
+# ABOUTME: Tests for portfolio management tool executors (create, buy, sell, holdings)
+# ABOUTME: Uses mock-DB pattern to test ToolExecutor and SmartChatAgent portfolio operations
 
 import pytest
 from unittest.mock import MagicMock, patch
@@ -8,10 +10,9 @@ import os
 # Add backend directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Add backend directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 # Mock dependencies
+_MOCKED_MODULES = ["google.genai", "google.genai.types", "fred_service", "characters", "stock_context"]
+_saved = {m: sys.modules.get(m) for m in _MOCKED_MODULES}
 sys.modules["google.genai"] = MagicMock()
 sys.modules["google.genai.types"] = MagicMock()
 sys.modules["fred_service"] = MagicMock()
@@ -21,6 +22,12 @@ sys.modules["stock_context"] = MagicMock()
 from database import Database
 from agent_tools import ToolExecutor
 from smart_chat_agent import SmartChatAgent
+
+for _m in _MOCKED_MODULES:
+    if _saved[_m] is not None:
+        sys.modules[_m] = _saved[_m]
+    else:
+        sys.modules.pop(_m, None)
 
 @pytest.fixture
 def mock_db():

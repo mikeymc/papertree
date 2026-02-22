@@ -50,7 +50,7 @@ def test_alert_logic():
             
             # 2. Call LLM (mocking the exact call structure from worker.py)
             response = worker.llm_client.models.generate_content(
-                model='gemini-2.0-flash-exp', 
+                model='gemini-2.0-flash',
                 contents=prompt,
                 config={'response_mime_type': 'application/json'}
             )
