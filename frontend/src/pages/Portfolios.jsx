@@ -673,18 +673,18 @@ function HoldingsTab({ portfolio, portfolioId, isAutonomous }) {
 
     return (
         <Card>
-            <Table>
+            <Table className="table-fixed w-full">
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-[100px]">Symbol</TableHead>
+                        <TableHead className="w-[90px]">Symbol</TableHead>
                         <TableHead>Name</TableHead>
-                        <TableHead className="text-right">Shares</TableHead>
-                        <TableHead className="text-right">Purchase Price</TableHead>
-                        <TableHead className="text-right">Current Price</TableHead>
-                        <TableHead className="text-right">Total Cost</TableHead>
-                        <TableHead className="text-right">Current Value</TableHead>
-                        <TableHead className="text-right">Gain/Loss</TableHead>
-                        <TableHead className="text-right">Yield %</TableHead>
+                        <TableHead className="text-right w-[70px]">Shares</TableHead>
+                        <TableHead className="text-right w-[90px]">Purchase</TableHead>
+                        <TableHead className="text-right w-[90px]">Current</TableHead>
+                        <TableHead className="text-right w-[90px]">Cost</TableHead>
+                        <TableHead className="text-right w-[90px]">Value</TableHead>
+                        <TableHead className="text-right w-[90px]">G/L</TableHead>
+                        <TableHead className="text-right w-[70px]">Yield</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -716,7 +716,7 @@ function HoldingsTab({ portfolio, portfolioId, isAutonomous }) {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="font-medium text-sm truncate max-w-[200px]" title={holding.name}>
+                                        <div className="font-medium text-sm truncate max-w-[150px]" title={holding.name}>
                                             {holding.name}
                                         </div>
                                     </TableCell>
