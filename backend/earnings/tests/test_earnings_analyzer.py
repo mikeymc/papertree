@@ -7,7 +7,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 from database import Database
 
 # test_db fixture is now provided by conftest.py

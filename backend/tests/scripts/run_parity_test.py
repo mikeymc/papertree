@@ -13,7 +13,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from database import Database
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 from scoring import LynchCriteria
 from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
 from characters.buffett import BUFFETT

@@ -52,7 +52,7 @@ class StrategyExecutorCore(ScoringMixin, ThesisMixin, DeliberationMixin, Trading
         """Lazy initialization of LynchCriteria."""
         if self._lynch_criteria is None:
             from scoring import LynchCriteria
-            from earnings_analyzer import EarningsAnalyzer
+            from earnings.analyzer import EarningsAnalyzer
             analyzer = EarningsAnalyzer(self.db)
             self._lynch_criteria = LynchCriteria(self.db, analyzer)
         return self._lynch_criteria

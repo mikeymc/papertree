@@ -5,13 +5,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from backend/.env
-env_path = Path(__file__).parent.parent / ".env"
+env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(env_path)
 
 # We will define this class later
 # from backend.earnings_extractor import EarningsExtractor
 
-FIXTURES_DIR = Path(__file__).parent / "fixtures" / "8k"
+FIXTURES_DIR = Path(__file__).parent.parent.parent / "tests" / "fixtures" / "8k"
 
 def load_fixture(filename):
     with open(FIXTURES_DIR / filename, "r") as f:
@@ -58,7 +58,7 @@ def test_extract_earnings_ground_truth(filename, expected):
     Test that the EarningsExtractor correctly extracts financial metrics 
     from known 8-K fixtures.
     """
-    from earnings_extractor import EarningsExtractor
+    from earnings.extractor import EarningsExtractor
     
     fixture_data = load_fixture(filename)
     text_content = fixture_data["content_text"]

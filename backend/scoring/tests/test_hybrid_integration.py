@@ -4,7 +4,7 @@
 from database import Database
 from data_fetcher import DataFetcher
 from scoring import LynchCriteria
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 import os
 
 def test_hybrid_fetch(test_db):

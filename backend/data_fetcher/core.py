@@ -12,7 +12,7 @@ from edgar_fetcher import EdgarFetcher
 import pandas as pd
 import logging
 import socket
-from earnings_extractor import EarningsExtractor
+from earnings.extractor import EarningsExtractor
 from yfinance_rate_limiter import with_timeout_and_retry
 
 logger = logging.getLogger(__name__)

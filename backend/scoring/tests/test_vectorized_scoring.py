@@ -8,7 +8,7 @@ import os
 # sys.path is handled by backend/tests/conftest.py
 
 from database import Database
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 from scoring import LynchCriteria
 from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
 

@@ -573,7 +573,7 @@ class ContentJobsMixin:
 
         logger.info(f"Starting transcript cache job {job_id} (region={region}, force={force_refresh})")
 
-        from transcript_scraper import TranscriptScraper
+        from earnings.transcript_scraper import TranscriptScraper
         from tradingview_fetcher import TradingViewFetcher
 
         # If specific symbols provided, use those directly

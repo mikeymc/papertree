@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Dict, Any, Optional, List
 
 from database import Database
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 from characters.config import CharacterConfig, Threshold, ScoringWeight
 from metric_calculator import MetricCalculator
 

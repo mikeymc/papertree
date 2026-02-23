@@ -34,7 +34,7 @@ def db_and_criteria():
     """Connect to the live DB and build scoring objects. Skips if DB unavailable."""
     try:
         from database import Database
-        from earnings_analyzer import EarningsAnalyzer
+        from earnings.analyzer import EarningsAnalyzer
         from scoring import LynchCriteria
         from scoring.vectors import StockVectors
 

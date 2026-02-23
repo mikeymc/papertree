@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional
 import logging
 from database import Database
 from scoring import LynchCriteria
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 
 logger = logging.getLogger(__name__)
 

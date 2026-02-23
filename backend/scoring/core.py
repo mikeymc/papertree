@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any, Optional
 from database import Database
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 
 logger = logging.getLogger(__name__)
 

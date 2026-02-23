@@ -256,7 +256,7 @@ class StockToolsMixin:
         """Calculate earnings consistency score."""
         ticker = ticker.upper()
 
-        from earnings_analyzer import EarningsAnalyzer
+        from earnings.analyzer import EarningsAnalyzer
         analyzer = EarningsAnalyzer(self.db)
         growth_data = analyzer.calculate_earnings_growth(ticker)
 

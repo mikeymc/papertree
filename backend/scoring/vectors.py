@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 from database import Database
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 import logging
 
 logger = logging.getLogger(__name__)

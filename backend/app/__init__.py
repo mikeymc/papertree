@@ -111,7 +111,7 @@ configure_edgartools_rate_limit()
 # Initialize services and populate deps
 from database import Database
 from data_fetcher import DataFetcher
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 from scoring import LynchCriteria
 from yfinance_price_client import YFinancePriceClient
 from stock_analyst import StockAnalyst

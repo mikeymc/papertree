@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from scoring import LynchCriteria
 from database import Database
-from earnings_analyzer import EarningsAnalyzer
+from earnings.analyzer import EarningsAnalyzer
 
 def test_new_methods(test_db):
     """Test the new metric-specific evaluation methods"""
