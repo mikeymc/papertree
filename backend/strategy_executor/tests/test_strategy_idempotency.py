@@ -7,6 +7,16 @@ import os
 
 from strategy_executor import StrategyExecutor
 
+
+@pytest.fixture(autouse=True)
+def mock_portfolio_service():
+    """Replace portfolio_service module with a MagicMock so that
+    is_market_open, execute_trade, fetch_current_prices_batch etc.
+    are all controllable mocks inside _execute_trades."""
+    with patch.dict('sys.modules', {'portfolio_service': MagicMock()}):
+        yield
+
+
 @pytest.fixture
 def mock_db():
     db = MagicMock()

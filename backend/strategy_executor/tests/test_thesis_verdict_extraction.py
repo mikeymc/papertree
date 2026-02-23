@@ -11,7 +11,7 @@ def test_extract_acnb_verdict():
     Test that _extract_thesis_verdict correctly returns WATCH for the ACNB thesis
     """
     # Load ACNB thesis from fixture
-    fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures', 'acnb_thesis.md')
+    fixture_path = os.path.join(os.path.dirname(__file__), '..', '..', 'tests', 'fixtures', 'acnb_thesis.md')
     with open(fixture_path, 'r') as f:
         acnb_thesis = f.read()
     

@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 import json
 import os
 
-# Fixtures path
-FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'fixtures')
+# Fixtures path (shared fixtures in backend/tests/fixtures/)
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'tests', 'fixtures')
 
 def load_fixture(filename):
     with open(os.path.join(FIXTURES_DIR, filename), 'r') as f:
