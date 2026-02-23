@@ -72,6 +72,7 @@ def create_job():
             'thesis_refresher',
             'outlook_cache',
             '8k_cache',
+            'full_screening',
             '10k_cache'
         }
         if job_type in heavy_jobs:
