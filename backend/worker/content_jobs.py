@@ -38,7 +38,7 @@ class ContentJobsMixin:
         logger.info(f"Starting news cache job {job_id} (region={region})")
 
         from finnhub_news import FinnhubNewsClient
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
 
         # If specific symbols provided, use those directly (for testing)
         if specific_symbols:
@@ -171,7 +171,7 @@ class ContentJobsMixin:
         import yfinance as yf
         import pandas as pd
         from datetime import datetime, timedelta
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
 
         limit = params.get('limit')
         region = params.get('region', 'us')
@@ -574,7 +574,7 @@ class ContentJobsMixin:
         logger.info(f"Starting transcript cache job {job_id} (region={region}, force={force_refresh})")
 
         from earnings.transcript_scraper import TranscriptScraper
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
 
         # If specific symbols provided, use those directly
         if symbols_list:
@@ -856,7 +856,7 @@ class ContentJobsMixin:
 
         logger.info(f"Starting forward metrics cache job {job_id} (region={region})")
 
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
 
         # If specific symbols provided, use those directly (for testing)
         if specific_symbols:

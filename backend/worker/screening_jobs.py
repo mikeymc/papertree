@@ -22,7 +22,7 @@ class ScreeningJobsMixin:
         region = params.get('region', 'us')  # Default to US only
         specific_symbols = params.get('symbols')  # Optional list of specific symbols to screen
 
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
         from finviz_fetcher import FinvizFetcher
         from data_fetcher import DataFetcher
 

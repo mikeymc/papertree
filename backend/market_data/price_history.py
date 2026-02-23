@@ -5,7 +5,7 @@ import logging
 from typing import Optional, Dict, Any
 from threading import Semaphore
 from database import Database
-from yfinance_price_client import YFinancePriceClient
+from market_data.yfinance_client import YFinancePriceClient
 
 logger = logging.getLogger(__name__)
 

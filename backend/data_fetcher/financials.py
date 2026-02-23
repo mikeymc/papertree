@@ -5,7 +5,7 @@ import yfinance as yf
 import logging
 from typing import Dict, Any, Optional, List
 import pandas as pd
-from yfinance_rate_limiter import with_timeout_and_retry
+from market_data.yfinance_limiter import with_timeout_and_retry
 
 logger = logging.getLogger(__name__)
 

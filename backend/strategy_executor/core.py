@@ -16,7 +16,7 @@ from strategy_executor.scoring import ScoringMixin
 from strategy_executor.thesis import ThesisMixin
 from strategy_executor.deliberation import DeliberationMixin
 from strategy_executor.trading import TradingMixin
-from benchmark_tracker import BenchmarkTracker
+from market_data.benchmark import BenchmarkTracker
 from strategy_executor.utils import log_event, get_spy_price
 from scoring.vectors import StockVectors, DEFAULT_ALGORITHM_CONFIG
 from characters.buffett import BUFFETT

@@ -23,7 +23,7 @@ class TestWorkerMemoryOptimization:
         })
         return db
 
-    @patch('tradingview_fetcher.TradingViewFetcher')
+    @patch('market_data.tradingview.TradingViewFetcher')
     @patch('finviz_fetcher.FinvizFetcher')
     @patch('data_fetcher.DataFetcher')
     def test_run_screening_clears_cache_and_counts_correctly(

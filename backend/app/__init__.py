@@ -113,7 +113,7 @@ from database import Database
 from data_fetcher import DataFetcher
 from earnings.analyzer import EarningsAnalyzer
 from scoring import LynchCriteria
-from yfinance_price_client import YFinancePriceClient
+from market_data.yfinance_client import YFinancePriceClient
 from stock_analyst import StockAnalyst
 from algorithm.backtester import Backtester
 from algorithm.validator import AlgorithmValidator

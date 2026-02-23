@@ -13,7 +13,7 @@ import pandas as pd
 import logging
 import socket
 from earnings.extractor import EarningsExtractor
-from yfinance_rate_limiter import with_timeout_and_retry
+from market_data.yfinance_limiter import with_timeout_and_retry
 
 logger = logging.getLogger(__name__)
 

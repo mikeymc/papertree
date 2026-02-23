@@ -257,7 +257,7 @@ class TestYFinancePriceClientImplementation:
     
     def test_yfinance_satisfies_protocol_interface(self):
         """Verify YFinancePriceClient has the required interface methods"""
-        from yfinance_price_client import YFinancePriceClient
+        from market_data.yfinance_client import YFinancePriceClient
         
         client = YFinancePriceClient()
         
@@ -269,7 +269,7 @@ class TestYFinancePriceClientImplementation:
     
     def test_yfinance_get_historical_price_signature(self):
         """Verify get_historical_price accepts correct arguments"""
-        from yfinance_price_client import YFinancePriceClient
+        from market_data.yfinance_client import YFinancePriceClient
         
         client = YFinancePriceClient()
         client._available = False  # Prevent actual API calls
@@ -283,7 +283,7 @@ class TestYFinancePriceClientImplementation:
     
     def test_yfinance_handles_invalid_date_format(self):
         """YFinancePriceClient should return None for invalid date formats"""
-        from yfinance_price_client import YFinancePriceClient
+        from market_data.yfinance_client import YFinancePriceClient
         
         client = YFinancePriceClient()
         
@@ -293,7 +293,7 @@ class TestYFinancePriceClientImplementation:
     
     def test_yfinance_handles_future_date(self):
         """YFinancePriceClient should return None for future dates"""
-        from yfinance_price_client import YFinancePriceClient
+        from market_data.yfinance_client import YFinancePriceClient
         
         client = YFinancePriceClient()
         
@@ -304,7 +304,7 @@ class TestYFinancePriceClientImplementation:
     
     def test_yfinance_is_available_returns_true(self):
         """YFinancePriceClient.is_available() should return True by default"""
-        from yfinance_price_client import YFinancePriceClient
+        from market_data.yfinance_client import YFinancePriceClient
         
         client = YFinancePriceClient()
         

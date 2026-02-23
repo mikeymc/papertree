@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import yfinance as yf
 import yfinance.cache as yf_cache
-from yfinance_rate_limiter import with_timeout_and_retry
+from market_data.yfinance_limiter import with_timeout_and_retry
 
 logger = logging.getLogger(__name__)
 

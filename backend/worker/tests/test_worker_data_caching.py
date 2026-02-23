@@ -29,7 +29,7 @@ class TestWorkerDataCaching:
     def test_fetcher_modules_exist(self):
         """Verify all fetcher modules can be imported"""
         # These imports will fail if the modules don't exist or have syntax errors
-        from price_history_fetcher import PriceHistoryFetcher
+        from market_data.price_history import PriceHistoryFetcher
         from sec.sec_data_fetcher import SECDataFetcher
         from news_fetcher import NewsFetcher
         from material_events_fetcher import MaterialEventsFetcher
@@ -289,7 +289,7 @@ class TestOTCFiltering:
     
     def test_tradingview_fetcher_has_otc_filter(self):
         """Verify TradingViewFetcher._should_skip_ticker filters OTC patterns"""
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
         import inspect
         
         source = inspect.getsource(TradingViewFetcher._should_skip_ticker)
@@ -300,7 +300,7 @@ class TestOTCFiltering:
     
     def test_tradingview_fetcher_has_warrant_filter(self):
         """Verify TradingViewFetcher._should_skip_ticker filters warrants"""
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
         import inspect
         
         source = inspect.getsource(TradingViewFetcher._should_skip_ticker)

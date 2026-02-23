@@ -33,7 +33,7 @@ class DataJobsMixin:
 
         logger.info(f"Starting historical_fundamentals_cache job {job_id} (region={region})")
 
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
         from edgar_fetcher import EdgarFetcher
 
         # Get stock list
@@ -217,7 +217,7 @@ class DataJobsMixin:
 
         logger.info(f"Starting quarterly_fundamentals_cache job {job_id} (region={region}, use_rss={use_rss})")
 
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
         from edgar_fetcher import EdgarFetcher
 
         # Get stock list
@@ -419,7 +419,7 @@ class DataJobsMixin:
         logger.info(f"Starting price update job {job_id}")
         self.db.update_job_progress(job_id, progress_pct=5, progress_message='Fetching market data from TradingView...')
 
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
 
         try:
             # fetch_all_stocks gets data for relevant regions (defaults to US/Europe/Asia)
@@ -544,9 +544,9 @@ class DataJobsMixin:
 
         logger.info(f"Starting price history cache job {job_id} (region={region})")
 
-        from yfinance_price_client import YFinancePriceClient
-        from tradingview_fetcher import TradingViewFetcher
-        from price_history_fetcher import PriceHistoryFetcher
+        from market_data.yfinance_client import YFinancePriceClient
+        from market_data.tradingview import TradingViewFetcher
+        from market_data.price_history import PriceHistoryFetcher
 
         # Map CLI region to TradingView regions (same as screening)
         region_mapping = {

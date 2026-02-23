@@ -4,7 +4,7 @@ Tests for smart incremental price caching in PriceHistoryFetcher
 import pytest
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
-from price_history_fetcher import PriceHistoryFetcher
+from market_data.price_history import PriceHistoryFetcher
 
 
 class TestIncrementalPriceCaching:
@@ -148,7 +148,7 @@ class TestYFinancePriceClientIncremental:
     @pytest.fixture
     def price_client(self):
         """Create YFinancePriceClient instance"""
-        from yfinance_price_client import YFinancePriceClient
+        from market_data.yfinance_client import YFinancePriceClient
         return YFinancePriceClient()
     
     @patch('yfinance.Ticker')
@@ -244,7 +244,7 @@ class TestPerformanceComparison:
     @pytest.mark.integration
     def test_incremental_fetches_less_data(self):
         """Verify that incremental fetch returns less data than full history (integration test)"""
-        from yfinance_price_client import YFinancePriceClient
+        from market_data.yfinance_client import YFinancePriceClient
         
         client = YFinancePriceClient()
         

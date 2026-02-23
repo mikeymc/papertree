@@ -10,7 +10,7 @@ import resource
 import platform
 from typing import Dict, Any
 
-from price_history_fetcher import PriceHistoryFetcher
+from market_data.price_history import PriceHistoryFetcher
 from sec.sec_data_fetcher import SECDataFetcher
 from news_fetcher import NewsFetcher
 from material_events_fetcher import MaterialEventsFetcher

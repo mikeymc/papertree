@@ -87,7 +87,7 @@ class SECJobsMixin:
         logger.info(f"Starting 10-K/10-Q cache job {job_id} (region={region}, use_rss={use_rss})")
 
         from edgar_fetcher import EdgarFetcher
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
 
         # Disable edgartools disk caching - not useful for batch jobs on ephemeral workers
         # (each stock is only processed once, cache would be discarded anyway)
@@ -263,7 +263,7 @@ class SECJobsMixin:
 
         from edgar_fetcher import EdgarFetcher
         from sec.sec_8k_client import SEC8KClient
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
 
         # Disable edgartools disk caching - not useful for batch jobs on ephemeral workers
         # (each stock is only processed once, cache would be discarded anyway)
@@ -440,7 +440,7 @@ class SECJobsMixin:
         logger.info(f"Starting Form 4 cache job {job_id} (region={region}, use_rss={use_rss})")
 
         from edgar_fetcher import EdgarFetcher
-        from tradingview_fetcher import TradingViewFetcher
+        from market_data.tradingview import TradingViewFetcher
 
         # Disable edgartools disk caching for batch jobs
         try:

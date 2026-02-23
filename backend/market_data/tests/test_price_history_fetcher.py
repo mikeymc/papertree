@@ -5,7 +5,7 @@ Tests the fetching and caching of price history data
 import pytest
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
-from price_history_fetcher import PriceHistoryFetcher
+from market_data.price_history import PriceHistoryFetcher
 
 
 class TestPriceHistoryFetcher:
