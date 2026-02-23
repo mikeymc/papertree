@@ -35,7 +35,9 @@ import {
     User,
     Play,
     Settings,
-    Loader2
+    Loader2,
+    ChevronRight,
+    ChevronDown
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { Line } from 'react-chartjs-2'
@@ -703,7 +705,13 @@ function HoldingsTab({ portfolio, portfolioId, isAutonomous }) {
                                                 {holding.symbol}
                                             </Link>
                                             {holdingReason && (
-                                                <span className="text-[10px] text-muted-foreground">{isExpanded ? '▲' : '▼'}</span>
+                                                <span className="text-muted-foreground">
+                                                    {isExpanded ? (
+                                                        <ChevronDown className="h-3.5 w-3.5" />
+                                                    ) : (
+                                                        <ChevronRight className="h-3.5 w-3.5" />
+                                                    )}
+                                                </span>
                                             )}
                                         </div>
                                     </TableCell>
