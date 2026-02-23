@@ -18,6 +18,11 @@ class UsersMixin:
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
+            
+            # Check if user already exists
+            cursor.execute("SELECT id FROM users WHERE google_id = %s", (google_id,))
+            is_new_user = cursor.fetchone() is None
+            
             cursor.execute("""
                 INSERT INTO users (google_id, email, name, picture, created_at, last_login, theme)
                 VALUES (%s, %s, %s, %s, %s, %s, 'light')
@@ -30,6 +35,10 @@ class UsersMixin:
             """, (google_id, email, name, picture, datetime.now(timezone.utc), datetime.now(timezone.utc)))
             user_id = cursor.fetchone()[0]
             conn.commit()
+            
+            if is_new_user:
+                self._create_welcome_message(user_id)
+                
             return user_id
         finally:
             self.return_connection(conn)
@@ -49,6 +58,9 @@ class UsersMixin:
             """, (email, password_hash, name, datetime.now(timezone.utc), datetime.now(timezone.utc), is_verified, verification_code, code_expires_at))
             user_id = cursor.fetchone()[0]
             conn.commit()
+            
+            self._create_welcome_message(user_id)
+            
             return user_id
         finally:
             self.return_connection(conn)
@@ -245,3 +257,24 @@ class UsersMixin:
         )
 
         self.write_queue.put((sql, args))
+
+    def _create_welcome_message(self, user_id: int):
+        """Creates an initial welcome conversation and message for new users."""
+        try:
+            if hasattr(self, 'create_agent_conversation'):
+                conversation_id = self.create_agent_conversation(user_id)
+                welcome_text = (
+                    "Hello! I am your AI stock analysis assistant.\n\n"
+                    "I can analyze stocks, pull recent filings, interpret earnings calls, and give you an investment thesis.\n\n"
+                    "Here are a few things you can ask me:\n"
+                    "- **Company Overview:** \"What's the outlook for AAPL?\"\n"
+                    "- **Earnings:** \"Summarize the latest NVDA earnings call.\"\n"
+                    "- **Deep Dive:** \"Compare the valuation, debt, and growth metrics of AMD and INTC, and verify if any insider trading happened recently.\"\n"
+                    "- **Analysts:** \"You can ask a Lynch analyst with @lynch and a Buffett analyst with @buffett to get two different types of responses!\"\n"
+                    "- **Screening:** \"Find me tech stocks with a P/E under 20 and revenue growth over 15%.\"\n"
+                    "- **Risk:** \"What are the biggest risk factors mentioned in TSLA's latest 10-K?\"\n"
+                )
+                self.save_agent_message(conversation_id, "assistant", welcome_text)
+                self.update_conversation_title(conversation_id, "Getting Started")
+        except Exception as e:
+            logger.error(f"Failed to create welcome message for user {user_id}: {e}")
