@@ -115,10 +115,10 @@ from earnings.analyzer import EarningsAnalyzer
 from scoring import LynchCriteria
 from yfinance_price_client import YFinancePriceClient
 from stock_analyst import StockAnalyst
-from backtester import Backtester
-from algorithm_validator import AlgorithmValidator
-from correlation_analyzer import CorrelationAnalyzer
-from algorithm_optimizer import AlgorithmOptimizer
+from algorithm.backtester import Backtester
+from algorithm.validator import AlgorithmValidator
+from algorithm.correlation import CorrelationAnalyzer
+from algorithm.optimizer import AlgorithmOptimizer
 from finnhub_news import FinnhubNewsClient
 from scoring.vectors import StockVectors
 from sec.sec_8k_client import SEC8KClient

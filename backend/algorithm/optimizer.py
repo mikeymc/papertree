@@ -7,7 +7,7 @@ from skopt.space import Real
 from skopt.utils import use_named_args
 
 from database import Database
-from correlation_analyzer import CorrelationAnalyzer
+from algorithm.correlation import CorrelationAnalyzer
 
 logger = logging.getLogger(__name__)
 

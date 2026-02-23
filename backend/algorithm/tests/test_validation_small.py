@@ -1,5 +1,5 @@
 import pytest
-from algorithm_validator import AlgorithmValidator
+from algorithm.validator import AlgorithmValidator
 
 @pytest.mark.slow
 @pytest.mark.integration

@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 # Add backend directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../backend'))
 
-from backtester import Backtester
+from algorithm.backtester import Backtester
 
 class TestBacktester(unittest.TestCase):
     def setUp(self):

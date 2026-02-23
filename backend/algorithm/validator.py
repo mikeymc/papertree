@@ -7,7 +7,7 @@ import pandas as pd
 import time
 
 from database import Database
-from backtester import Backtester
+from algorithm.backtester import Backtester
 
 logger = logging.getLogger(__name__)
 

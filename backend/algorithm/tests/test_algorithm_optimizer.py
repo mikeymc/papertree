@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from algorithm_optimizer import AlgorithmOptimizer
+from algorithm.optimizer import AlgorithmOptimizer
 from database import Database
 
 class TestAlgorithmOptimizer:
@@ -80,7 +80,7 @@ class TestAlgorithmOptimizer:
         ]
         mock_result.fun = -0.85  # Correlation of 0.85 (negated because we minimize)
 
-        with mock.patch('algorithm_optimizer.gp_minimize', return_value=mock_result) as mock_gp:
+        with mock.patch('algorithm.optimizer.gp_minimize', return_value=mock_result) as mock_gp:
             best_config, history = optimizer._bayesian_optimize(
                 mock_results,
                 'lynch',

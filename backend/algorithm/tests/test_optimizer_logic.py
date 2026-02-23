@@ -5,7 +5,7 @@ import os
 # sys.path handled by conftest.py
 
 import unittest
-from algorithm_optimizer import AlgorithmOptimizer
+from algorithm.optimizer import AlgorithmOptimizer
 
 class MockDB:
     pass

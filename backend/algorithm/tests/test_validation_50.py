@@ -1,6 +1,6 @@
 import pytest
-from algorithm_validator import AlgorithmValidator
-from correlation_analyzer import CorrelationAnalyzer
+from algorithm.validator import AlgorithmValidator
+from algorithm.correlation import CorrelationAnalyzer
 
 @pytest.mark.slow
 @pytest.mark.integration

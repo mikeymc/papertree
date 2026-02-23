@@ -1,5 +1,5 @@
 import pytest
-from correlation_analyzer import CorrelationAnalyzer
+from algorithm.correlation import CorrelationAnalyzer
 
 def test_correlation_analysis(db):
     """Analyze the correlation between scores and historical returns."""
