@@ -1,0 +1,169 @@
+[
+    {
+        "id": "price_simple_trigger",
+        "category": "valuation",
+        "condition": "Price is below $150",
+        "metrics": {
+            "symbol": "PG",
+            "price": 144.50,
+            "pe_ratio": 21.5
+        },
+        "expected_trigger": true,
+        "expected_reason_contains": "below"
+    },
+    {
+        "id": "price_simple_no_trigger",
+        "category": "valuation",
+        "condition": "Price is below $140",
+        "metrics": {
+            "symbol": "PG",
+            "price": 144.50
+        },
+        "expected_trigger": false
+    },
+    {
+        "id": "pe_simple",
+        "category": "valuation",
+        "condition": "P/E ratio is below 25",
+        "metrics": {
+            "symbol": "ADP",
+            "pe_ratio": 24.5,
+            "price": 250.0
+        },
+        "expected_trigger": true
+    },
+    {
+        "id": "pe_52w_avg_trigger",
+        "category": "valuation",
+        "condition": "P/E ratio is below its 52-week average",
+        "metrics": {
+            "symbol": "MANH",
+            "pe_ratio": 49.2,
+            "pe_mean_52w": 54.6
+        },
+        "expected_trigger": true
+    },
+    {
+        "id": "pe_52w_avg_no_trigger",
+        "category": "valuation",
+        "condition": "P/E ratio is below its 52-week average",
+        "metrics": {
+            "symbol": "MANH",
+            "pe_ratio": 60.0,
+            "pe_mean_52w": 54.6
+        },
+        "expected_trigger": false
+    },
+    {
+        "id": "peg_ratio_trigger",
+        "category": "valuation",
+        "condition": "PEG ratio is below 1.5",
+        "metrics": {
+            "symbol": "GOOGL",
+            "peg_ratio": 1.2
+        },
+        "expected_trigger": true
+    },
+    {
+        "id": "earnings_growth_cagr",
+        "category": "growth",
+        "condition": "5-year earnings growth above 10%",
+        "metrics": {
+            "symbol": "MSFT",
+            "earnings_cagr": 12.5
+        },
+        "expected_trigger": true
+    },
+    {
+        "id": "insider_buying_trigger",
+        "category": "events",
+        "condition": "Notify me of any new insider buying",
+        "metrics": {
+            "symbol": "AMZN",
+            "price": 180.0
+        },
+        "context": {
+            "recent_insider_trades": [
+                {
+                    "transaction_date": "2025-01-18",
+                    "name": "Andy Jassy",
+                    "transaction_type": "Purchase",
+                    "shares": 5000,
+                    "value": 900000,
+                    "price_per_share": 180.0
+                }
+            ]
+        },
+        "expected_trigger": true
+    },
+    {
+        "id": "insider_buying_no_trigger",
+        "category": "events",
+        "condition": "Notify me of any new insider buying",
+        "metrics": {
+            "symbol": "AMZN",
+            "price": 180.0
+        },
+        "context": {
+            "recent_insider_trades": [
+                {
+                    "transaction_date": "2025-01-18",
+                    "name": "Jeff Bezos",
+                    "transaction_type": "Sale",
+                    "shares": 50000,
+                    "value": 9000000
+                }
+            ]
+        },
+        "expected_trigger": false,
+        "expected_reason_contains": "sale"
+    },
+    {
+        "id": "material_event_acquisition",
+        "category": "events",
+        "condition": "Notify me of any acquisitions",
+        "metrics": {
+            "symbol": "CRM"
+        },
+        "context": {
+            "recent_material_events": [
+                {
+                    "date": "2025-01-19",
+                    "event_type": "8-K",
+                    "headline": "Entry into a Material Definitive Agreement",
+                    "description": "Salesforce signs agreement to acquire Informatica for $10B."
+                }
+            ]
+        },
+        "expected_trigger": true
+    },
+    {
+        "id": "dividend_yield_target",
+        "category": "fundamentals",
+        "condition": "Dividend yield is above 3%",
+        "metrics": {
+            "symbol": "VZ",
+            "dividend_yield": 6.5
+        },
+        "expected_trigger": true
+    },
+    {
+        "id": "new_debt_issuance",
+        "category": "events",
+        "condition": "Notify me if the company issues new debt",
+        "metrics": {
+            "symbol": "T"
+        },
+        "context": {
+            "recent_material_events": [
+                {
+                    "date": "2025-01-15",
+                    "event_type": "8-K",
+                    "headline": "Creation of a Direct Financial Obligation",
+                    "description": "Company issues $1B in senior notes."
+                }
+            ]
+        },
+        "expected_trigger": true
+    }
+]
