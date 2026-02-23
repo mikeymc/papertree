@@ -3,7 +3,7 @@
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from sec_rss_client import SECRSSClient
+from sec.sec_rss_client import SECRSSClient
 
 
 class TestSECRSSClient:
@@ -61,7 +61,7 @@ class TestSECRSSClient:
         assert client.headers == {'User-Agent': "Test User Agent test@example.com"}
         assert client._cik_to_ticker_cache is None
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_get_tickers_with_new_filings_success(self, mock_get, client, sample_rss_response, sample_cik_mapping):
         """Test successfully fetching tickers with new filings"""
         # Mock RSS feed response
@@ -86,7 +86,7 @@ class TestSECRSSClient:
         assert len(result) == 3
         assert 'TSLA' not in result  # No filing in RSS
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_get_tickers_filters_to_known_tickers(self, mock_get, client, sample_rss_response, sample_cik_mapping):
         """Test that results are filtered to known tickers"""
         # Mock responses
@@ -109,7 +109,7 @@ class TestSECRSSClient:
         assert 'MSFT' not in result  # Has filing but not in known_tickers
         assert 'GOOGL' not in result  # Has filing but not in known_tickers
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_get_tickers_without_filter(self, mock_get, client, sample_rss_response, sample_cik_mapping):
         """Test fetching tickers without known_tickers filter"""
         # Mock responses
@@ -136,14 +136,14 @@ class TestSECRSSClient:
         assert SECRSSClient.FORM_TYPE_MAPPING['10-Q'] == '10-Q'
         assert SECRSSClient.FORM_TYPE_MAPPING['FORM4'] == '4'
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_unknown_form_type(self, mock_get, client):
         """Test handling of unknown form type"""
         result = client.get_tickers_with_new_filings('UNKNOWN-FORM')
         assert result == set()
         mock_get.assert_not_called()
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_rss_fetch_error(self, mock_get, client):
         """Test handling of RSS fetch errors"""
         mock_get.side_effect = Exception("Network error")
@@ -151,7 +151,7 @@ class TestSECRSSClient:
         result = client.get_tickers_with_new_filings('8-K')
         assert result == set()
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_cik_mapping_caches(self, mock_get, client, sample_rss_response, sample_cik_mapping):
         """Test that CIK mapping is cached after first load"""
         # Mock responses
@@ -198,7 +198,7 @@ class TestSECRSSClient:
 </entry>
 </feed>"""
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_paginated_single_page(self, mock_get, client, sample_rss_with_ids, sample_cik_mapping):
         """Test pagination with single page (all new filings)"""
         # Page 1 RSS response
@@ -233,7 +233,7 @@ class TestSECRSSClient:
         assert result == {'AAPL', 'MSFT', 'GOOGL'}
         assert mock_db.filing_exists.call_count == 3  # Checked all 3 filings
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_paginated_stop_on_known_filing(self, mock_get, client, sample_cik_mapping):
         """Test pagination stops when hitting a known filing"""
         # Page 1: 2 new filings
@@ -280,7 +280,7 @@ class TestSECRSSClient:
         assert 'GOOGL' not in result
         assert mock_db.filing_exists.call_count == 3  # Checked until hitting known
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_paginated_multiple_pages(self, mock_get, client, sample_cik_mapping):
         """Test pagination across multiple pages"""
         # Page 1
@@ -337,7 +337,7 @@ class TestSECRSSClient:
         assert result == {'AAPL', 'MSFT'}
         assert mock_db.filing_exists.call_count == 2
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_paginated_unknown_form_type(self, mock_get, client):
         """Test pagination with unknown form type"""
         mock_db = Mock()
@@ -345,7 +345,7 @@ class TestSECRSSClient:
         assert result == set()
         mock_get.assert_not_called()
 
-    @patch('sec_rss_client.requests.get')
+    @patch('sec.sec_rss_client.requests.get')
     def test_paginated_error_handling(self, mock_get, client):
         """Test pagination handles errors gracefully"""
         mock_get.side_effect = Exception("Network error")

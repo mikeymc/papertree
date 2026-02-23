@@ -2,7 +2,7 @@
 """Integration tests for SEC 8-K client"""
 
 import pytest
-from sec_8k_client import SEC8KClient
+from sec.sec_8k_client import SEC8KClient
 import time
 
 @pytest.mark.integration

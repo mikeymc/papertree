@@ -30,7 +30,7 @@ class TestWorkerDataCaching:
         """Verify all fetcher modules can be imported"""
         # These imports will fail if the modules don't exist or have syntax errors
         from price_history_fetcher import PriceHistoryFetcher
-        from sec_data_fetcher import SECDataFetcher
+        from sec.sec_data_fetcher import SECDataFetcher
         from news_fetcher import NewsFetcher
         from material_events_fetcher import MaterialEventsFetcher
         

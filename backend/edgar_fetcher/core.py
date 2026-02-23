@@ -6,7 +6,7 @@ import time
 import logging
 from typing import Dict, List, Optional, Any
 from edgar import Company, set_identity
-from sec_rate_limiter import SEC_RATE_LIMITER
+from sec.sec_rate_limiter import SEC_RATE_LIMITER
 
 logger = logging.getLogger(__name__)
 

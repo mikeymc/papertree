@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import time
 import logging
-from sec_rate_limiter import SEC_RATE_LIMITER
+from sec.sec_rate_limiter import SEC_RATE_LIMITER
 
 logger = logging.getLogger(__name__)
 

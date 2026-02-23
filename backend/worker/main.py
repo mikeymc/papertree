@@ -5,7 +5,7 @@ import logging
 import os
 
 # Import global rate limiter for SEC API (shared across all threads)
-from sec_rate_limiter import SEC_RATE_LIMITER
+from sec.sec_rate_limiter import SEC_RATE_LIMITER
 
 logger = logging.getLogger(__name__)
 

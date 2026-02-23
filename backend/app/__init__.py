@@ -105,7 +105,7 @@ else:
     db_password = os.environ.get('DB_PASSWORD', 'lynch_dev_password')
 
 # CRITICAL: Disable EDGAR caching BEFORE any other imports that use edgartools
-from sec_rate_limiter import configure_edgartools_rate_limit
+from sec.sec_rate_limiter import configure_edgartools_rate_limit
 configure_edgartools_rate_limit()
 
 # Initialize services and populate deps
@@ -121,7 +121,7 @@ from correlation_analyzer import CorrelationAnalyzer
 from algorithm_optimizer import AlgorithmOptimizer
 from finnhub_news import FinnhubNewsClient
 from scoring.vectors import StockVectors
-from sec_8k_client import SEC8KClient
+from sec.sec_8k_client import SEC8KClient
 from material_event_summarizer import MaterialEventSummarizer
 
 print(f"Connecting to PostgreSQL: {db_user}@{db_host}:{db_port}/{db_name}")

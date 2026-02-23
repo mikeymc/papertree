@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from database import Database
-from sec_8k_client import SEC8KClient
+from sec.sec_8k_client import SEC8KClient
 
 logger = logging.getLogger(__name__)
 

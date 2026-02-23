@@ -33,7 +33,7 @@ load_dotenv()  # Load from .env in current directory
 load_dotenv('../.env')  # Also try parent directory
 
 # CRITICAL: Disable EDGAR caching BEFORE any other imports that use edgartools
-from sec_rate_limiter import configure_edgartools_rate_limit
+from sec.sec_rate_limiter import configure_edgartools_rate_limit
 configure_edgartools_rate_limit()
 
 from worker.core import BackgroundWorkerCore, get_memory_mb, check_memory_warning

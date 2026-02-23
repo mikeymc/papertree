@@ -4,7 +4,7 @@ Tests the fetching and caching of SEC filing data including incremental fetching
 """
 import pytest
 from unittest.mock import Mock, MagicMock
-from sec_data_fetcher import SECDataFetcher
+from sec.sec_data_fetcher import SECDataFetcher
 
 
 class TestSECDataFetcher:

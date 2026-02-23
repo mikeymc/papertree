@@ -243,7 +243,7 @@ class DataJobsMixin:
 
         # RSS-based optimization: only process stocks with new filings
         if use_rss and not force_refresh and not specific_symbols:
-            from sec_rss_client import SECRSSClient
+            from sec.sec_rss_client import SECRSSClient
             self.db.update_job_progress(job_id, progress_pct=9, progress_message='Checking RSS feed for new 10-Q/10-K filings...')
 
             sec_user_agent = os.environ.get('SEC_USER_AGENT', 'Lynch Stock Screener mikey@example.com')

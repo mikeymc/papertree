@@ -7,7 +7,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any
 
-from sec_data_fetcher import SECDataFetcher
+from sec.sec_data_fetcher import SECDataFetcher
 from material_events_fetcher import MaterialEventsFetcher
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ class SECJobsMixin:
 
     def _run_sec_refresh(self, job_id: int, params: Dict[str, Any]):
         """Execute SEC data refresh"""
-        from migrate_sec_to_postgres import SECPostgresMigrator
+        from sec.migrate_sec_to_postgres import SECPostgresMigrator
 
         logger.info(f"Starting SEC refresh job {job_id}")
 
@@ -143,7 +143,7 @@ class SECJobsMixin:
 
         # RSS-based optimization: only process stocks with new filings
         if use_rss and not force_refresh and not specific_symbols:
-            from sec_rss_client import SECRSSClient
+            from sec.sec_rss_client import SECRSSClient
             self.db.update_job_progress(job_id, progress_pct=9, progress_message='Checking RSS feed for new 10-K/10-Q filings...')
 
             sec_user_agent = os.environ.get('SEC_USER_AGENT', 'Lynch Stock Screener mikey@example.com')
@@ -262,7 +262,7 @@ class SECJobsMixin:
         logger.info(f"Starting 8-K cache job {job_id} (region={region}, use_rss={use_rss})")
 
         from edgar_fetcher import EdgarFetcher
-        from sec_8k_client import SEC8KClient
+        from sec.sec_8k_client import SEC8KClient
         from tradingview_fetcher import TradingViewFetcher
 
         # Disable edgartools disk caching - not useful for batch jobs on ephemeral workers
@@ -319,7 +319,7 @@ class SECJobsMixin:
 
         # RSS-based optimization: only process stocks with new filings
         if use_rss and not force_refresh and not specific_symbols:
-            from sec_rss_client import SECRSSClient
+            from sec.sec_rss_client import SECRSSClient
             self.db.update_job_progress(job_id, progress_pct=9, progress_message='Checking RSS feed for new 8-K filings...')
 
             sec_user_agent = os.environ.get('SEC_USER_AGENT', 'Lynch Stock Screener mikey@example.com')
@@ -486,7 +486,7 @@ class SECJobsMixin:
 
         # RSS-based optimization: only process stocks with new filings
         if use_rss:
-            from sec_rss_client import SECRSSClient
+            from sec.sec_rss_client import SECRSSClient
             self.db.update_job_progress(job_id, progress_pct=9, progress_message='Checking RSS feed for new Form 4 filings...')
 
             sec_user_agent = os.environ.get('SEC_USER_AGENT', 'Lynch Stock Screener mikey@example.com')

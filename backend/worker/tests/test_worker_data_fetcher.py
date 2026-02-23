@@ -25,7 +25,7 @@ def test_worker_has_data_fetcher_attribute():
 def test_worker_data_fetcher_can_be_used_with_material_events():
     """Test that worker's data_fetcher can be passed to MaterialEventsFetcher"""
     from material_events_fetcher import MaterialEventsFetcher
-    from sec_8k_client import SEC8KClient
+    from sec.sec_8k_client import SEC8KClient
     from edgar_fetcher import EdgarFetcher
 
     worker = BackgroundWorker()

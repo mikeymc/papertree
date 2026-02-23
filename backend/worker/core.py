@@ -11,7 +11,7 @@ import platform
 from typing import Dict, Any
 
 from price_history_fetcher import PriceHistoryFetcher
-from sec_data_fetcher import SECDataFetcher
+from sec.sec_data_fetcher import SECDataFetcher
 from news_fetcher import NewsFetcher
 from material_events_fetcher import MaterialEventsFetcher
 from dividend_manager import DividendManager
