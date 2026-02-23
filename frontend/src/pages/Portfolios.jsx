@@ -441,13 +441,8 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
 
     useEffect(() => {
         fetchValueHistory()
+        fetchTransactions()
     }, [portfolio.id])
-
-    useEffect(() => {
-        if (activeTab === 'transactions') {
-            fetchTransactions()
-        }
-    }, [activeTab, portfolio.id])
 
     const fetchTransactions = async () => {
         setLoadingTransactions(true)
@@ -610,38 +605,40 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                     </TabsList>
                 </div>
 
-                {portfolio.strategy_id && (
-                    <TabsContent value="briefings">
-                        <BriefingsTab portfolioId={portfolio.id} refreshKey={briefingsRefreshKey} />
+                <div className="min-h-[800px] lg:min-h-[1000px]">
+                    {portfolio.strategy_id && (
+                        <TabsContent value="briefings" forceMount hidden={activeTab !== 'briefings'}>
+                            <BriefingsTab portfolioId={portfolio.id} refreshKey={briefingsRefreshKey} />
+                        </TabsContent>
+                    )}
+
+                    {portfolio.strategy_id && (
+                        <TabsContent value="runs" forceMount hidden={activeTab !== 'runs'}>
+                            <StrategyRunsTab strategyId={portfolio.strategy_id} runsCount={portfolio.strategy_runs_count} />
+                        </TabsContent>
+                    )}
+
+                    <TabsContent value="holdings" forceMount hidden={activeTab !== 'holdings'}>
+                        <HoldingsTab portfolio={portfolio} portfolioId={portfolio.id} isAutonomous={!!portfolio.strategy_id} />
                     </TabsContent>
-                )}
 
-                {portfolio.strategy_id && (
-                    <TabsContent value="runs">
-                        <StrategyRunsTab strategyId={portfolio.strategy_id} runsCount={portfolio.strategy_runs_count} />
-                    </TabsContent>
-                )}
-
-                <TabsContent value="holdings">
-                    <HoldingsTab portfolio={portfolio} portfolioId={portfolio.id} isAutonomous={!!portfolio.strategy_id} />
-                </TabsContent>
-
-                {!portfolio.strategy_id && (
-                    <TabsContent value="trade">
-                        <TradeTab
-                            portfolioId={portfolio.id}
-                            cash={cash}
-                            holdings={holdings}
-                            onTradeComplete={onRefresh}
+                    {!portfolio.strategy_id && (
+                        <TabsContent value="trade" forceMount hidden={activeTab !== 'trade'}>
+                            <TradeTab
+                                portfolioId={portfolio.id}
+                                cash={cash}
+                                holdings={holdings}
+                                onTradeComplete={onRefresh}
+                            />
+                        </TabsContent>
+                    )}
+                    <TabsContent value="transactions" forceMount hidden={activeTab !== 'transactions'}>
+                        <TransactionsTab
+                            transactions={transactions}
+                            loading={loadingTransactions}
                         />
                     </TabsContent>
-                )}
-                <TabsContent value="transactions">
-                    <TransactionsTab
-                        transactions={transactions}
-                        loading={loadingTransactions}
-                    />
-                </TabsContent>
+                </div>
             </Tabs>
         </div>
     )
@@ -897,7 +894,7 @@ function TradeTab({ portfolioId, cash, holdings, onTradeComplete }) {
 }
 
 function TransactionsTab({ transactions, loading }) {
-    if (loading) {
+    if (loading && transactions.length === 0) {
         return (
             <Card>
                 <CardContent className="py-8">
