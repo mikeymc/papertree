@@ -1,0 +1,24 @@
+name: Cron - System
+
+on:
+  schedule:
+    # Alerts check - every hour at :03
+    - cron: '3 * * * *'
+  workflow_dispatch:
+    inputs:
+      job_type:
+        description: 'Job type to run'
+        required: true
+        type: choice
+        options:
+          - check_alerts
+
+jobs:
+  check_alerts:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'check_alerts' || github.event.schedule == '3 * * * *'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'check_alerts'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}

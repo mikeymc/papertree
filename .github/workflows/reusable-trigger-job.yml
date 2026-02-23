@@ -1,0 +1,87 @@
+name: Trigger Background Job
+
+on:
+  workflow_call:
+    inputs:
+      job_type:
+        description: 'Type of job to trigger'
+        required: true
+        type: string
+      job_params:
+        description: 'JSON string of parameters to pass to the API'
+        required: false
+        type: string
+        default: '{}'
+    secrets:
+      API_URL:
+        required: true
+      API_TOKEN:
+        required: true
+
+jobs:
+  run-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger background job
+        id: trigger-job
+        run: |
+          JOB_TYPE="${{ inputs.job_type }}"
+          PARAMS='${{ inputs.job_params }}'
+          
+          echo "Triggering job: $JOB_TYPE with params: $PARAMS"
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.API_URL }}/api/jobs" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.API_TOKEN }}" \
+            -d "{\"type\": \"$JOB_TYPE\", \"params\": $PARAMS}")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Response: $BODY"
+          echo "HTTP Code: $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Failed to trigger job"
+            exit 1
+          fi
+          
+          JOB_ID=$(echo "$BODY" | jq -r '.job_id')
+          echo "Job ID: $JOB_ID"
+          echo "job_id=$JOB_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait for job to complete
+        run: |
+          JOB_ID="${{ steps.trigger-job.outputs.job_id }}"
+          API_URL="${{ secrets.API_URL }}/api/jobs/$JOB_ID"
+          TOKEN="${{ secrets.API_TOKEN }}"
+          
+          echo "Polling job status at: $API_URL"
+          
+          while true; do
+            RESPONSE=$(curl -s -X GET "$API_URL" \
+              -H "Authorization: Bearer $TOKEN")
+              
+            STATUS=$(echo "$RESPONSE" | jq -r '.status')
+            ERROR=$(echo "$RESPONSE" | jq -r '.error // empty')
+            
+            echo "Current status: $STATUS"
+            
+            if [ "$STATUS" = "completed" ] || [ "$STATUS" = "success" ]; then
+              echo "Job completed successfully!"
+              break
+            elif [ "$STATUS" = "failed" ] || [ "$STATUS" = "error" ]; then
+              echo "Job failed!"
+              if [ -n "$ERROR" ]; then
+                echo "Error details: $ERROR"
+              fi
+              exit 1
+            elif [ "$STATUS" = "cancelled" ]; then
+              echo "Job was cancelled!"
+              exit 1
+            fi
+            
+            # Sleep for 30 seconds before polling again
+            sleep 30
+          done

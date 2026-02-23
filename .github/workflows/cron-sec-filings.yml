@@ -1,0 +1,72 @@
+name: Cron - SEC Filings
+
+on:
+  schedule:
+    # 8-K cache every 2 hours from 6am-8pm ET on weekdays
+    - cron: '12 11 * * 1-5'
+    - cron: '12 13 * * 1-5'
+    - cron: '12 15 * * 1-5'
+    - cron: '12 17 * * 1-5'
+    - cron: '12 19 * * 1-5'
+    - cron: '12 21 * * 1-5'
+    - cron: '12 23 * * 1-5'
+    - cron: '12 1 * * 2-6'
+    # 10K cache - every 2 hours (:22)
+    - cron: '22 11 * * 1-5'
+    - cron: '22 13 * * 1-5'
+    - cron: '22 15 * * 1-5'
+    - cron: '22 17 * * 1-5'
+    - cron: '22 19 * * 1-5'
+    - cron: '22 21 * * 1-5'
+    - cron: '22 23 * * 1-5'
+    - cron: '22 1 * * 2-6'
+    # Form 4 cache - every 2 hours (:32)
+    - cron: '32 11 * * 1-5'
+    - cron: '32 13 * * 1-5'
+    - cron: '32 15 * * 1-5'
+    - cron: '32 17 * * 1-5'
+    - cron: '32 19 * * 1-5'
+    - cron: '32 21 * * 1-5'
+    - cron: '32 23 * * 1-5'
+    - cron: '32 1 * * 2-6'
+  workflow_dispatch:
+    inputs:
+      job_type:
+        description: 'Job type to run'
+        required: true
+        type: choice
+        options:
+          - 8k_cache
+          - 10k_cache
+          - form4_cache
+
+jobs:
+  cache_8k:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == '8k_cache' || startsWith(github.event.schedule, '12 ')
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: '8k_cache'
+      job_params: '{"use_rss": true}'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  cache_10k:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == '10k_cache' || startsWith(github.event.schedule, '22 ')
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: '10k_cache'
+      job_params: '{"use_rss": true}'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  form4_cache:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'form4_cache' || startsWith(github.event.schedule, '32 ')
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'form4_cache'
+      job_params: '{"region": "us", "use_rss": true}'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}

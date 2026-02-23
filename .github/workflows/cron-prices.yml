@@ -1,0 +1,38 @@
+name: Cron - Prices
+
+on:
+  schedule:
+    # Price Update - 4am ET to 8pm ET on weekdays
+    - cron: '*/5 9-23 * * 1-5' # 4am - 6:55pm ET Mon-Fri
+    - cron: '*/5 0 * * 2-6'    # 7pm - 7:55pm ET Mon-Fri (12am-1am UTC Tue-Sat)
+    # Price history cache at 11:00 PM ET S-Th (4:00 AM UTC M-F)
+    - cron: '0 4 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      job_type:
+        description: 'Job type to run'
+        required: true
+        type: choice
+        options:
+          - price_update
+          - price_history_cache
+
+jobs:
+  price_update:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'price_update' || github.event.schedule == '*/5 9-23 * * 1-5' || github.event.schedule == '*/5 0 * * 2-6'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'price_update'
+      job_params: '{"regions": ["us"]}'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  price_history_cache:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'price_history_cache' || github.event.schedule == '0 4 * * 1-5'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'price_history_cache'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}

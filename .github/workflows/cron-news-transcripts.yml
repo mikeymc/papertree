@@ -1,0 +1,59 @@
+name: Cron - News & Transcripts
+
+on:
+  schedule:
+    # News cache every 2 hours from 6am-8pm ET on weekdays
+    - cron: '2 11 * * 1-5'
+    - cron: '2 13 * * 1-5'
+    - cron: '2 15 * * 1-5'
+    - cron: '2 17 * * 1-5'
+    - cron: '2 19 * * 1-5'
+    - cron: '2 21 * * 1-5'
+    - cron: '2 23 * * 1-5'
+    - cron: '2 1 * * 2-6'
+    # Outlook cache at 12:00 AM ET weekdays (5:00 AM UTC M-F)
+    - cron: '0 5 * * 1-5'
+    # Transcript cache - runs 4x weekdays
+    - cron: '36 5 * * 1-5'
+    - cron: '36 11 * * 1-5'
+    - cron: '36 17 * * 1-5'
+    - cron: '36 23 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      job_type:
+        description: 'Job type to run'
+        required: true
+        type: choice
+        options:
+          - news_cache
+          - outlook_cache
+          - transcript_cache
+
+jobs:
+  news_cache:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'news_cache' || startsWith(github.event.schedule, '2 ')
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'news_cache'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  outlook_cache:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'outlook_cache' || github.event.schedule == '0 5 * * 1-5'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'outlook_cache'
+      job_params: '{"region": "us"}'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  transcript_cache:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'transcript_cache' || startsWith(github.event.schedule, '36 ')
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'transcript_cache'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}

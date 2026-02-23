@@ -1,0 +1,48 @@
+name: Cron - Portfolios
+
+on:
+  schedule:
+    # Strategy execution at 9:31 AM ET (2:31 PM UTC) on weekdays - just after market open
+    - cron: '31 14 * * 1-5'
+    # Benchmark snapshot at 4:06 PM ET (9:06 PM UTC) on weekdays - Market Close
+    - cron: '6 21 * * 1-5'
+    # Portfolio sweep (dividends, snapshots, benchmark) at 9:00 PM ET weekdays (2:00 AM UTC Tue-Sat)
+    - cron: '0 2 * * 2-6'
+  workflow_dispatch:
+    inputs:
+      job_type:
+        description: 'Job type to run'
+        required: true
+        type: choice
+        options:
+          - strategy_execution
+          - benchmark_snapshot
+          - portfolio_sweep
+
+jobs:
+  strategy_execution:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'strategy_execution' || github.event.schedule == '31 14 * * 1-5'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'strategy_execution'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  benchmark_snapshot:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'benchmark_snapshot' || github.event.schedule == '6 21 * * 1-5'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'benchmark_snapshot'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  portfolio_sweep:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'portfolio_sweep' || github.event.schedule == '0 2 * * 2-6'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'portfolio_sweep'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}

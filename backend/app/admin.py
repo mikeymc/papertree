@@ -183,57 +183,115 @@ def get_job_stats():
 def get_job_schedule():
     """Parse .github/workflows/scheduled-jobs.yml to return the job schedule"""
     try:
-        # Resolve path to the workflow file
-        # In local dev: it's root/.github/... and we are in root/backend/app/admin.py
-        # In Docker: it's /app/.github/... and we are in /app/app/admin.py
+        # Try to find the directory containing the workflow files
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        
-        # Try both locations
-        paths_to_try = [
-            os.path.join(os.path.dirname(base_dir), '.github/workflows/scheduled-jobs.yml'), # Local: root/.github
-            os.path.join(base_dir, '.github/workflows/scheduled-jobs.yml'),               # Docker: /app/.github
-            '.github/workflows/scheduled-jobs.yml'                                         # Fallback
+        workflows_dirs_to_try = [
+            os.path.join(os.path.dirname(base_dir), '.github/workflows'), # Local
+            os.path.join(base_dir, '.github/workflows'),                  # Docker
+            '.github/workflows'                                           # Fallback
         ]
         
-        yaml_path = None
-        for path in paths_to_try:
-            if os.path.exists(path):
-                yaml_path = path
+        workflows_dir = None
+        for path in workflows_dirs_to_try:
+            if os.path.exists(path) and os.path.isdir(path):
+                workflows_dir = path
                 break
-        
-        if not yaml_path:
-            logger.error(f"Schedule file not found in any of: {paths_to_try}")
-            return jsonify({'error': 'Schedule file not found'}), 404
+                
+        if not workflows_dir:
+            logger.error(f"Workflows directory not found in any of: {workflows_dirs_to_try}")
+            return jsonify({'error': 'Workflows directory not found'}), 404
             
-        with open(yaml_path, 'r') as f:
-            content = f.read()
-            data = yaml.safe_load(content)
-            
-        # Extract crons from the 'on' section
-        on_block = data.get('on') or data.get(True)
-        crons = on_block.get('schedule', []) if on_block else []
-        cron_list = [c.get('cron') for c in crons if c.get('cron')]
-        
-        # Extract job type mapping
-        mapping = {}
-        case_block = re.search(r'case "\$SCHEDULE" in(.*?)\sesac', content, re.DOTALL)
-        if case_block:
-            case_content = case_block.group(1)
-            matches = re.finditer(r'"(.*?)"\)\s+echo "type=(.*?)"', case_content)
-            for m in matches:
-                mapping[m.group(1)] = m.group(2)
-        
-        # Group by job type
         grouped_jobs = {}
-        for cron in cron_list:
-            job_type = mapping.get(cron, 'unknown')
-            if job_type not in grouped_jobs:
-                grouped_jobs[job_type] = {
-                    'job_type': job_type,
-                    'crons': [],
-                    'description': get_job_description(job_type)
-                }
-            grouped_jobs[job_type]['crons'].append(cron)
+        
+        # Scan all yaml files in the workflows directory
+        for filename in os.listdir(workflows_dir):
+            if not filename.endswith('.yml') or filename == 'reusable-trigger-job.yml':
+                continue
+                
+            yaml_path = os.path.join(workflows_dir, filename)
+            try:
+                with open(yaml_path, 'r') as f:
+                    content = f.read()
+                    data = yaml.safe_load(content)
+            except Exception as e:
+                logger.warning(f"Error parsing yaml {yaml_path}: {e}")
+                continue
+                
+            if not data:
+                continue
+                
+            # Extract crons from the 'on' section
+            on_block = data.get('on') or data.get(True)
+            if not on_block:
+                continue
+                
+            crons = on_block.get('schedule', []) if isinstance(on_block, dict) else []
+            cron_list = [c.get('cron') for c in crons if c.get('cron')]
+            
+            if not cron_list:
+                continue
+                
+            # Job types are defined in the 'jobs' section
+            jobs_block = data.get('jobs', {})
+            for job_id, job_config in jobs_block.items():
+                if not isinstance(job_config, dict):
+                    continue
+                    
+                # The actual job_type string passed to the reusable job
+                with_block = job_config.get('with', {})
+                job_type = with_block.get('job_type')
+                
+                # If we couldn't find it in the `with:` block, try the job ID
+                if not job_type:
+                    # In python yaml parsing, sometimes things don't map perfectly if they use expressions
+                    # So we'll fall back to the job id and mapping standard names
+                    job_type = job_id.replace('cache_', '') + '_cache' if job_id.startswith('cache_') else job_id
+                
+                # Exclude if it's not a known job type and we can't get a description
+                desc = get_job_description(job_type)
+                if desc == 'No description provided' and job_type not in ['price_update', 'check_alerts', 'full_screening', 'news_cache', '8k_cache', '10k_cache', 'form4_cache', 'price_history_cache', 'outlook_cache', 'transcript_cache', 'forward_metrics_cache', 'thesis_refresher', 'strategy_execution', 'benchmark_snapshot', 'portfolio_sweep']:
+                     continue
+                     
+                if job_type not in grouped_jobs:
+                    grouped_jobs[job_type] = {
+                        'job_type': job_type,
+                        'crons': [],
+                        'description': desc
+                    }
+                    
+                # Determine which crons belong to this specific job based on the `if` condition
+                if_condition = job_config.get('if', '')
+                
+                # If there is no if condition, or if it doesn't mention schedule, assume all crons apply
+                if not if_condition or 'github.event.schedule' not in if_condition:
+                    matched_crons = cron_list
+                else:
+                    # Look for explicit exact matches: github.event.schedule == '0 4 * * 1-5'
+                    matched_crons = []
+                    for cron in cron_list:
+                        # Check exact match
+                        if f"github.event.schedule == '{cron}'" in if_condition:
+                            matched_crons.append(cron)
+                        elif f'github.event.schedule == "{cron}"' in if_condition:
+                            matched_crons.append(cron)
+                        # Check startsWith match (used for SEC/News jobs that run frequently)
+                        # e.g. startsWith(github.event.schedule, '12 ')
+                        elif 'startsWith(github.event.schedule' in if_condition:
+                            # Extract the prefix being searched for
+                            prefix_match = re.search(r"startsWith.*?['\"]([^'\"]+)['\"]", if_condition)
+                            if prefix_match:
+                                prefix = prefix_match.group(1)
+                                if cron.startswith(prefix):
+                                    matched_crons.append(cron)
+                                    
+                    # Fallback if our parsing failed but it has an if condition: assume it matches everything in the file
+                    # This happens if there's complex logic we didn't account for
+                    if not matched_crons:
+                         matched_crons = cron_list
+                         
+                for cron in matched_crons:
+                    if cron not in grouped_jobs[job_type]['crons']:
+                         grouped_jobs[job_type]['crons'].append(cron)
         
         # Build the final schedule objects with EST conversion
         schedule = []
@@ -253,10 +311,6 @@ def get_job_schedule():
                 # Convert to EST
                 est_times.append(cron_to_est(cron))
             
-            # Sort EST times (roughly)
-            # This is tricky because they are strings like "6a", "12p"
-            # We'll just keep them in order of appearance for now
-            
             schedule.append({
                 'job_type': job_type,
                 'est_times': ", ".join(est_times),
@@ -269,6 +323,7 @@ def get_job_schedule():
     except Exception as e:
         logger.error(f"Error fetching job schedule: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 def cron_to_est(cron):
     """Simple conversion of UTC cron to EST (UTC-5) human time"""

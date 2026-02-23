@@ -1,0 +1,48 @@
+name: Cron - Screening
+
+on:
+  schedule:
+    # Full screening at 8:00 PM ET S-Th (1:00 AM UTC M-F)
+    - cron: '0 1 * * 1-5'
+    # Forward metrics cache at 2:00 AM ET weekdays (7:00 AM UTC M-F)
+    - cron: '0 7 * * 1-5'
+    # Thesis refresh at 3:00 AM ET (8:00 AM UTC) on weekdays - before market open
+    - cron: '0 8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      job_type:
+        description: 'Job type to run'
+        required: true
+        type: choice
+        options:
+          - full_screening
+          - forward_metrics_cache
+          - thesis_refresher
+
+jobs:
+  full_screening:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'full_screening' || github.event.schedule == '0 1 * * 1-5'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'full_screening'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  forward_metrics_cache:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'forward_metrics_cache' || github.event.schedule == '0 7 * * 1-5'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'forward_metrics_cache'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+
+  thesis_refresher:
+    if: github.event_name == 'workflow_dispatch' && inputs.job_type == 'thesis_refresher' || github.event.schedule == '0 8 * * 1-5'
+    uses: ./.github/workflows/reusable-trigger-job.yml
+    with:
+      job_type: 'thesis_refresher'
+    secrets:
+      API_URL: ${{ secrets.API_URL }}
+      API_TOKEN: ${{ secrets.API_TOKEN }}
