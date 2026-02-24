@@ -5,6 +5,9 @@ import pytest
 import psycopg
 import sys
 import os
+import logging
+
+logging.getLogger('yoyo.migrations').setLevel(logging.WARNING)
 
 # Add backend directory to Python path for all test imports
 # This must happen at module level, before any test collection
