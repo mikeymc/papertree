@@ -61,74 +61,6 @@ class TestSECRSSClient:
         assert client.headers == {'User-Agent': "Test User Agent test@example.com"}
         assert client._cik_to_ticker_cache is None
 
-    @patch('sec.sec_rss_client.requests.get')
-    def test_get_tickers_with_new_filings_success(self, mock_get, client, sample_rss_response, sample_cik_mapping):
-        """Test successfully fetching tickers with new filings"""
-        # Mock RSS feed response
-        rss_mock = Mock()
-        rss_mock.content = sample_rss_response.encode('utf-8')
-        rss_mock.raise_for_status = Mock()
-
-        # Mock CIK mapping response
-        mapping_mock = Mock()
-        mapping_mock.json.return_value = sample_cik_mapping
-        mapping_mock.raise_for_status = Mock()
-
-        # Return RSS feed first, then CIK mapping
-        mock_get.side_effect = [rss_mock, mapping_mock]
-
-        # Execute
-        known_tickers = {'AAPL', 'MSFT', 'GOOGL', 'TSLA'}
-        result = client.get_tickers_with_new_filings('8-K', known_tickers=known_tickers)
-
-        # Verify
-        assert result == {'AAPL', 'MSFT', 'GOOGL'}
-        assert len(result) == 3
-        assert 'TSLA' not in result  # No filing in RSS
-
-    @patch('sec.sec_rss_client.requests.get')
-    def test_get_tickers_filters_to_known_tickers(self, mock_get, client, sample_rss_response, sample_cik_mapping):
-        """Test that results are filtered to known tickers"""
-        # Mock responses
-        rss_mock = Mock()
-        rss_mock.content = sample_rss_response.encode('utf-8')
-        rss_mock.raise_for_status = Mock()
-
-        mapping_mock = Mock()
-        mapping_mock.json.return_value = sample_cik_mapping
-        mapping_mock.raise_for_status = Mock()
-
-        mock_get.side_effect = [rss_mock, mapping_mock]
-
-        # Only provide subset of known tickers
-        known_tickers = {'AAPL', 'TSLA'}  # MSFT and GOOGL not in known_tickers
-        result = client.get_tickers_with_new_filings('8-K', known_tickers=known_tickers)
-
-        # Should only return AAPL (in both RSS and known_tickers)
-        assert result == {'AAPL'}
-        assert 'MSFT' not in result  # Has filing but not in known_tickers
-        assert 'GOOGL' not in result  # Has filing but not in known_tickers
-
-    @patch('sec.sec_rss_client.requests.get')
-    def test_get_tickers_without_filter(self, mock_get, client, sample_rss_response, sample_cik_mapping):
-        """Test fetching tickers without known_tickers filter"""
-        # Mock responses
-        rss_mock = Mock()
-        rss_mock.content = sample_rss_response.encode('utf-8')
-        rss_mock.raise_for_status = Mock()
-
-        mapping_mock = Mock()
-        mapping_mock.json.return_value = sample_cik_mapping
-        mapping_mock.raise_for_status = Mock()
-
-        mock_get.side_effect = [rss_mock, mapping_mock]
-
-        # No known_tickers filter
-        result = client.get_tickers_with_new_filings('8-K', known_tickers=None)
-
-        # Should return all tickers found in RSS
-        assert result == {'AAPL', 'MSFT', 'GOOGL'}
-
     def test_form_type_mapping(self, client):
         """Test that form types are correctly mapped"""
         assert SECRSSClient.FORM_TYPE_MAPPING['8-K'] == '8-K'
@@ -137,46 +69,12 @@ class TestSECRSSClient:
         assert SECRSSClient.FORM_TYPE_MAPPING['FORM4'] == '4'
 
     @patch('sec.sec_rss_client.requests.get')
-    def test_unknown_form_type(self, mock_get, client):
-        """Test handling of unknown form type"""
-        result = client.get_tickers_with_new_filings('UNKNOWN-FORM')
-        assert result == set()
-        mock_get.assert_not_called()
-
-    @patch('sec.sec_rss_client.requests.get')
-    def test_rss_fetch_error(self, mock_get, client):
+    def test_rss_fetch_when_error_returns_empty_set(self, mock_get, client, test_db):
         """Test handling of RSS fetch errors"""
         mock_get.side_effect = Exception("Network error")
 
-        result = client.get_tickers_with_new_filings('8-K')
+        result = client.get_tickers_with_new_filings_paginated('8-K', None, test_db)
         assert result == set()
-
-    @patch('sec.sec_rss_client.requests.get')
-    def test_cik_mapping_caches(self, mock_get, client, sample_rss_response, sample_cik_mapping):
-        """Test that CIK mapping is cached after first load"""
-        # Mock responses
-        rss_mock = Mock()
-        rss_mock.content = sample_rss_response.encode('utf-8')
-        rss_mock.raise_for_status = Mock()
-
-        mapping_mock = Mock()
-        mapping_mock.json.return_value = sample_cik_mapping
-        mapping_mock.raise_for_status = Mock()
-
-        # First call: RSS + mapping
-        mock_get.side_effect = [rss_mock, mapping_mock]
-        client.get_tickers_with_new_filings('8-K')
-
-        # Second call: Only RSS (mapping should be cached)
-        rss_mock2 = Mock()
-        rss_mock2.content = sample_rss_response.encode('utf-8')
-        rss_mock2.raise_for_status = Mock()
-        mock_get.side_effect = [rss_mock2]
-
-        client.get_tickers_with_new_filings('8-K')
-
-        # Verify mapping was only fetched once
-        assert mock_get.call_count == 3  # RSS + mapping + RSS (not mapping again)
 
     @pytest.fixture
     def sample_rss_with_ids(self):

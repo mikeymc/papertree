@@ -40,62 +40,6 @@ class SECRSSClient:
         self.headers = {'User-Agent': user_agent}
         self._cik_to_ticker_cache: Optional[Dict[str, str]] = None
 
-    def get_tickers_with_new_filings(self, form_type: str, known_tickers: Optional[Set[str]] = None) -> Set[str]:
-        """
-        Get ticker symbols that have new filings in the RSS feed.
-
-        Args:
-            form_type: Filing type ('8-K', '10-K', '10-Q', 'FORM4')
-            known_tickers: Optional set of tickers to filter to (for efficiency)
-
-        Returns:
-            Set of ticker symbols with new filings
-        """
-        # Map form type to RSS parameter
-        rss_form_type = self.FORM_TYPE_MAPPING.get(form_type)
-        if not rss_form_type:
-            logger.error(f"Unknown form type: {form_type}")
-            return set()
-
-        try:
-            # Fetch RSS feed
-            url = f"{self.RSS_BASE_URL}?action=getcurrent&type={rss_form_type}&output=atom"
-            logger.info(f"Fetching SEC RSS feed for {form_type}: {url}")
-
-            response = requests.get(url, headers=self.headers, timeout=10)
-            response.raise_for_status()
-
-            # Parse XML
-            root = ET.fromstring(response.content)
-            entries = root.findall('atom:entry', self.NAMESPACE)
-
-            logger.info(f"Found {len(entries)} {form_type} filings in RSS feed")
-
-            # Extract CIKs from entries
-            ciks = set()
-            for entry in entries:
-                title = entry.find('atom:title', self.NAMESPACE)
-                if title is not None and title.text:
-                    # Extract CIK from title format: "8-K - COMPANY NAME (CIK) (Filer)"
-                    cik_match = re.search(r'\((\d+)\)', title.text)
-                    if cik_match:
-                        cik = cik_match.group(1).zfill(10)  # Pad to 10 digits
-                        ciks.add(cik)
-
-            logger.info(f"Extracted {len(ciks)} unique CIKs from RSS feed")
-
-            # Map CIKs to tickers
-            tickers = self._map_ciks_to_tickers(ciks, known_tickers)
-
-            logger.info(f"Mapped to {len(tickers)} tickers with new {form_type} filings")
-            return tickers
-
-        except Exception as e:
-            logger.error(f"Error fetching RSS feed for {form_type}: {e}")
-            import traceback
-            traceback.print_exc()
-            return set()
-
     def get_tickers_with_new_filings_paginated(self, form_type: str, known_tickers: Optional[Set[str]], db) -> Set[str]:
         """
         Get ticker symbols with new filings using RSS pagination.
