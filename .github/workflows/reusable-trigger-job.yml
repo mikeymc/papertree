@@ -51,37 +51,3 @@ jobs:
           echo "Job ID: $JOB_ID"
           echo "job_id=$JOB_ID" >> $GITHUB_OUTPUT
 
-      - name: Wait for job to complete
-        run: |
-          JOB_ID="${{ steps.trigger-job.outputs.job_id }}"
-          API_URL="${{ secrets.API_URL }}/api/jobs/$JOB_ID"
-          TOKEN="${{ secrets.API_TOKEN }}"
-          
-          echo "Polling job status at: $API_URL"
-          
-          while true; do
-            RESPONSE=$(curl -s -X GET "$API_URL" \
-              -H "Authorization: Bearer $TOKEN")
-              
-            STATUS=$(echo "$RESPONSE" | jq -r '.status')
-            ERROR=$(echo "$RESPONSE" | jq -r '.error // empty')
-            
-            echo "Current status: $STATUS"
-            
-            if [ "$STATUS" = "completed" ] || [ "$STATUS" = "success" ]; then
-              echo "Job completed successfully!"
-              break
-            elif [ "$STATUS" = "failed" ] || [ "$STATUS" = "error" ]; then
-              echo "Job failed!"
-              if [ -n "$ERROR" ]; then
-                echo "Error details: $ERROR"
-              fi
-              exit 1
-            elif [ "$STATUS" = "cancelled" ]; then
-              echo "Job was cancelled!"
-              exit 1
-            fi
-            
-            # Sleep for 30 seconds before polling again
-            sleep 30
-          done
