@@ -156,6 +156,107 @@ class PortfoliosMixin:
         finally:
             self.return_connection(conn)
 
+    def get_portfolio_trade_history(self, portfolio_id: int) -> List[Dict[str, Any]]:
+        """Build FIFO-matched trade positions from buy/sell transactions.
+
+        Returns a list of positions (closed and open) sorted by entry date descending.
+        Each position includes entry/exit prices, return, hold duration, and
+        strategy reasoning if available.
+        """
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
+            cursor.execute("""
+                SELECT t.id, t.symbol, t.transaction_type, t.quantity,
+                       t.price_per_share, t.executed_at, t.note,
+                       sd.decision_reasoning, sd.thesis_summary
+                FROM portfolio_transactions t
+                LEFT JOIN strategy_decisions sd ON sd.transaction_id = t.id
+                WHERE t.portfolio_id = %s
+                  AND t.transaction_type IN ('BUY', 'SELL')
+                ORDER BY t.executed_at ASC, t.id ASC
+            """, (portfolio_id,))
+            rows = cursor.fetchall()
+        finally:
+            self.return_connection(conn)
+
+        # Group by symbol
+        from collections import defaultdict
+        buys_by_symbol = defaultdict(list)
+        sells_by_symbol = defaultdict(list)
+        for row in rows:
+            entry = {
+                "quantity": row["quantity"],
+                "price": row["price_per_share"],
+                "date": row["executed_at"],
+                "note": row["note"],
+                "reasoning": row["decision_reasoning"],
+                "thesis_summary": row["thesis_summary"],
+            }
+            if row["transaction_type"] == "BUY":
+                buys_by_symbol[row["symbol"]].append(entry)
+            else:
+                sells_by_symbol[row["symbol"]].append(entry)
+
+        # FIFO matching per symbol
+        positions = []
+        for symbol in sorted(set(list(buys_by_symbol.keys()) + list(sells_by_symbol.keys()))):
+            buy_lots = []
+            for b in buys_by_symbol.get(symbol, []):
+                buy_lots.append({**b, "remaining": b["quantity"]})
+
+            for sell in sells_by_symbol.get(symbol, []):
+                remaining_sell = sell["quantity"]
+                while remaining_sell > 0 and buy_lots:
+                    lot = buy_lots[0]
+                    matched = min(lot["remaining"], remaining_sell)
+                    hold_days = (sell["date"] - lot["date"]).days
+                    return_pct = ((sell["price"] - lot["price"]) / lot["price"]) * 100
+
+                    positions.append({
+                        "symbol": symbol,
+                        "shares": matched,
+                        "entry_date": lot["date"].isoformat() if hasattr(lot["date"], 'isoformat') else str(lot["date"]),
+                        "entry_price": lot["price"],
+                        "exit_date": sell["date"].isoformat() if hasattr(sell["date"], 'isoformat') else str(sell["date"]),
+                        "exit_price": sell["price"],
+                        "return_pct": round(return_pct, 2),
+                        "hold_days": hold_days,
+                        "status": "closed",
+                        "entry_note": lot["note"],
+                        "exit_note": sell["note"],
+                        "entry_reasoning": lot["reasoning"],
+                        "exit_reasoning": sell["reasoning"],
+                    })
+
+                    lot["remaining"] -= matched
+                    remaining_sell -= matched
+                    if lot["remaining"] == 0:
+                        buy_lots.pop(0)
+
+            # Remaining buy lots are open positions
+            for lot in buy_lots:
+                if lot["remaining"] > 0:
+                    positions.append({
+                        "symbol": symbol,
+                        "shares": lot["remaining"],
+                        "entry_date": lot["date"].isoformat() if hasattr(lot["date"], 'isoformat') else str(lot["date"]),
+                        "entry_price": lot["price"],
+                        "exit_date": None,
+                        "exit_price": None,
+                        "return_pct": None,
+                        "hold_days": None,
+                        "status": "open",
+                        "entry_note": lot["note"],
+                        "exit_note": None,
+                        "entry_reasoning": lot["reasoning"],
+                        "exit_reasoning": None,
+                    })
+
+        # Sort by entry date descending (most recent first)
+        positions.sort(key=lambda p: p["entry_date"], reverse=True)
+        return positions
+
     def get_portfolio_trade_stats(self, portfolio_id: int) -> Dict[str, Any]:
         """Compute trade statistics from closed positions (buy/sell pairs)."""
         conn = self.get_connection()
