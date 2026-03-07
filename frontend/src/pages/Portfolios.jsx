@@ -390,9 +390,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
     const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams()
     const [activeTab, setActiveTab] = useState(portfolio.strategy_id ? 'briefings' : 'holdings')
-    const [transactions, setTransactions] = useState([])
     const [valueHistory, setValueHistory] = useState([])
-    const [loadingTransactions, setLoadingTransactions] = useState(false)
     const [loadingHistory, setLoadingHistory] = useState(false)
     const [runningJob, setRunningJob] = useState(null)
     const [briefingsRefreshKey, setBriefingsRefreshKey] = useState(0)
@@ -441,23 +439,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
 
     useEffect(() => {
         fetchValueHistory()
-        fetchTransactions()
     }, [portfolio.id])
-
-    const fetchTransactions = async () => {
-        setLoadingTransactions(true)
-        try {
-            const response = await fetch(`/api/portfolios/${portfolio.id}/transactions`)
-            if (response.ok) {
-                const data = await response.json()
-                setTransactions(data.transactions || [])
-            }
-        } catch (err) {
-            console.error('Error fetching transactions:', err)
-        } finally {
-            setLoadingTransactions(false)
-        }
-    }
 
     const fetchValueHistory = async () => {
         setLoadingHistory(true)
@@ -601,7 +583,7 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                         {portfolio.strategy_id && <TabsTrigger value="runs" className="px-1.5 sm:px-4 text-sm">Runs</TabsTrigger>}
                         <TabsTrigger value="holdings" className="px-1.5 sm:px-4 text-sm">Holdings</TabsTrigger>
                         {!portfolio.strategy_id && <TabsTrigger value="trade" className="px-1.5 sm:px-4 text-sm">Trade</TabsTrigger>}
-                        <TabsTrigger value="transactions" className="px-1.5 sm:px-4 text-sm">Transactions</TabsTrigger>
+                        <TabsTrigger value="trade-history" className="px-1.5 sm:px-4 text-sm">Trade History</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -632,11 +614,8 @@ function PortfolioDetail({ portfolio, onBack, onRefresh, onDelete }) {
                             />
                         </TabsContent>
                     )}
-                    <TabsContent value="transactions" forceMount hidden={activeTab !== 'transactions'}>
-                        <TransactionsTab
-                            transactions={transactions}
-                            loading={loadingTransactions}
-                        />
+                    <TabsContent value="trade-history" forceMount hidden={activeTab !== 'trade-history'}>
+                        <TradeHistoryTab portfolioId={portfolio.id} />
                     </TabsContent>
                 </div>
             </Tabs>
@@ -893,8 +872,34 @@ function TradeTab({ portfolioId, cash, holdings, onTradeComplete }) {
     )
 }
 
-function TransactionsTab({ transactions, loading }) {
-    if (loading && transactions.length === 0) {
+function TradeHistoryTab({ portfolioId }) {
+    const [trades, setTrades] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [expandedRows, setExpandedRows] = useState({})
+
+    useEffect(() => {
+        const fetchTrades = async () => {
+            setLoading(true)
+            try {
+                const response = await fetch(`/api/portfolios/${portfolioId}/trade-history`)
+                if (response.ok) {
+                    const data = await response.json()
+                    setTrades(data.trades || [])
+                }
+            } catch (err) {
+                console.error('Error fetching trade history:', err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchTrades()
+    }, [portfolioId])
+
+    const toggleRow = (index) => {
+        setExpandedRows(prev => ({ ...prev, [index]: !prev[index] }))
+    }
+
+    if (loading && trades.length === 0) {
         return (
             <Card>
                 <CardContent className="py-8">
@@ -908,12 +913,12 @@ function TransactionsTab({ transactions, loading }) {
         )
     }
 
-    if (transactions.length === 0) {
+    if (trades.length === 0) {
         return (
             <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                     <Clock className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>No transactions yet.</p>
+                    <p>No trades yet.</p>
                 </CardContent>
             </Card>
         )
@@ -924,39 +929,105 @@ function TransactionsTab({ transactions, loading }) {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead className="w-8"></TableHead>
                         <TableHead>Symbol</TableHead>
+                        <TableHead>Entry</TableHead>
+                        <TableHead className="text-right">Entry $</TableHead>
                         <TableHead className="text-right">Shares</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead>Exit</TableHead>
+                        <TableHead className="text-right">Exit $</TableHead>
+                        <TableHead className="text-right">Return</TableHead>
+                        <TableHead className="text-right">Hold</TableHead>
+                        <TableHead>Status</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {transactions.map(tx => (
-                        <TableRow key={tx.id}>
-                            <TableCell className="text-muted-foreground text-sm">
-                                {formatLocal(tx.executed_at)}
-                            </TableCell>
-                            <TableCell>
-                                <Badge
-                                    variant="outline"
-                                    className={tx.transaction_type === 'BUY'
-                                        ? 'border-emerald-500/50 text-emerald-600 dark:text-emerald-400'
-                                        : 'border-red-500/50 text-red-600 dark:text-red-400'
-                                    }
+                    {trades.map((trade, i) => {
+                        const hasReasoning = trade.entry_reasoning || trade.exit_reasoning || trade.entry_note || trade.exit_note
+                        const isExpanded = expandedRows[i]
+                        return (
+                            <Fragment key={i}>
+                                <TableRow
+                                    className={hasReasoning ? 'cursor-pointer hover:bg-muted/50' : ''}
+                                    onClick={() => hasReasoning && toggleRow(i)}
                                 >
-                                    {tx.transaction_type}
-                                </Badge>
-                            </TableCell>
-                            <TableCell className="font-medium">{tx.symbol}</TableCell>
-                            <TableCell className="text-right">{tx.quantity}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(tx.price_per_share)}</TableCell>
-                            <TableCell className="text-right font-medium">
-                                {formatCurrency(tx.total_value)}
-                            </TableCell>
-                        </TableRow>
-                    ))}
+                                    <TableCell className="w-8 px-2">
+                                        {hasReasoning && (
+                                            isExpanded
+                                                ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="font-medium">{trade.symbol}</TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">
+                                        {formatDate(trade.entry_date)}
+                                    </TableCell>
+                                    <TableCell className="text-right">{formatCurrency(trade.entry_price)}</TableCell>
+                                    <TableCell className="text-right">{trade.shares}</TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">
+                                        {trade.exit_date ? formatDate(trade.exit_date) : '—'}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {trade.exit_price != null ? formatCurrency(trade.exit_price) : '—'}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {trade.return_pct != null ? (
+                                            <span className={trade.return_pct >= 0
+                                                ? 'text-emerald-600 dark:text-emerald-400'
+                                                : 'text-red-600 dark:text-red-400'
+                                            }>
+                                                {formatPercent(trade.return_pct)}
+                                            </span>
+                                        ) : '—'}
+                                    </TableCell>
+                                    <TableCell className="text-right text-muted-foreground text-sm">
+                                        {trade.hold_days != null ? `${trade.hold_days}d` : '—'}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant="outline"
+                                            className={trade.status === 'open'
+                                                ? 'border-blue-500/50 text-blue-600 dark:text-blue-400'
+                                                : 'border-muted-foreground/30 text-muted-foreground'
+                                            }
+                                        >
+                                            {trade.status === 'open' ? 'Open' : 'Closed'}
+                                        </Badge>
+                                    </TableCell>
+                                </TableRow>
+                                {isExpanded && (
+                                    <TableRow>
+                                        <TableCell colSpan={10} className="bg-muted/30 px-6 py-3">
+                                            <div className="space-y-2 text-sm">
+                                                {(trade.entry_note || trade.entry_reasoning) && (
+                                                    <div>
+                                                        <span className="font-medium text-emerald-600 dark:text-emerald-400">Entry: </span>
+                                                        <span className="text-muted-foreground">
+                                                            {trade.entry_note}
+                                                            {trade.entry_reasoning && (
+                                                                <span> — {trade.entry_reasoning}</span>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {(trade.exit_note || trade.exit_reasoning) && (
+                                                    <div>
+                                                        <span className="font-medium text-red-600 dark:text-red-400">Exit: </span>
+                                                        <span className="text-muted-foreground">
+                                                            {trade.exit_note}
+                                                            {trade.exit_reasoning && (
+                                                                <span> — {trade.exit_reasoning}</span>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </Fragment>
+                        )
+                    })}
                 </TableBody>
             </Table>
         </Card>
