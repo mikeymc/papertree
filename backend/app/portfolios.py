@@ -167,6 +167,23 @@ def execute_portfolio_trade(portfolio_id, user_id):
         return jsonify({'error': str(e), 'success': False}), 500
 
 
+@portfolios_bp.route('/api/portfolios/<int:portfolio_id>/trade-history', methods=['GET'])
+@require_user_auth
+def get_portfolio_trade_history(portfolio_id, user_id):
+    """Get FIFO-matched trade positions for a portfolio."""
+    try:
+        portfolio = deps.db.get_portfolio(portfolio_id)
+        is_admin = session.get('user_type') == 'admin'
+        if not portfolio or (portfolio['user_id'] != user_id and not is_admin):
+            return jsonify({'error': 'Portfolio not found'}), 404
+
+        trades = deps.db.get_portfolio_trade_history(portfolio_id)
+        return jsonify({'trades': trades})
+    except Exception as e:
+        logger.error(f"Error getting trade history for portfolio {portfolio_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @portfolios_bp.route('/api/portfolios/<int:portfolio_id>/trade-stats', methods=['GET'])
 @require_user_auth
 def get_portfolio_trade_stats(portfolio_id, user_id):
