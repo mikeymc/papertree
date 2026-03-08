@@ -46,6 +46,38 @@ export const earningsResponse = {
   },
 }
 
+export const insiderIntentResponse = {
+  insider_intent: {
+    filings: [
+      {
+        id: 1,
+        symbol: 'AAPL',
+        accession_number: '0001234567-26-000001',
+        filing_date: '2026-03-05',
+        insider_name: 'Tim Cook',
+        relationship: 'CEO',
+        shares_to_sell: 50000,
+        estimated_value: 9750000.0,
+        is_10b51_plan: false,
+        filing_url: 'https://sec.gov/filing/1',
+      },
+      {
+        id: 2,
+        symbol: 'MSFT',
+        accession_number: '0001234567-26-000002',
+        filing_date: '2026-02-28',
+        insider_name: 'Satya Nadella',
+        relationship: 'CEO',
+        shares_to_sell: 30000,
+        estimated_value: 12600000.0,
+        is_10b51_plan: true,
+        filing_url: 'https://sec.gov/filing/2',
+      },
+    ],
+    total_count: 2,
+  },
+}
+
 export const moversResponse = {
   gainers: [
     { symbol: 'NVDA', name: 'NVIDIA Corp.', change_pct: 5.2, price: 875.00, overall_status: 'excellent' },

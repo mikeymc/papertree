@@ -735,6 +735,36 @@ def get_dashboard_theses(user_id):
         return jsonify({'error': str(e)}), 500
 
 
+@dashboard_bp.route('/api/dashboard/insider-intent', methods=['GET'])
+@require_user_auth
+def get_dashboard_insider_intent(user_id):
+    """Get recent Form 144 filings for stocks in user's watchlist and portfolios."""
+    try:
+        watchlist_symbols = deps.db.get_watchlist(user_id)
+        portfolios = deps.db.get_user_portfolios(user_id)
+        portfolio_symbols = set()
+        for p in portfolios:
+            try:
+                holdings = deps.db.get_portfolio_holdings(p['id'])
+                portfolio_symbols.update(holdings.keys())
+            except Exception:
+                pass
+
+        all_symbols = set(watchlist_symbols) | portfolio_symbols
+
+        if not all_symbols:
+            return jsonify({
+                'insider_intent': {'filings': [], 'total_count': 0}
+            })
+
+        limit = int(request.args.get('limit', 10))
+        result = deps.db.get_form144_filings_multi(list(all_symbols), limit=limit)
+        return jsonify({'insider_intent': result})
+    except Exception as e:
+        logger.error(f"Error getting dashboard insider intent: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @dashboard_bp.route('/api/dashboard', methods=['GET'])
 @require_user_auth
 def get_dashboard(user_id):

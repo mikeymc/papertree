@@ -13,6 +13,7 @@ import AlertsSummary from '@/components/dashboard/AlertsSummary'
 import EarningsCalendar from '@/components/dashboard/EarningsCalendar'
 import NewsFeed from '@/components/dashboard/NewsFeed'
 import NewTheses from '@/components/dashboard/NewTheses'
+import InsiderIntent from '@/components/dashboard/InsiderIntent'
 import { useAuth } from '@/context/AuthContext'
 
 const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
@@ -44,6 +45,11 @@ export default function Dashboard({ activeCharacter }) {
             {/* Row 4: Market Movers */}
             <div className="grid gap-6">
                 <MarketMovers activeCharacter={activeCharacter} />
+            </div>
+
+            {/* Row 5: Insider Intent */}
+            <div className="grid gap-6">
+                <InsiderIntent />
             </div>
         </div>
     )

@@ -863,24 +863,69 @@ class FilingsMixin:
         rows = cursor.fetchall()
         self.return_connection(conn)
 
-        return [
-            {
-                'id': row[0],
-                'symbol': row[1],
-                'accession_number': row[2],
-                'filing_date': row[3].isoformat() if row[3] else None,
-                'insider_name': row[4],
-                'insider_cik': row[5],
-                'relationship': row[6],
-                'securities_class': row[7],
-                'shares_to_sell': row[8],
-                'estimated_value': row[9],
-                'approx_sale_date': row[10].isoformat() if row[10] else None,
-                'acquisition_nature': row[11],
-                'is_10b51_plan': row[12],
-                'plan_adoption_date': row[13].isoformat() if row[13] else None,
-                'filing_url': row[14],
-                'created_at': row[15].isoformat() if row[15] else None,
+        return [self._form144_row_to_dict(row) for row in rows]
+
+    def get_form144_filings_multi(self, symbols: List[str], limit: int = 10) -> Dict[str, Any]:
+        """
+        Get recent Form 144 filings across multiple symbols.
+
+        Args:
+            symbols: List of stock ticker symbols
+            limit: Max total filings to return
+
+        Returns:
+            Dict with 'filings' list and 'total_count'
+        """
+        if not symbols:
+            return {'filings': [], 'total_count': 0}
+
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT COUNT(*) FROM form144_filings
+                WHERE symbol = ANY(%s)
+            """, (list(symbols),))
+            total_count = cursor.fetchone()[0]
+
+            cursor.execute("""
+                SELECT id, symbol, accession_number, filing_date, insider_name, insider_cik,
+                       relationship, securities_class, shares_to_sell, estimated_value,
+                       approx_sale_date, acquisition_nature, is_10b51_plan, plan_adoption_date,
+                       filing_url, created_at
+                FROM form144_filings
+                WHERE symbol = ANY(%s)
+                ORDER BY filing_date DESC
+                LIMIT %s
+            """, (list(symbols), limit))
+            rows = cursor.fetchall()
+
+            return {
+                'filings': [self._form144_row_to_dict(row) for row in rows],
+                'total_count': total_count,
             }
-            for row in rows
-        ]
+        finally:
+            self.return_connection(conn)
+
+    @staticmethod
+    def _form144_row_to_dict(row) -> Dict[str, Any]:
+        """Convert a form144_filings row tuple to a dict."""
+        return {
+            'id': row[0],
+            'symbol': row[1],
+            'accession_number': row[2],
+            'filing_date': row[3].isoformat() if row[3] else None,
+            'insider_name': row[4],
+            'insider_cik': row[5],
+            'relationship': row[6],
+            'securities_class': row[7],
+            'shares_to_sell': row[8],
+            'estimated_value': row[9],
+            'approx_sale_date': row[10].isoformat() if row[10] else None,
+            'acquisition_nature': row[11],
+            'is_10b51_plan': row[12],
+            'plan_adoption_date': row[13].isoformat() if row[13] else None,
+            'filing_url': row[14],
+            'created_at': row[15].isoformat() if row[15] else None,
+        }

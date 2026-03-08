@@ -258,3 +258,54 @@ class TestDashboardEarningsEndpoint:
             for call in execute_calls:
                 sql = call[0][0]
                 assert "sm.symbol = ANY(%s)" not in sql
+
+
+class TestDashboardInsiderIntentEndpoint:
+    """Tests for GET /api/dashboard/insider-intent"""
+
+    def test_get_insider_intent(self, client, mock_db):
+        """Test getting insider intent filings for dashboard."""
+        mock_db.get_user_by_id.return_value = {"id": 1, "user_type": "regular"}
+        mock_db.get_form144_filings_multi.return_value = {
+            'filings': [
+                {
+                    'id': 1,
+                    'symbol': 'AAPL',
+                    'insider_name': 'Tim Cook',
+                    'relationship': 'CEO',
+                    'shares_to_sell': 50000,
+                    'estimated_value': 9750000.0,
+                    'filing_date': '2026-03-01',
+                    'is_10b51_plan': False,
+                },
+            ],
+            'total_count': 1,
+        }
+
+        with client.session_transaction() as sess:
+            sess['user_id'] = 1
+
+        with patch('app.deps.db', mock_db):
+            response = client.get('/api/dashboard/insider-intent')
+            assert response.status_code == 200
+            data = response.get_json()
+            assert 'insider_intent' in data
+            assert len(data['insider_intent']['filings']) == 1
+            assert data['insider_intent']['filings'][0]['symbol'] == 'AAPL'
+            assert data['insider_intent']['total_count'] == 1
+
+    def test_insider_intent_empty_watchlist(self, client, mock_db):
+        """Test insider intent returns empty when user has no stocks."""
+        mock_db.get_user_by_id.return_value = {"id": 1, "user_type": "regular"}
+        mock_db.get_watchlist.return_value = []
+        mock_db.get_user_portfolios.return_value = []
+
+        with client.session_transaction() as sess:
+            sess['user_id'] = 1
+
+        with patch('app.deps.db', mock_db):
+            response = client.get('/api/dashboard/insider-intent')
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data['insider_intent']['filings'] == []
+            assert data['insider_intent']['total_count'] == 0
