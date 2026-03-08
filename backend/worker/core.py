@@ -190,6 +190,8 @@ class BackgroundWorkerCore:
             self._run_8k_cache(job_id, params)
         elif job_type == 'form4_cache':
             self._run_form4_cache(job_id, params)
+        elif job_type == 'form144_cache':
+            self._run_form144_cache(job_id, params)
         elif job_type == 'outlook_cache':
             self._run_outlook_cache(job_id, params)
         elif job_type == 'transcript_cache':

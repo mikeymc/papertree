@@ -18,22 +18,22 @@ class TestSECRSSClient:
     def sample_rss_response(self):
         """Sample RSS feed XML response"""
         return """<?xml version="1.0" encoding="ISO-8859-1" ?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-<title>Latest Filings</title>
-<entry>
-<title>8-K - APPLE INC (0000320193) (Filer)</title>
-<updated>2024-01-28T17:30:59-05:00</updated>
-</entry>
-<entry>
-<title>8-K - MICROSOFT CORP (0000789019) (Filer)</title>
-<updated>2024-01-28T17:29:54-05:00</updated>
-</entry>
-<entry>
-<title>8-K - ALPHABET INC (0001652044) (Filer)</title>
-<updated>2024-01-28T17:28:57-05:00</updated>
-</entry>
-</feed>"""
-
+                      <feed xmlns="http://www.w3.org/2005/Atom">
+                      <title>Latest Filings</title>
+                      <entry>
+                      <title>8-K - APPLE INC (0000320193) (Filer)</title>
+                      <updated>2024-01-28T17:30:59-05:00</updated>
+                      </entry>
+                      <entry>
+                      <title>8-K - MICROSOFT CORP (0000789019) (Filer)</title>
+                      <updated>2024-01-28T17:29:54-05:00</updated>
+                      </entry>
+                      <entry>
+                      <title>8-K - ALPHABET INC (0001652044) (Filer)</title>
+                      <updated>2024-01-28T17:28:57-05:00</updated>
+                      </entry>
+                </feed>"""
+                
     @pytest.fixture
     def sample_cik_mapping(self):
         """Sample CIK-to-ticker mapping"""
@@ -55,18 +55,35 @@ class TestSECRSSClient:
             }
         }
 
-    def test_initialization(self, client):
+    def test_client_initializes_with_agent_and_headers(self, client):
         """Test client initializes correctly"""
         assert client.user_agent == "Test User Agent test@example.com"
         assert client.headers == {'User-Agent': "Test User Agent test@example.com"}
         assert client._cik_to_ticker_cache is None
 
-    def test_form_type_mapping(self, client):
+    def test_form_type_mappings(self, client):
         """Test that form types are correctly mapped"""
         assert SECRSSClient.FORM_TYPE_MAPPING['8-K'] == '8-K'
         assert SECRSSClient.FORM_TYPE_MAPPING['10-K'] == '10-K'
         assert SECRSSClient.FORM_TYPE_MAPPING['10-Q'] == '10-Q'
         assert SECRSSClient.FORM_TYPE_MAPPING['FORM4'] == '4'
+
+    @patch('sec.sec_rss_client.requests.get')
+    def test_makes_request_to_right_url_with_headers_and_timeout(self, mock_get, client, sample_rss_response, test_db):
+        rss_mock = Mock()
+        rss_mock.content = sample_rss_response.encode('utf-8')
+        rss_mock.raise_for_status = Mock()
+
+        mock_get.side_effect = rss_mock
+
+        client.get_tickers_with_new_filings_paginated('8-K', None, test_db)
+
+        RSS_BASE_URL = "https://www.sec.gov/cgi-bin/browse-edgar"
+        rss_form_type = "8-K"
+        start = 0
+        batch_size = 100
+        url = f"{RSS_BASE_URL}?action=getcurrent&type={rss_form_type}&start={start}&count={batch_size}&output=atom"
+        mock_get.assert_called_with(url, client.headers, 10)
 
     @patch('sec.sec_rss_client.requests.get')
     def test_rss_fetch_when_error_returns_empty_set(self, mock_get, client, test_db):
@@ -251,3 +268,98 @@ class TestSECRSSClient:
 
         result = client.get_tickers_with_new_filings_paginated('8-K', known_tickers=set(), db=mock_db)
         assert result == set()
+
+    def test_form144_in_form_type_mapping(self, client):
+        """Test that FORM144 is mapped to '144' for RSS feed"""
+        assert SECRSSClient.FORM_TYPE_MAPPING['FORM144'] == '144'
+
+    @pytest.fixture
+    def form144_rss_with_both_entries(self):
+        """Form 144 RSS XML with paired Reporting and Subject entries"""
+        return """<?xml version="1.0" encoding="ISO-8859-1" ?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Latest Filings</title>
+<entry>
+<title>144 - John Smith (0000111111) (Reporting)</title>
+<id>urn:tag:sec.gov,2008:accession-number=0001234567-26-144001</id>
+</entry>
+<entry>
+<title>144 - APPLE INC (0000320193) (Subject)</title>
+<id>urn:tag:sec.gov,2008:accession-number=0001234567-26-144001</id>
+</entry>
+<entry>
+<title>144 - Jane Doe (0000222222) (Reporting)</title>
+<id>urn:tag:sec.gov,2008:accession-number=0001234567-26-144002</id>
+</entry>
+<entry>
+<title>144 - MICROSOFT CORP (0000789019) (Subject)</title>
+<id>urn:tag:sec.gov,2008:accession-number=0001234567-26-144002</id>
+</entry>
+</feed>"""
+
+    @patch('sec.sec_rss_client.requests.get')
+    def test_form144_only_collects_subject_ciks(self, mock_get, client, form144_rss_with_both_entries, sample_cik_mapping):
+        """Test that Form 144 processing only collects CIKs from Subject entries"""
+        rss_mock = Mock()
+        rss_mock.content = form144_rss_with_both_entries.encode('utf-8')
+        rss_mock.raise_for_status = Mock()
+
+        empty_rss = """<?xml version="1.0" encoding="ISO-8859-1" ?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+</feed>"""
+        rss_mock2 = Mock()
+        rss_mock2.content = empty_rss.encode('utf-8')
+        rss_mock2.raise_for_status = Mock()
+
+        mapping_mock = Mock()
+        mapping_mock.json.return_value = sample_cik_mapping
+        mapping_mock.raise_for_status = Mock()
+
+        mock_db = Mock()
+        mock_db.filing_exists.return_value = False
+
+        mock_get.side_effect = [rss_mock, rss_mock2, mapping_mock]
+
+        known_tickers = {'AAPL', 'MSFT'}
+        result = client.get_tickers_with_new_filings_paginated('FORM144', known_tickers=known_tickers, db=mock_db)
+
+        # Should map company CIKs (Subject) to tickers
+        assert result == {'AAPL', 'MSFT'}
+
+    @patch('sec.sec_rss_client.requests.get')
+    def test_form144_skips_reporting_entries(self, mock_get, client, form144_rss_with_both_entries, sample_cik_mapping):
+        """Test that insider (Reporting) CIKs are NOT added to results"""
+        rss_mock = Mock()
+        rss_mock.content = form144_rss_with_both_entries.encode('utf-8')
+        rss_mock.raise_for_status = Mock()
+
+        empty_rss = """<?xml version="1.0" encoding="ISO-8859-1" ?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+</feed>"""
+        rss_mock2 = Mock()
+        rss_mock2.content = empty_rss.encode('utf-8')
+        rss_mock2.raise_for_status = Mock()
+
+        # Add insider CIKs to mapping to prove they'd match if not filtered
+        cik_mapping = dict(sample_cik_mapping)
+        cik_mapping["99"] = {"cik_str": 111111, "ticker": "INSIDER1", "title": "John Smith"}
+        cik_mapping["100"] = {"cik_str": 222222, "ticker": "INSIDER2", "title": "Jane Doe"}
+
+        mapping_mock = Mock()
+        mapping_mock.json.return_value = cik_mapping
+        mapping_mock.raise_for_status = Mock()
+
+        mock_db = Mock()
+        mock_db.filing_exists.return_value = False
+
+        mock_get.side_effect = [rss_mock, rss_mock2, mapping_mock]
+
+        # Include insider "tickers" in known set to prove filtering works
+        known_tickers = {'AAPL', 'MSFT', 'INSIDER1', 'INSIDER2'}
+        result = client.get_tickers_with_new_filings_paginated('FORM144', known_tickers=known_tickers, db=mock_db)
+
+        # Insider CIKs should NOT appear in results
+        assert 'INSIDER1' not in result
+        assert 'INSIDER2' not in result
+        # Only company (Subject) CIKs should appear
+        assert result == {'AAPL', 'MSFT'}

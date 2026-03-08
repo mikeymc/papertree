@@ -1,4 +1,4 @@
-# ABOUTME: Mixin for fetching and parsing SEC filings (10-K, 10-Q, Form 4) from EDGAR
+# ABOUTME: Mixin for fetching and parsing SEC filings (10-K, 10-Q, Form 4, Form 144) from EDGAR
 # ABOUTME: Handles filing section extraction, dividend history, and insider transaction parsing
 
 import requests
@@ -904,3 +904,209 @@ class FilingsMixin:
             'filing_date': filing['filing_date'],
             'accession_number': filing['accession_number']
         }
+
+    def _parse_form144_filing(self, ticker: str, filing: Dict[str, Any], xml_content: str) -> Optional[Dict[str, Any]]:
+        """
+        Parse Form 144 XML content into a structured dict.
+
+        Args:
+            ticker: Stock ticker symbol
+            filing: Dict with filing_date, accession_number, url, insider_cik
+            xml_content: Raw XML string of the Form 144 filing
+
+        Returns:
+            Dict with parsed Form 144 data, or None if parsing fails
+        """
+        import xml.etree.ElementTree as ET
+        from datetime import datetime
+
+        ns = {'own': 'http://www.sec.gov/edgar/ownership',
+              'com': 'http://www.sec.gov/edgar/common'}
+
+        try:
+            root = ET.fromstring(xml_content)
+        except ET.ParseError as e:
+            logger.warning(f"[{ticker}] Failed to parse Form 144 XML: {e}")
+            return None
+
+        form_data = root.find('own:formData', ns)
+        if form_data is None:
+            logger.warning(f"[{ticker}] No formData in Form 144 XML")
+            return None
+
+        issuer_info = form_data.find('own:issuerInfo', ns)
+        securities_info = form_data.find('own:securitiesInformation', ns)
+        securities_to_sell = form_data.find('own:securitiesToBeSold', ns)
+        notice_sig = form_data.find('own:noticeSignature', ns)
+
+        # Insider name and relationship
+        insider_name = None
+        relationship = None
+        if issuer_info is not None:
+            name_elem = issuer_info.find('own:nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold', ns)
+            if name_elem is not None:
+                insider_name = name_elem.text
+
+            rel_elems = issuer_info.findall('own:relationshipsToIssuer/own:relationshipToIssuer', ns)
+            if rel_elems:
+                relationship = ', '.join(elem.text for elem in rel_elems if elem.text)
+
+        # Securities details
+        securities_class = None
+        shares_to_sell = None
+        estimated_value = None
+        approx_sale_date = None
+        if securities_info is not None:
+            class_elem = securities_info.find('own:securitiesClassTitle', ns)
+            if class_elem is not None:
+                securities_class = class_elem.text
+
+            units_elem = securities_info.find('own:noOfUnitsSold', ns)
+            if units_elem is not None and units_elem.text:
+                shares_to_sell = float(units_elem.text)
+
+            value_elem = securities_info.find('own:aggregateMarketValue', ns)
+            if value_elem is not None and value_elem.text:
+                estimated_value = float(value_elem.text)
+
+            date_elem = securities_info.find('own:approxSaleDate', ns)
+            if date_elem is not None and date_elem.text:
+                try:
+                    approx_sale_date = datetime.strptime(date_elem.text, '%m/%d/%Y').strftime('%Y-%m-%d')
+                except ValueError:
+                    approx_sale_date = date_elem.text
+
+        # Acquisition nature
+        acquisition_nature = None
+        if securities_to_sell is not None:
+            nature_elem = securities_to_sell.find('own:natureOfAcquisitionTransaction', ns)
+            if nature_elem is not None:
+                acquisition_nature = nature_elem.text
+
+        # 10b5-1 plan detection
+        is_10b51 = False
+        plan_adoption_date = None
+
+        # Check remarks for 10b5-1 mention
+        remarks_elem = form_data.find('own:remarks', ns)
+        if remarks_elem is not None and remarks_elem.text:
+            if '10b5-1' in remarks_elem.text.lower() or '10b5' in remarks_elem.text.lower():
+                is_10b51 = True
+
+        # Check for plan adoption date
+        if notice_sig is not None:
+            plan_date_elem = notice_sig.find('own:planAdoptionDates/own:planAdoptionDate', ns)
+            if plan_date_elem is not None and plan_date_elem.text:
+                is_10b51 = True
+                try:
+                    plan_adoption_date = datetime.strptime(plan_date_elem.text, '%m/%d/%Y').strftime('%Y-%m-%d')
+                except ValueError:
+                    plan_adoption_date = plan_date_elem.text
+
+        return {
+            'insider_name': insider_name,
+            'insider_cik': filing.get('insider_cik'),
+            'relationship': relationship,
+            'securities_class': securities_class,
+            'shares_to_sell': shares_to_sell,
+            'estimated_value': estimated_value,
+            'approx_sale_date': approx_sale_date,
+            'acquisition_nature': acquisition_nature,
+            'is_10b51_plan': is_10b51,
+            'plan_adoption_date': plan_adoption_date,
+            'filing_date': filing['filing_date'],
+            'accession_number': filing['accession_number'],
+            'filing_url': filing['url'],
+        }
+
+    def fetch_form144_filings(self, ticker: str, since_date: str = None) -> List[Dict[str, Any]]:
+        """
+        Fetch Form 144 filings from EDGAR and parse XML content.
+
+        Args:
+            ticker: Stock ticker symbol
+            since_date: Optional date (YYYY-MM-DD) to filter filings newer than this
+
+        Returns:
+            List of parsed Form 144 filing dicts
+        """
+        import xml.etree.ElementTree as ET
+        from datetime import datetime, timedelta
+
+        cik = self.get_cik_for_ticker(ticker)
+        if not cik:
+            logger.warning(f"[{ticker}] Could not find CIK for Form 144 fetch")
+            return []
+
+        if not since_date:
+            one_year_ago = datetime.now() - timedelta(days=365)
+            since_date = one_year_ago.strftime('%Y-%m-%d')
+
+        padded_cik = cik.zfill(10)
+
+        try:
+            self._rate_limit(caller=f"form144-submissions-{ticker}")
+            submissions_url = f"https://data.sec.gov/submissions/CIK{padded_cik}.json"
+            response = requests.get(submissions_url, headers=self.headers, timeout=15)
+            response.raise_for_status()
+
+            data = response.json()
+            recent_filings = data.get('filings', {}).get('recent', {})
+
+            if not recent_filings:
+                logger.debug(f"[{ticker}] No recent filings found for Form 144")
+                return []
+
+            forms = recent_filings.get('form', [])
+            filing_dates = recent_filings.get('filingDate', [])
+            accession_numbers = recent_filings.get('accessionNumber', [])
+            primary_documents = recent_filings.get('primaryDocument', [])
+
+            # Collect Form 144 filing URLs
+            form144_filings = []
+            for i, form in enumerate(forms):
+                if form != '144':
+                    continue
+
+                filing_date = filing_dates[i]
+                if since_date and filing_date < since_date:
+                    continue
+
+                acc_num = accession_numbers[i]
+                acc_num_no_dashes = acc_num.replace('-', '')
+                primary_doc = primary_documents[i] if i < len(primary_documents) else 'primary_doc.xml'
+
+                # Form 144 XML is filed under the insider's CIK
+                # Use the filer CIK from the submission (which is the insider)
+                primary_doc_basename = primary_doc.split('/')[-1]
+                doc_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc_num_no_dashes}/{primary_doc_basename}"
+
+                form144_filings.append({
+                    'filing_date': filing_date,
+                    'accession_number': acc_num,
+                    'url': doc_url,
+                    'insider_cik': padded_cik,
+                })
+
+            logger.info(f"[{ticker}] Found {len(form144_filings)} Form 144 filings since {since_date}")
+
+            # Parse each Form 144 XML
+            all_filings = []
+            for filing in form144_filings:
+                try:
+                    self._rate_limit(caller=f"form144-xml-{ticker}")
+                    xml_response = requests.get(filing['url'], headers=self.headers, timeout=15)
+                    xml_response.raise_for_status()
+
+                    parsed = self._parse_form144_filing(ticker, filing, xml_response.text)
+                    if parsed:
+                        all_filings.append(parsed)
+                except Exception as e:
+                    logger.debug(f"[{ticker}] Error parsing Form 144 {filing['accession_number']}: {e}")
+
+            logger.info(f"[{ticker}] Parsed {len(all_filings)} Form 144 filings")
+            return all_filings
+
+        except Exception as e:
+            logger.error(f"[{ticker}] Error fetching Form 144 filings: {e}")
+            return []

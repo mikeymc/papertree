@@ -1,5 +1,5 @@
 # ABOUTME: SEC filing cache job mixins for the background worker
-# ABOUTME: Handles SEC refresh, 10-K/10-Q caching, 8-K material events, and Form 4 insider filings
+# ABOUTME: Handles SEC refresh, 10-K/10-Q caching, 8-K material events, Form 4, and Form 144 filings
 
 import os
 import time
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class SECJobsMixin:
-    """Mixin for SEC-related jobs: sec_refresh, 10k_cache, 8k_cache, form4_cache"""
+    """Mixin for SEC-related jobs: sec_refresh, 10k_cache, 8k_cache, form4_cache, form144_cache"""
 
     def _run_sec_refresh(self, job_id: int, params: Dict[str, Any]):
         """Execute SEC data refresh"""
@@ -657,3 +657,198 @@ class SECJobsMixin:
         self.db.flush()
         self.db.complete_job(job_id, result)
         logger.info(f"Form 4 cache complete: {result}")
+
+    def _run_form144_cache(self, job_id: int, params: Dict[str, Any]):
+        """
+        Cache SEC Form 144 (Notice of Proposed Sale) filings for all stocks.
+
+        Fetches Form 144 filings from SEC EDGAR and parses XML to extract
+        insider intent-to-sell data including shares, estimated value, and
+        10b5-1 plan details.
+
+        Params:
+            limit: Optional max number of stocks to process
+            region: Region filter (us, north-america, europe, asia, all)
+            use_rss: If True, use RSS feed to pre-filter to only stocks with new filings
+        """
+        from worker.core import get_memory_mb, check_memory_warning
+
+        limit = params.get('limit')
+        region = params.get('region', 'us')
+        use_rss = params.get('use_rss', False)
+
+        logger.info(f"Starting Form 144 cache job {job_id} (region={region}, use_rss={use_rss})")
+
+        from edgar_fetcher import EdgarFetcher
+        from market_data.tradingview import TradingViewFetcher
+
+        # Disable edgartools disk caching for batch jobs
+        try:
+            from edgar import httpclient
+            httpclient.CACHE_DIRECTORY = None
+            logger.info("Disabled edgartools HTTP disk cache for batch job")
+        except Exception as e:
+            logger.warning(f"Could not disable edgartools cache: {e}")
+
+        # Map CLI region to TradingView regions
+        region_mapping = {
+            'us': ['us'],
+            'north-america': ['north_america'],
+            'south-america': ['south_america'],
+            'europe': ['europe'],
+            'asia': ['asia'],
+            'all': None
+        }
+        tv_regions = region_mapping.get(region, ['us'])
+
+        # Get stock list from TradingView
+        self.db.update_job_progress(job_id, progress_pct=5, progress_message=f'Fetching stock list from TradingView ({region})...')
+        tv_fetcher = TradingViewFetcher()
+        market_data_cache = tv_fetcher.fetch_all_stocks(limit=20000, regions=tv_regions)
+
+        # Ensure all stocks exist in DB before caching (prevents FK violations)
+        self.db.update_job_progress(job_id, progress_pct=8, progress_message='Ensuring stocks exist in database...')
+        self.db.ensure_stocks_exist_batch(market_data_cache)
+
+        all_symbols = list(market_data_cache.keys())
+
+        # Sort by screening score if available (prioritize STRONG_BUY stocks)
+        scored_symbols = self.db.get_stocks_ordered_by_score(limit=None)
+        scored_set = set(scored_symbols)
+
+        sorted_symbols = [s for s in scored_symbols if s in set(all_symbols)]
+        remaining = [s for s in all_symbols if s not in scored_set]
+        all_symbols = sorted_symbols + remaining
+
+        if limit and limit < len(all_symbols):
+            all_symbols = all_symbols[:limit]
+
+        # RSS-based optimization: only process stocks with new filings
+        if use_rss:
+            from sec.sec_rss_client import SECRSSClient
+            self.db.update_job_progress(job_id, progress_pct=9, progress_message='Checking RSS feed for new Form 144 filings...')
+
+            sec_user_agent = os.environ.get('SEC_USER_AGENT', 'Lynch Stock Screener mikey@example.com')
+            rss_client = SECRSSClient(sec_user_agent)
+
+            known_tickers = set(all_symbols)
+            tickers_with_filings = rss_client.get_tickers_with_new_filings_paginated('FORM144', known_tickers=known_tickers, db=self.db)
+
+            if tickers_with_filings:
+                all_symbols = [s for s in all_symbols if s in tickers_with_filings]
+                logger.info(f"RSS optimization: reduced from {len(known_tickers)} to {len(all_symbols)} stocks with new Form 144 filings")
+            else:
+                logger.info("RSS optimization: no new Form 144 filings found, skipping cache job")
+                self.db.complete_job(job_id, {'total_stocks': 0, 'processed': 0, 'cached': 0, 'errors': 0, 'rss_optimized': True})
+                return
+
+        total = len(all_symbols)
+        logger.info(f"Caching Form 144 filings for {total} stocks (region={region}, sorted by score)")
+
+        # Initialize SEC fetcher with CIK cache
+        sec_user_agent = os.environ.get('SEC_USER_AGENT', 'Lynch Stock Screener mikey@example.com')
+        logger.info("Pre-fetching SEC CIK mappings...")
+        cik_cache = EdgarFetcher.prefetch_cik_cache(sec_user_agent)
+
+        edgar_fetcher = EdgarFetcher(
+            user_agent=sec_user_agent,
+            db=self.db,
+            cik_cache=cik_cache
+        )
+
+        self.db.update_job_progress(job_id, progress_pct=10,
+                                    progress_message=f'Caching Form 144 for {total} stocks...',
+                                    total_count=total)
+
+        processed = 0
+        cached = 0
+        skipped = 0
+        errors = 0
+        total_filings = 0
+
+        one_year_ago = datetime.now() - timedelta(days=365)
+        since_date = one_year_ago.strftime('%Y-%m-%d')
+
+        force_refresh = params.get('force_refresh', False)
+
+        for symbol in all_symbols:
+            if self.shutdown_requested:
+                logger.info("Shutdown requested, stopping Form 144 cache job")
+                break
+
+            job_status = self.db.get_background_job(job_id)
+            if job_status and job_status.get('status') == 'cancelled':
+                logger.info(f"Job {job_id} was cancelled, stopping")
+                return
+
+            if not force_refresh:
+                if self.db.has_recent_form144_filings(symbol, since_date):
+                    skipped += 1
+                    processed += 1
+                    if skipped % 100 == 0:
+                        logger.info(f"Form 144 cache: skipped {skipped} already-cached symbols")
+                    continue
+
+                today = datetime.now().strftime('%Y-%m-%d')
+                if self.db.was_cache_checked_since(symbol, 'form144', today):
+                    skipped += 1
+                    processed += 1
+                    if skipped % 100 == 0:
+                        logger.info(f"Form 144 cache: skipped {skipped} already-cached symbols")
+                    continue
+
+            try:
+                filings = edgar_fetcher.fetch_form144_filings(symbol)
+
+                last_data_date = None
+                if filings:
+                    for filing in filings:
+                        self.db.save_form144_filing(symbol, filing)
+                    total_filings += len(filings)
+                    cached += 1
+
+                    dates = [f.get('filing_date') for f in filings if f.get('filing_date')]
+                    if dates:
+                        last_data_date = max(dates)
+                else:
+                    cached += 1
+
+                self.db.record_cache_check(symbol, 'form144', last_data_date)
+
+            except Exception as e:
+                logger.debug(f"[{symbol}] Form 144 cache error: {e}")
+                errors += 1
+
+            processed += 1
+
+            if processed % 25 == 0:
+                pct = 10 + int((processed / total) * 85)
+                self.db.update_job_progress(
+                    job_id,
+                    progress_pct=pct,
+                    progress_message=f'Processed {processed}/{total} stocks (cached: {cached}, skipped: {skipped}, errors: {errors})',
+                    processed_count=processed,
+                    total_count=total
+                )
+                self._send_heartbeat(job_id)
+
+            if processed % 10 == 0:
+                logger.info(f"Form 144 cache progress: {processed}/{total} (cached: {cached}, skipped: {skipped}, filings: {total_filings}, errors: {errors}) | MEMORY: {get_memory_mb():.0f}MB")
+                check_memory_warning(f"[form144 {processed}/{total}]")
+
+            if processed % 100 == 0:
+                self.db.flush_async()
+
+        self.db.flush()
+
+        result = {
+            'total_stocks': total,
+            'processed': processed,
+            'cached': cached,
+            'skipped': skipped,
+            'total_filings': total_filings,
+            'errors': errors
+        }
+        self.db.flush()
+        self.db.complete_job(job_id, result)
+        logger.info(f"Form 144 cache complete: {result}")

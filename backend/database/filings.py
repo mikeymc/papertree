@@ -628,6 +628,16 @@ class FilingsMixin:
 
             self.return_connection(conn)
             return result
+        elif form_type == 'FORM144':
+            cursor.execute("""
+                SELECT EXISTS(
+                    SELECT 1 FROM rss_seen_filings
+                    WHERE accession_number = %s
+                )
+            """, (accession_number,))
+            result = cursor.fetchone()[0]
+            self.return_connection(conn)
+            return result
         else:
             self.return_connection(conn)
             return False
@@ -739,3 +749,138 @@ class FilingsMixin:
             return results
         finally:
             self.return_connection(conn)
+
+    def save_seen_filing(self, accession_number: str, form_type: str):
+        """
+        Record that an RSS filing has been seen for deduplication.
+
+        Args:
+            accession_number: SEC accession number
+            form_type: Filing type (e.g., 'FORM144')
+        """
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO rss_seen_filings (accession_number, form_type)
+            VALUES (%s, %s)
+            ON CONFLICT (accession_number) DO NOTHING
+        """, (accession_number, form_type))
+        conn.commit()
+        self.return_connection(conn)
+
+    def save_form144_filing(self, symbol: str, filing_data: Dict[str, Any]):
+        """
+        Save a parsed Form 144 filing to the database.
+
+        Args:
+            symbol: Stock ticker symbol
+            filing_data: Dict from _parse_form144_filing()
+        """
+        sql = """
+            INSERT INTO form144_filings
+            (symbol, accession_number, filing_date, insider_name, insider_cik,
+             relationship, securities_class, shares_to_sell, estimated_value,
+             approx_sale_date, acquisition_nature, is_10b51_plan, plan_adoption_date,
+             filing_url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (accession_number, insider_name) DO UPDATE SET
+                filing_date = EXCLUDED.filing_date,
+                relationship = EXCLUDED.relationship,
+                securities_class = EXCLUDED.securities_class,
+                shares_to_sell = EXCLUDED.shares_to_sell,
+                estimated_value = EXCLUDED.estimated_value,
+                approx_sale_date = EXCLUDED.approx_sale_date,
+                acquisition_nature = EXCLUDED.acquisition_nature,
+                is_10b51_plan = EXCLUDED.is_10b51_plan,
+                plan_adoption_date = EXCLUDED.plan_adoption_date,
+                filing_url = EXCLUDED.filing_url
+        """
+        args = (
+            symbol,
+            filing_data.get('accession_number'),
+            filing_data.get('filing_date'),
+            filing_data.get('insider_name'),
+            filing_data.get('insider_cik'),
+            filing_data.get('relationship'),
+            filing_data.get('securities_class'),
+            filing_data.get('shares_to_sell'),
+            filing_data.get('estimated_value'),
+            filing_data.get('approx_sale_date'),
+            filing_data.get('acquisition_nature'),
+            filing_data.get('is_10b51_plan', False),
+            filing_data.get('plan_adoption_date'),
+            filing_data.get('filing_url'),
+        )
+        self.write_queue.put((sql, args))
+
+    def has_recent_form144_filings(self, symbol: str, since_date: str) -> bool:
+        """
+        Check if we have Form 144 filings for a symbol since a given date.
+
+        Args:
+            symbol: Stock ticker symbol
+            since_date: Date string (YYYY-MM-DD)
+
+        Returns:
+            True if filings exist since the given date
+        """
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT EXISTS(
+                SELECT 1 FROM form144_filings
+                WHERE symbol = %s AND filing_date >= %s
+                LIMIT 1
+            )
+        """, (symbol, since_date))
+        result = cursor.fetchone()[0]
+        self.return_connection(conn)
+        return result
+
+    def get_form144_filings(self, symbol: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """
+        Get Form 144 filings for a stock, ordered by filing date descending.
+
+        Args:
+            symbol: Stock ticker symbol
+            limit: Max number of filings to return
+
+        Returns:
+            List of Form 144 filing dicts
+        """
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, symbol, accession_number, filing_date, insider_name, insider_cik,
+                   relationship, securities_class, shares_to_sell, estimated_value,
+                   approx_sale_date, acquisition_nature, is_10b51_plan, plan_adoption_date,
+                   filing_url, created_at
+            FROM form144_filings
+            WHERE symbol = %s
+            ORDER BY filing_date DESC
+            LIMIT %s
+        """, (symbol, limit))
+        rows = cursor.fetchall()
+        self.return_connection(conn)
+
+        return [
+            {
+                'id': row[0],
+                'symbol': row[1],
+                'accession_number': row[2],
+                'filing_date': row[3].isoformat() if row[3] else None,
+                'insider_name': row[4],
+                'insider_cik': row[5],
+                'relationship': row[6],
+                'securities_class': row[7],
+                'shares_to_sell': row[8],
+                'estimated_value': row[9],
+                'approx_sale_date': row[10].isoformat() if row[10] else None,
+                'acquisition_nature': row[11],
+                'is_10b51_plan': row[12],
+                'plan_adoption_date': row[13].isoformat() if row[13] else None,
+                'filing_url': row[14],
+                'created_at': row[15].isoformat() if row[15] else None,
+            }
+            for row in rows
+        ]

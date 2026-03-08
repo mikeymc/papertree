@@ -27,6 +27,7 @@ class SECRSSClient:
         '10-K': '10-K',
         '10-Q': '10-Q',
         'FORM4': '4',  # Form 4 uses '4' in RSS
+        'FORM144': '144',
     }
 
     def __init__(self, user_agent: str):
@@ -124,10 +125,19 @@ class SECRSSClient:
                     # Extract CIK from title and add to new filings set
                     title = entry.find('atom:title', self.NAMESPACE)
                     if title is not None and title.text:
+                        # Form 144 entries come in pairs: (Reporting) for the insider,
+                        # (Subject) for the company. Only process Subject entries.
+                        if form_type == 'FORM144' and '(Subject)' not in title.text:
+                            continue
+
                         cik_match = re.search(r'\((\d+)\)', title.text)
                         if cik_match:
                             cik = cik_match.group(1).zfill(10)
                             new_ciks.add(cik)
+
+                    # Record FORM144 filings as seen for deduplication
+                    if form_type == 'FORM144':
+                        db.save_seen_filing(accession_number, form_type)
 
                 # Fetch next page
                 start += batch_size
