@@ -290,7 +290,9 @@ class DatabaseCore:
 
         batch = []
         last_commit = time.time()
+        last_keepalive = time.time()
         reconnect_count = 0
+        KEEPALIVE_INTERVAL = 60
 
         while True:
             try:
@@ -300,6 +302,25 @@ class DatabaseCore:
                     task = None
 
                 if task is None and not batch:
+                    now = time.time()
+                    if now - last_keepalive >= KEEPALIVE_INTERVAL:
+                        try:
+                            cursor.execute("SELECT 1")
+                            last_keepalive = now
+                        except Exception as ping_err:
+                            logger.warning(f"Database ping failed: {ping_err}")
+                            try:
+                                self.connection_pool.putconn(conn, close=True)
+                            except Exception:
+                                pass
+                            conn = self.connection_pool.getconn()
+                            cursor = conn.cursor()
+                            reconnect_count += 1
+                            last_keepalive = time.time()
+                            logger.info(
+                                f"Writer loop reconnected after keepalive failure (reconnect #{reconnect_count})"
+                            )
+
                     continue
 
                 if task is not None:
