@@ -457,6 +457,21 @@ class StrategiesMixin:
         finally:
             self.return_connection(conn)
 
+    def get_latest_benchmark_snapshot(self) -> Optional[Dict[str, Any]]:
+        """Get the most recent benchmark snapshot regardless of date."""
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor(row_factory=psycopg.rows.dict_row)
+            cursor.execute("""
+                SELECT id, snapshot_date, spy_price, created_at
+                FROM benchmark_snapshots
+                ORDER BY snapshot_date DESC
+                LIMIT 1
+            """)
+            return cursor.fetchone()
+        finally:
+            self.return_connection(conn)
+
     def get_benchmark_range(self, start_date: date, end_date: date) -> List[Dict[str, Any]]:
         """Get benchmark snapshots for a date range."""
         conn = self.get_connection()

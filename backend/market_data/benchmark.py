@@ -49,11 +49,11 @@ class BenchmarkTracker:
         else:
             # First run - current values as inception
             inception_value = portfolio_value
-            benchmark = self.db.get_benchmark_snapshot(today)
+            benchmark = self.db.get_benchmark_snapshot(today) or self.db.get_latest_benchmark_snapshot()
             inception_spy = benchmark['spy_price'] if benchmark else None
 
-        # Get current SPY
-        benchmark = self.db.get_benchmark_snapshot(today)
+        # Get current SPY (fall back to latest if no snapshot for today)
+        benchmark = self.db.get_benchmark_snapshot(today) or self.db.get_latest_benchmark_snapshot()
         current_spy = benchmark['spy_price'] if benchmark else None
 
         # Calculate returns

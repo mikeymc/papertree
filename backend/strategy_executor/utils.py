@@ -20,5 +20,5 @@ def log_event(db, run_id: int, message: str):
 
 def get_spy_price(db) -> Optional[float]:
     """Get current SPY price from benchmark snapshots."""
-    benchmark = db.get_benchmark_snapshot(date.today())
+    benchmark = db.get_benchmark_snapshot(date.today()) or db.get_latest_benchmark_snapshot()
     return benchmark['spy_price'] if benchmark else None
