@@ -11,6 +11,8 @@ from app import deps
 from auth import DEV_AUTH_BYPASS, init_oauth_client
 from email_service import send_verification_email
 from flask import Blueprint, jsonify, redirect, request, session
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
 from werkzeug.security import check_password_hash, generate_password_hash
 
 logger = logging.getLogger(__name__)
@@ -61,8 +63,6 @@ def google_auth_callback():
 
         # Get user info from ID token
         credentials = flow.credentials
-        from google.auth.transport import requests as google_requests
-        from google.oauth2 import id_token
 
         id_info = id_token.verify_oauth2_token(
             credentials.id_token,
