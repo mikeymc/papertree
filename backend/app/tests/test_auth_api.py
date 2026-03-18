@@ -275,3 +275,197 @@ def describe_complete_onboarding():
 
             assert response.status_code == 500
             assert response.json == {"error": "Database error"}
+
+
+def describe_register():
+    def describe_sad_paths():
+        def describe_when_no_data_is_posted():
+            def it_returns_a_400(client):
+                response = client.post("/api/auth/register", json={})
+
+                assert response.status_code == 400
+                assert response.json == {"error": "No data provided"}
+
+        def describe_when_email_is_not_posted():
+            def it_returns_a_400(client):
+                response = client.post(
+                    "/api/auth/register",
+                    json={
+                        "password": "foo",
+                        "name": "bar",
+                    },
+                )
+
+                assert response.status_code == 400
+                assert response.json == {"error": "Email and password are required"}
+
+        def describe_when_password_is_not_posted():
+            def it_returns_a_400(client):
+                response = client.post(
+                    "/api/auth/register",
+                    json={
+                        "email": "foo",
+                        "name": "bar",
+                    },
+                )
+
+                assert response.status_code == 400
+                assert response.json == {"error": "Email and password are required"}
+
+        def describe_when_user_already_registered():
+            def it_returns_a_400(client, db):
+                db.get_user_by_email = Mock(return_value=True)
+
+                response = client.post(
+                    "/api/auth/register",
+                    json={
+                        "email": "foo",
+                        "password": "bar",
+                    },
+                )
+
+                assert response.status_code == 400
+                assert response.json == {"error": "Email already registered"}
+
+        def describe_when_there_is_an_error():
+            @patch("app.auth.logger")
+            def it_returns_500_and_logs_the_error(mock_logger, client):
+                response = client.post("/api/auth/register", json=None)
+
+                assert response.status_code == 500
+                assert response.json == {
+                    "error": "415 Unsupported Media Type: Did not attempt to load JSON data because the request Content-Type was not 'application/json'."
+                }
+                mock_logger.error.assert_called_with(
+                    "Registration error: 415 Unsupported Media Type: Did not attempt to load JSON data because the request Content-Type was not 'application/json'."
+                )
+
+    def describe_successful_new_user_flow():
+        @patch("app.auth.send_verification_email")
+        @patch("app.auth.generate_password_hash")
+        @patch("app.auth.logger")
+        @patch("app.auth.generate_verification_code")
+        @patch("app.auth.generate_expiration_date")
+        def it_hashes_password_creates_user_and_sends_email(
+            mock_generate_expiration_date,
+            mock_generate_verification_code,
+            mock_logger,
+            mock_password_hash,
+            mock_send_verification_email,
+            client,
+            db,
+        ):
+            mock_password_hash.return_value = "mock-hash-value"
+            db.get_user_by_email = Mock(return_value=False)
+            db.create_user_with_password = Mock(return_value="some-user-id")
+            mock_generate_verification_code.return_value = "some-otp-code"
+            mock_generate_expiration_date.return_value = "some-expiration-date"
+
+            response = client.post(
+                "/api/auth/register",
+                json={
+                    "email": "foo@hammertime.com",
+                    "password": "bar",
+                    "name": "mc-hammer",
+                },
+            )
+
+            db.get_user_by_email.assert_called_with("foo@hammertime.com")
+            mock_password_hash.assert_called_with("bar")
+            db.create_user_with_password.assert_called_with(
+                "foo@hammertime.com",
+                "mock-hash-value",
+                "mc-hammer",
+                "some-otp-code",
+                "some-expiration-date",
+            )
+            mock_send_verification_email.assert_called_with(
+                "foo@hammertime.com", "some-otp-code"
+            )
+            mock_logger.info.assert_called_with(
+                "Verification email sent to foo@hammertime.com"
+            )
+            assert response.status_code == 200
+            assert response.json == {
+                "message": "Registration successful. Please check your email for the verification code.",
+                "user": {
+                    "id": "some-user-id",
+                    "email": "foo@hammertime.com",
+                    "name": "mc-hammer",
+                    "has_completed_onboarding": False,
+                },
+            }
+
+        def describe_when_no_name_is_provided():
+            @patch("app.auth.generate_password_hash")
+            @patch("app.auth.generate_verification_code")
+            @patch("app.auth.generate_expiration_date")
+            def it_uses_the_email_address_name(
+                mock_generate_expiration_date,
+                mock_generate_verification_code,
+                mock_password_hash,
+                client,
+                db,
+            ):
+                mock_password_hash.return_value = "mock-hash-value"
+                db.get_user_by_email = Mock(return_value=False)
+                db.create_user_with_password = Mock(return_value="some-user-id")
+                mock_generate_verification_code.return_value = "some-otp-code"
+                mock_generate_expiration_date.return_value = "some-expiration-date"
+
+                client.post(
+                    "/api/auth/register",
+                    json={
+                        "email": "foo@hammertime.com",
+                        "password": "bar",
+                    },
+                )
+
+                db.create_user_with_password.assert_called_with(
+                    "foo@hammertime.com",
+                    "mock-hash-value",
+                    "foo",
+                    "some-otp-code",
+                    "some-expiration-date",
+                )
+
+        def describe_when_email_send_fails():
+            @patch("app.auth.send_verification_email")
+            @patch("app.auth.generate_password_hash")
+            @patch("app.auth.logger")
+            @patch("app.auth.generate_verification_code")
+            @patch("app.auth.generate_expiration_date")
+            def it_logs_the_failure(
+                mock_generate_expiration_date,
+                mock_generate_verification_code,
+                mock_logger,
+                mock_password_hash,
+                mock_send_verification_email,
+                client,
+                db,
+            ):
+                mock_password_hash.return_value = "mock-hash-value"
+                db.get_user_by_email = Mock(return_value=False)
+                db.create_user_with_password = Mock(return_value="some-user-id")
+                mock_generate_verification_code.return_value = "some-otp-code"
+                mock_generate_expiration_date.return_value = "some-expiration-date"
+                mock_send_verification_email.return_value = False
+
+                client.post(
+                    "/api/auth/register",
+                    json={
+                        "email": "foo@hammertime.com",
+                        "password": "bar",
+                    },
+                )
+
+                mock_logger.error.assert_called_with(
+                    "Failed to send verification email to foo@hammertime.com"
+                )
+                mock_logger.info.assert_called_with(
+                    "EMAILS FAILED - VERIFICATION CODE FOR foo@hammertime.com: some-otp-code"
+                )
+
+def describe_test_login():
+    def describe_when_test_auth_not_enabled():
+        def it_returns_a_403(client):

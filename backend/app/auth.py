@@ -156,8 +156,8 @@ def register():
             name = email.split("@")[0]
 
         # Generate 6-digit numeric verification code
-        verification_code = "".join(secrets.choice(string.digits) for _ in range(6))
-        code_expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+        verification_code = generate_verification_code()
+        code_expires_at = generate_expiration_date()
 
         user_id = deps.db.create_user_with_password(
             email, password_hash, name, verification_code, code_expires_at
@@ -332,6 +332,14 @@ def test_login():
     except Exception as e:
         logger.error(f"Test login error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+def generate_verification_code():
+    return "".join(secrets.choice(string.digits) for _ in range(6))
+
+
+def generate_expiration_date():
+    return datetime.now(timezone.utc) + timedelta(minutes=15)
 
 
 def check_for_api_token():
