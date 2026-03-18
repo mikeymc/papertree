@@ -17,25 +17,25 @@ def db():
 
 
 def describe_login():
-    def describe_when_no_credentials():
+    def when_no_credentials():
         def it_returns_400(client):
             response = client.post("/api/auth/login", json={})
             assert response.status_code == 400
             assert response.json == {"error": "No data provided"}
 
-    def describe_with_email_and_no_password():
+    def when_with_email_and_no_password():
         def it_returns_400(client):
             response = client.post("/api/auth/login", json={"email": "mc@hammer.com"})
             assert response.status_code == 400
             assert response.json == {"error": "Email and password are required"}
 
-    def describe_with_password_and_no_email():
+    def when_password_and_no_email():
         def it_returns_400(client):
             response = client.post("/api/auth/login", json={"password": "bananas"})
             assert response.status_code == 400
             assert response.json == {"error": "Email and password are required"}
 
-    def describe_with_user_not_found():
+    def when_user_not_found():
         def it_returns_401(client):
             db.get_user_by_email = Mock(return_value=None)
 
@@ -47,7 +47,7 @@ def describe_login():
             assert response.json == {"error": "Invalid email or password"}
 
     def describe_user_password_checking():
-        def describe_user_without_password_hash():
+        def when_user_has_no_password_hash():
             def it_returns_401(client, db):
                 db.get_user_by_email = Mock(
                     return_value={"email": "mc@hammer.com", "password_hash": None}
@@ -82,7 +82,7 @@ def describe_login():
                     "stored-password-hash", "provided-password"
                 )
 
-        def describe_with_user_password_hash_mismatch():
+        def when_user_password_hash_does_not_match():
             @patch("app.auth.check_password_hash")
             def it_returns_401(mock_check_password, client, db):
                 db.get_user_by_email = Mock(
@@ -102,7 +102,7 @@ def describe_login():
                 assert response.status_code == 401
                 assert response.json == {"error": "Invalid email or password"}
 
-    def describe_with_user_not_verified():
+    def given_user_not_verified():
         @patch("app.auth.check_password_hash")
         def it_returns_403(mock_check_password, client, db):
             db.get_user_by_email = Mock(
@@ -124,7 +124,7 @@ def describe_login():
                 "error": "Email not verified. Please check your inbox."
             }
 
-    def describe_given_successful():
+    def given_successful():
         @patch("app.auth.check_password_hash")
         def it_returns_200_and_user_information(mock_check_password, client, db):
             db.get_user_by_email = Mock(
@@ -154,7 +154,7 @@ def describe_login():
                 "has_completed_onboarding": False,
             }
 
-    def describe_given_error():
+    def given_an_error():
         @patch("app.auth.check_password_hash")
         def it_returns_500_and_error_message(mock_check_password, client, db):
             db.get_user_by_email = Mock(
@@ -201,7 +201,7 @@ def describe_verify_user():
 
         db.verify_user_otp.assert_called_once_with("mc@hammer.com", "otp-code")
 
-    def describe_when_the_verification_succeeds():
+    def when_the_verification_succeeds():
         def it_responds_with_success(client, db):
             db.verify_user_otp = Mock(return_value=True)
 
@@ -212,7 +212,7 @@ def describe_verify_user():
             assert response.status_code == 200
             assert response.json == {"message": "Email verified successfully"}
 
-    def describe_when_the_verification_fails():
+    def when_the_verification_fails():
         def it_responds_with_failure(client, db):
             db.verify_user_otp = Mock(return_value=False)
 
@@ -223,7 +223,7 @@ def describe_verify_user():
             assert response.status_code == 400
             assert response.json == {"error": "Invalid, expired, or incorrect code"}
 
-    def describe_when_there_is_an_exception():
+    def when_there_is_an_exception():
         def it_responds_with_failure(client, db):
             db.verify_user_otp = Mock(side_effect=KeyError("foo"))
 
@@ -236,7 +236,7 @@ def describe_verify_user():
 
 
 def describe_complete_onboarding():
-    def describe_when_user_not_logged_in():
+    def given_user_not_logged_in():
         def it_responds_with_failure(client, db):
             with client.session_transaction() as session:
                 session.pop("user_id", None)
@@ -249,7 +249,7 @@ def describe_complete_onboarding():
             assert response.json == {"error": "Not authenticated"}
             db.mark_onboarding_complete.assert_not_called()
 
-    def describe_when_user_logged_in():
+    def given_user_logged_in():
         def it_marks_onboarding_complete_in_the_db(client, db):
             with client.session_transaction() as session:
                 session["user_id"] = "1234"
@@ -262,7 +262,7 @@ def describe_complete_onboarding():
             assert response.json == {"message": "Onboarding completed"}
             db.mark_onboarding_complete.assert_called_once_with("1234")
 
-    def describe_when_there_is_an_error():
+    def given_there_is_an_error():
         def it_returns_a_500_error(client, db):
             with client.session_transaction() as session:
                 session["user_id"] = "1234"
@@ -277,14 +277,14 @@ def describe_complete_onboarding():
 
 def describe_register():
     def describe_sad_paths():
-        def describe_when_no_data_is_posted():
+        def when_no_data_is_posted():
             def it_returns_a_400(client):
                 response = client.post("/api/auth/register", json={})
 
                 assert response.status_code == 400
                 assert response.json == {"error": "No data provided"}
 
-        def describe_when_email_is_not_posted():
+        def when_email_is_not_posted():
             def it_returns_a_400(client):
                 response = client.post(
                     "/api/auth/register",
@@ -297,7 +297,7 @@ def describe_register():
                 assert response.status_code == 400
                 assert response.json == {"error": "Email and password are required"}
 
-        def describe_when_password_is_not_posted():
+        def when_password_is_not_posted():
             def it_returns_a_400(client):
                 response = client.post(
                     "/api/auth/register",
@@ -310,7 +310,7 @@ def describe_register():
                 assert response.status_code == 400
                 assert response.json == {"error": "Email and password are required"}
 
-        def describe_when_user_already_registered():
+        def given_user_already_registered():
             def it_returns_a_400(client, db):
                 db.get_user_by_email = Mock(return_value=True)
 
@@ -325,7 +325,7 @@ def describe_register():
                 assert response.status_code == 400
                 assert response.json == {"error": "Email already registered"}
 
-        def describe_when_there_is_an_error():
+        def given_there_is_an_error():
             @patch("app.auth.logger")
             def it_returns_500_and_logs_the_error(mock_logger, client):
                 response = client.post("/api/auth/register", json=None)
@@ -431,7 +431,7 @@ def describe_register():
                     "some-expiration-date",
                 )
 
-        def describe_when_email_send_fails():
+        def given_email_send_fails():
             @patch("app.auth.send_verification_email")
             @patch("app.auth.generate_password_hash")
             @patch("app.auth.logger")
@@ -470,7 +470,7 @@ def describe_register():
 
 
 def describe_test_login():
-    def describe_when_test_auth_not_enabled():
+    def given_test_auth_not_enabled():
         def it_returns_a_403(client):
             with patch.dict(os.environ, {"ENABLE_TEST_AUTH": "false"}):
                 response = client.post("/api/auth/test-login", json={})
@@ -514,7 +514,7 @@ def describe_test_login():
                 assert sess["user_name"] == "Test User"
                 assert sess["user_picture"] == "https://example.com/test.jpg"
 
-    def describe_when_an_exception():
+    def given_an_exception():
         @patch("app.auth.logger")
         def it_returns_500_and_logs_error(mock_logger, client, db):
             with patch.dict(os.environ, {"ENABLE_TEST_AUTH": "true"}):
@@ -528,14 +528,14 @@ def describe_test_login():
 
 
 def describe_get_current_user():
-    def describe_with_no_user_in_session():
+    def given_no_user_in_session():
         def it_returns_a_401(client):
             response = client.get("/api/auth/user")
 
             assert response.status_code == 401
             assert response.json == {"error": "Not authenticated"}
 
-    def describe_with_user_not_registered():
+    def given_user_not_registered():
         def it_returns_a_401(client, db):
             with client.session_transaction() as sess:
                 sess["user_id"] = {"id": 1234}
@@ -550,7 +550,7 @@ def describe_get_current_user():
             with client.session_transaction() as sess:
                 assert "user_id" not in sess
 
-    def describe_with_user_registered_and_in_session():
+    def given_user_registered_and_in_session():
         def it_returns_the_user(client, db):
             with client.session_transaction() as sess:
                 sess["user_id"] = {"id": 1234}
@@ -625,7 +625,7 @@ def describe_get_google_auth_url():
             assert "oauth_state" in sess
             assert sess["oauth_state"] == "some-state"
 
-    def describe_when_there_is_an_error():
+    def given_an_error():
         @patch("app.auth.init_oauth_client")
         def it_returns_500_and_a_message(mock_init_auth, client):
             mock_init_auth.side_effect = Exception("some-exception")
@@ -637,14 +637,14 @@ def describe_get_google_auth_url():
 
 
 def describe_google_auth_callback():
-    def describe_when_no_auth_code_in_the_request_args():
+    def given_no_auth_code_in_the_request_args():
         def it_returns_400(client):
             response = client.get("/api/auth/google/callback")
 
             assert response.status_code == 400
             assert response.json == {"error": "No authorization code provided"}
 
-    def describe_when_auth_code_but_oauth_state_mismatch():
+    def given_auth_code_but_oauth_state_mismatch():
         def it_returns_400(client):
             with client.session_transaction() as sess:
                 sess["oauth_state"] = "session-oauth-state"
@@ -657,7 +657,7 @@ def describe_google_auth_callback():
             assert response.status_code == 400
             assert response.json == {"error": "Invalid state parameter"}
 
-    def describe_when_there_is_an_exception():
+    def given_is_an_exception():
         @patch("app.auth.id_token")
         @patch("app.auth.init_oauth_client")
         @patch("app.auth.logger")
@@ -791,7 +791,7 @@ def describe_google_auth_callback():
                 assert sess["user_picture"] == "some-picture"
                 assert sess["user_type"] == "some-user-type"
 
-        def describe_when_the_user_does_not_have_a_user_type():
+        def given_the_user_does_not_have_a_user_type():
             @patch("app.auth.id_token")
             @patch("app.auth.init_oauth_client")
             def it_sets_the_user_as_regular_type(
@@ -827,7 +827,7 @@ def describe_google_auth_callback():
                 with client.session_transaction() as sess:
                     assert sess["user_type"] == "regular"
 
-        def describe_when_the_frontend_url_environment_variable_is_not_set():
+        def given_the_frontend_url_environment_variable_is_not_set():
             @patch("app.auth.id_token")
             @patch("app.auth.init_oauth_client")
             @patch("app.auth.redirect")
