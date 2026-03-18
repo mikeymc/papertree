@@ -191,3 +191,87 @@ def describe_logout():
 
         with client.session_transaction() as sess:
             assert "user_id" not in sess
+
+
+def describe_verify_user():
+    def it_checks_the_otp_code_and_user_email(client, db):
+        db.verify_user_otp = Mock(return_value=True)
+
+        client.post(
+            "/api/auth/verify", json={"code": "otp-code", "email": "mc@hammer.com"}
+        )
+
+        db.verify_user_otp.assert_called_once_with("mc@hammer.com", "otp-code")
+
+    def describe_when_the_verification_succeeds():
+        def it_responds_with_success(client, db):
+            db.verify_user_otp = Mock(return_value=True)
+
+            response = client.post(
+                "/api/auth/verify", json={"code": "otp-code", "email": "mc@hammer.com"}
+            )
+
+            assert response.status_code == 200
+            assert response.json == {"message": "Email verified successfully"}
+
+    def describe_when_the_verification_fails():
+        def it_responds_with_failure(client, db):
+            db.verify_user_otp = Mock(return_value=False)
+
+            response = client.post(
+                "/api/auth/verify", json={"code": "otp-code", "email": "mc@hammer.com"}
+            )
+
+            assert response.status_code == 400
+            assert response.json == {"error": "Invalid, expired, or incorrect code"}
+
+    def describe_when_there_is_an_exception():
+        def it_responds_with_failure(client, db):
+            db.verify_user_otp = Mock(side_effect=KeyError("foo"))
+
+            response = client.post(
+                "/api/auth/verify", json={"code": "otp-code", "email": "mc@hammer.com"}
+            )
+
+            assert response.status_code == 500
+            assert response.json["error"] is not None
+
+
+def describe_complete_onboarding():
+    def describe_when_user_not_logged_in():
+        def it_responds_with_failure(client, db):
+            with client.session_transaction() as session:
+                session.pop("user_id", None)
+
+            db.mark_onboarding_complete = Mock()
+
+            response = client.post("/api/user/complete_onboarding")
+
+            assert response.status_code == 401
+            assert response.json == {"error": "Not authenticated"}
+            db.mark_onboarding_complete.assert_not_called()
+
+    def describe_when_user_logged_in():
+        def it_marks_onboarding_complete_in_the_db(client, db):
+            with client.session_transaction() as session:
+                session["user_id"] = "1234"
+
+            db.mark_onboarding_complete = Mock()
+
+            response = client.post("/api/user/complete_onboarding")
+
+            assert response.status_code == 200
+            assert response.json == {"message": "Onboarding completed"}
+            db.mark_onboarding_complete.assert_called_once_with("1234")
+
+    def describe_when_there_is_an_error():
+        def it_returns_a_500_error(client, db):
+            with client.session_transaction() as session:
+                session["user_id"] = "1234"
+
+            db.mark_onboarding_complete = Mock(side_effect=Exception("Database error"))
+
+            response = client.post("/api/user/complete_onboarding")
+
+            assert response.status_code == 500
+            assert response.json == {"error": "Database error"}
