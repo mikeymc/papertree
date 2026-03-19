@@ -1,9 +1,9 @@
 // ABOUTME: Public landing page for unauthenticated visitors.
 // ABOUTME: Explains papertree.ai's value proposition and drives signups.
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
   Search,
   Brain,
@@ -21,7 +21,7 @@ import {
   MessageSquare,
   Calculator,
   Newspaper,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -37,13 +37,22 @@ export default function LandingPage() {
               alt="papertree.ai"
               className="h-8 w-8 object-contain"
             />
-            <span className="text-xl font-semibold tracking-tight text-white">papertree.ai</span>
+            <span className="text-xl font-semibold tracking-tight text-white">
+              papertree.ai
+            </span>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" className="text-zinc-300 hover:text-white hover:bg-zinc-800" onClick={() => navigate('/login')}>
+            <Button
+              variant="ghost"
+              className="text-zinc-300 hover:text-white hover:bg-zinc-800"
+              onClick={() => navigate("/login")}
+            >
               Log In
             </Button>
-            <Button className="bg-emerald-600 text-white hover:bg-emerald-700 font-medium" onClick={() => navigate('/login')}>
+            <Button
+              className="bg-emerald-600 text-white hover:bg-emerald-700 font-medium"
+              onClick={() => navigate("/login")}
+            >
               Get Started Free
             </Button>
           </div>
@@ -59,21 +68,35 @@ export default function LandingPage() {
           <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl text-white">
             Stop chasing hype.
             <br />
-            <span className="text-zinc-500">Start investing systematically.</span>
+            <span className="text-zinc-500">
+              Start investing systematically.
+            </span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
-            papertree.ai screens thousands of stocks using the proven criteria of legendary
-            investors — delivering deep-dive research theses and managing autonomous paper
-            portfolios so you can invest with discipline, not emotion.
+            papertree.ai screens thousands of stocks using the proven criteria
+            of legendary investors — delivering deep-dive research theses and
+            managing autonomous paper portfolios so you can invest with
+            discipline, not emotion.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Button size="lg" className="text-base px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0" onClick={() => navigate('/login')}>
+            <Button
+              size="lg"
+              className="text-base px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+              onClick={() => navigate("/login")}
+            >
               Get Started Free
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-            <Button variant="outline" size="lg" className="text-base px-8 py-6 border-zinc-600 text-zinc-900 bg-zinc-100 hover:bg-zinc-200" onClick={() => {
-              document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
-            }}>
+            <Button
+              variant="outline"
+              size="lg"
+              className="text-base px-8 py-6 border-zinc-600 text-zinc-900 bg-zinc-100 hover:bg-zinc-200"
+              onClick={() => {
+                document
+                  .getElementById("how-it-works")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
               See How It Works
             </Button>
           </div>
@@ -95,19 +118,23 @@ export default function LandingPage() {
               <ul className="mt-6 space-y-4 text-zinc-400">
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  Investment ideas from social media come with someone else's biases baked in
+                  Investment ideas from social media come with someone else's
+                  biases baked in
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  Traditional screeners only catch the numbers, completely missing qualitative context
+                  Traditional screeners only catch the numbers, completely
+                  missing qualitative context
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  General-purpose AI tools aren't built for rigorous financial analysis
+                  General-purpose AI tools aren't built for rigorous financial
+                  analysis
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-1 text-zinc-600">&#x2715;</span>
-                  Thorough due diligence takes discipline, a systematic process, and hours per company
+                  Thorough due diligence takes discipline, a systematic process,
+                  and hours per company
                 </li>
               </ul>
             </div>
@@ -116,24 +143,29 @@ export default function LandingPage() {
                 The solution
               </p>
               <h2 className="text-2xl font-bold md:text-3xl text-white">
-                A research analyst that screens, verifies, invests, and explains.
+                A research analyst that screens, verifies, invests, and
+                explains.
               </h2>
               <ul className="mt-6 space-y-4 text-zinc-400">
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                  A disciplined, systematic process replaces gut feelings and social media tips
+                  A disciplined, systematic process replaces gut feelings and
+                  social media tips
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                  AI combines hard financial metrics with qualitative intelligence from SEC filings
+                  AI combines hard financial metrics with qualitative
+                  intelligence from SEC filings
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                  Every number is pulled from real financial data — never hallucinated
+                  Every number is pulled from real financial data — never
+                  hallucinated
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                  An AI analyst that reads filings, writes theses, answers your questions, and monitors your portfolio
+                  An AI analyst that reads filings, writes theses, answers your
+                  questions, and monitors your portfolio
                 </li>
               </ul>
             </div>
@@ -151,47 +183,48 @@ export default function LandingPage() {
             Six steps. Thousands of stocks. One disciplined portfolio.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-zinc-500">
-            papertree.ai runs every stock through a multi-step filtering pipeline
-            inspired by how the best investors actually evaluate companies.
+            papertree.ai runs every stock through a multi-step filtering
+            pipeline inspired by how the best investors actually evaluate
+            companies.
           </p>
         </div>
         <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               icon: Search,
-              step: '1',
-              title: 'Discovery',
-              desc: 'Start with the full global market and narrow it down by market cap, sector, region, and other baseline criteria.',
+              step: "1",
+              title: "Discovery",
+              desc: "Start with the full global market and narrow it down by market cap, sector, region, and other baseline criteria.",
             },
             {
               icon: Filter,
-              step: '2',
-              title: 'Quantitative Scoring',
-              desc: 'Every candidate is scored across dozens of financial metrics using algorithms modeled after Lynch and Buffett\'s published strategies.',
+              step: "2",
+              title: "Quantitative Scoring",
+              desc: "Every candidate is scored across dozens of financial metrics using algorithms modeled after Lynch and Buffett's published strategies.",
             },
             {
               icon: Shield,
-              step: '3',
-              title: 'Risk Filtering',
-              desc: 'Eliminate stocks with red flags — excessive debt, declining earnings, insider selling, or governance concerns.',
+              step: "3",
+              title: "Risk Filtering",
+              desc: "Eliminate stocks with red flags — excessive debt, declining earnings, insider selling, or governance concerns.",
             },
             {
               icon: Brain,
-              step: '4',
-              title: 'AI Analysis',
-              desc: 'An AI analyst reads SEC filings, earnings transcripts, and news to produce a full analysis and recommendation for each stock.',
+              step: "4",
+              title: "AI Analysis",
+              desc: "An AI analyst reads SEC filings, earnings transcripts, and news to produce a full analysis and recommendation for each stock.",
             },
             {
               icon: Target,
-              step: '5',
-              title: 'Deliberation',
-              desc: 'Multiple AI agents — each applying a different methodology like Lynch or Buffett — deliberate to select the highest-conviction targets.',
+              step: "5",
+              title: "Deliberation",
+              desc: "Multiple AI agents — each applying a different methodology like Lynch or Buffett — deliberate to select the highest-conviction targets.",
             },
             {
               icon: TrendingUp,
-              step: '6',
-              title: 'Autonomous Management',
-              desc: 'The system automatically executes trades, tracks alpha vs the S&P 500, and continuously monitors your portfolio over time.',
+              step: "6",
+              title: "Autonomous Management",
+              desc: "The system automatically executes trades, tracks alpha vs the S&P 500, and continuously monitors your portfolio over time.",
             },
           ].map(({ icon: Icon, step, title, desc }) => (
             <div
@@ -207,7 +240,9 @@ export default function LandingPage() {
                 </span>
               </div>
               <h3 className="text-lg font-semibold text-white">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{desc}</p>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                {desc}
+              </p>
             </div>
           ))}
         </div>
@@ -224,31 +259,32 @@ export default function LandingPage() {
               A full research desk at your fingertips.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-zinc-500">
-              Dig into any company, any time. papertree.ai gives you the same tools
-              the autonomous portfolio uses — available whenever you need them.
+              Dig into any company, any time. papertree.ai gives you the same
+              tools the autonomous portfolio uses — available whenever you need
+              them.
             </p>
           </div>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 icon: MessageSquare,
-                title: 'AI Chat',
-                desc: 'Ask questions about any stock. 30+ specialized tools for financials, filings, insider activity, and more.',
+                title: "AI Chat",
+                desc: "Ask questions about any stock. 30+ specialized tools for financials, filings, insider activity, and more.",
               },
               {
                 icon: Calculator,
-                title: 'DCF Analysis',
-                desc: 'Run AI-assisted discounted cash flow models to estimate intrinsic value and margin of safety.',
+                title: "DCF Analysis",
+                desc: "Run AI-assisted discounted cash flow models to estimate intrinsic value and margin of safety.",
               },
               {
                 icon: Newspaper,
-                title: 'Earnings Intelligence',
-                desc: 'Read synthesized earnings calls and reports — key takeaways, management tone, and guidance changes.',
+                title: "Earnings Intelligence",
+                desc: "Read synthesized earnings calls and reports — key takeaways, management tone, and guidance changes.",
               },
               {
                 icon: Search,
-                title: 'Stock Screener',
-                desc: 'Filter the full market by fundamentals, growth metrics, debt levels, and investor-style scoring.',
+                title: "Stock Screener",
+                desc: "Filter the full market by fundamentals, growth metrics, debt levels, and investor-style scoring.",
               },
             ].map(({ icon: Icon, title, desc }) => (
               <div
@@ -257,7 +293,9 @@ export default function LandingPage() {
               >
                 <Icon className="mb-3 h-5 w-5 text-emerald-500" />
                 <h3 className="font-semibold text-white">{title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">{desc}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">
+                  {desc}
+                </p>
               </div>
             ))}
           </div>
@@ -313,8 +351,8 @@ export default function LandingPage() {
               </div>
               <p className="text-sm text-zinc-400">
                 "The Intelligent Investor" philosophy — Identify companies with
-                durable competitive advantages, consistent earnings, conservative
-                debt, and management that allocates capital wisely.
+                durable competitive advantages, consistent earnings,
+                conservative debt, and management that allocates capital wisely.
               </p>
               <ul className="mt-6 space-y-2 text-sm text-zinc-300">
                 <li className="flex items-center gap-2">
@@ -335,113 +373,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section replacing Content */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="text-center">
-          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-500">
-            Pricing
-          </p>
-          <h2 className="text-2xl font-bold md:text-3xl text-white">
-            Simple, transparent pricing.
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-zinc-400">
-            Start finding better investments today. One successful trade pays for years of access.
-          </p>
-        </div>
-
-        <div className="mt-16 grid gap-8 lg:grid-cols-3">
-          {/* Starter Tier */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 flex flex-col">
-            <h3 className="text-2xl font-semibold text-white">Starter</h3>
-            <div className="mt-4 flex items-baseline text-white">
-              <span className="text-5xl font-bold tracking-tight">$0</span>
-              <span className="ml-1 text-xl text-zinc-500">/forever</span>
-            </div>
-            <p className="mt-4 text-sm text-zinc-400 min-h-[40px]">
-              Get comfortable with AI-driven research.
-            </p>
-            <ul className="mt-8 space-y-4 flex-1">
-              {[
-                'Basic stock screening',
-                '5 AI theses per month',
-                'Access to fundamental data',
-                'Manual watchlist tracking'
-              ].map((feature, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-zinc-300">
-                  <CheckCircle2 className="h-5 w-5 text-zinc-600 shrink-0 mt-0.5" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <Button variant="outline" className="mt-8 w-full border-zinc-600 text-zinc-900 bg-zinc-100 hover:bg-zinc-200 py-6" onClick={() => navigate('/login')}>
-              Create Free Account
-            </Button>
-          </div>
-
-          {/* Research Pro Tier */}
-          <div className="rounded-2xl border border-emerald-800 bg-zinc-900/80 p-8 shadow-xl shadow-emerald-900/20 backdrop-blur-sm relative overflow-hidden flex flex-col scale-105 z-10">
-            <div className="absolute top-0 right-0 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
-              Most Popular
-            </div>
-            <h3 className="text-2xl font-semibold text-white">Research Pro</h3>
-            <div className="mt-4 flex items-baseline text-white">
-              <span className="text-5xl font-bold tracking-tight">$19</span>
-              <span className="ml-1 text-xl text-zinc-400">/month</span>
-            </div>
-            <p className="mt-4 text-sm text-emerald-100/70 min-h-[40px]">
-              A full AI research desk at your fingertips.
-            </p>
-            <ul className="mt-8 space-y-4 flex-1">
-              {[
-                'Unlimited AI generated theses',
-                'Unlimited stock screening',
-                'AI chat for the full market',
-                'DCF modeling & Earnings Intelligence',
-                'Advanced real-time risk filtering'
-              ].map((feature, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-zinc-300">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <Button className="mt-8 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-6" onClick={() => navigate('/login')}>
-              Start 14-Day Free Trial
-            </Button>
-            <p className="mt-3 text-center text-xs text-emerald-500/60">Cancel anytime. No questions asked.</p>
-          </div>
-
-          {/* Autonomous Tier */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 flex flex-col">
-            <h3 className="text-2xl font-semibold text-white">Autonomous</h3>
-            <div className="mt-4 flex items-baseline text-white">
-              <span className="text-5xl font-bold tracking-tight">$39</span>
-              <span className="ml-1 text-xl text-zinc-500">/month</span>
-            </div>
-            <p className="mt-4 text-sm text-zinc-400 min-h-[40px]">
-              Let the system build and manage your portfolio.
-            </p>
-            <ul className="mt-8 space-y-4 flex-1">
-              {[
-                'Everything in Research Pro',
-                'Full 6-step autonomous pipeline',
-                'Lynch & Buffett strategy templates',
-                'Continuous portfolio monitoring',
-                'Automated rebalancing (paper trading)'
-              ].map((feature, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-zinc-300">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600/50 shrink-0 mt-0.5" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <Button variant="outline" className="mt-8 w-full border-zinc-700 text-white hover:bg-zinc-800 hover:text-white py-6 bg-zinc-800/50" onClick={() => navigate('/login')}>
-              Start 14-Day Free Trial
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* Founder Story */}
       <section className="border-y border-zinc-800 bg-zinc-900/30">
         <div className="mx-auto max-w-6xl px-6 py-20">
@@ -454,19 +385,20 @@ export default function LandingPage() {
             </h2>
             <div className="mt-6 space-y-4 text-zinc-400 leading-relaxed">
               <p>
-                Too much of retail investing is driven by hype — chasing momentum on
-                social media, buying into stories that "feel" right, panic-selling when
-                sentiment shifts.
+                Too much of retail investing is driven by hype — chasing
+                momentum on social media, buying into stories that "feel" right,
+                panic-selling when sentiment shifts.
               </p>
               <p>
-                But it doesn't have to work that way. Investors like Lynch and Buffett
-                published exactly how they evaluate companies. The principles are proven
-                and freely available. The hard part is applying them rigorously across
-                thousands of stocks — that's where discipline breaks down.
+                But it doesn't have to work that way. Investors like Lynch and
+                Buffett published exactly how they evaluate companies. The
+                principles are proven and freely available. The hard part is
+                applying them rigorously across thousands of stocks — that's
+                where discipline breaks down.
               </p>
               <p className="text-zinc-300 font-medium">
-                papertree.ai does the rigorous work so you can make decisions based on
-                analysis, not emotion.
+                papertree.ai does the rigorous work so you can make decisions
+                based on analysis, not emotion.
               </p>
             </div>
           </div>
@@ -482,7 +414,11 @@ export default function LandingPage() {
           Create a free account. No credit card required.
         </p>
         <div className="mt-8">
-          <Button size="lg" className="text-base px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0" onClick={() => navigate('/login')}>
+          <Button
+            size="lg"
+            className="text-base px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+            onClick={() => navigate("/login")}
+          >
             Get Started Free
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
@@ -501,9 +437,18 @@ export default function LandingPage() {
             <span>&copy; {new Date().getFullYear()} papertree.ai</span>
           </div>
           <div className="flex items-center gap-6">
-            <a href="mailto:info@papertree.ai" className="hover:text-zinc-300 transition-colors">Contact</a>
-            <a href="#" className="hover:text-zinc-300 transition-colors">Terms</a>
-            <a href="#" className="hover:text-zinc-300 transition-colors">Privacy</a>
+            <a
+              href="mailto:info@papertree.ai"
+              className="hover:text-zinc-300 transition-colors"
+            >
+              Contact
+            </a>
+            <a href="#" className="hover:text-zinc-300 transition-colors">
+              Terms
+            </a>
+            <a href="#" className="hover:text-zinc-300 transition-colors">
+              Privacy
+            </a>
           </div>
         </div>
       </footer>
