@@ -1,6 +1,8 @@
 # ABOUTME: Authentication routes for OAuth, email/password login, and session management
 # ABOUTME: Handles Google OAuth flow, user registration, and onboarding
 
+import base64
+import hashlib
 import logging
 import os
 import secrets
@@ -29,11 +31,19 @@ def get_google_auth_url():
         redirect_uri = f"{request.host_url}api/auth/google/callback"
 
         flow = init_oauth_client(redirect_uri=redirect_uri)
+
+        code_verifier, code_challenge = generate_pkce_challenge_and_verifier()
+
         authorization_url, state = flow.authorization_url(
-            access_type="offline", include_granted_scopes="true"
+            access_type="offline",
+            include_granted_scopes="true",
+            code_challenge=code_challenge,
+            code_challenge_method="S256",
         )
-        # Store state in session for CSRF protection
+        # Store state and PKCE verifier in session
         session["oauth_state"] = state
+        print(code_verifier)
+        session["oauth_code_verifier"] = code_verifier
         return jsonify({"url": authorization_url})
     except Exception as e:
         logger.error(f"Error generating OAuth URL: {e}")
@@ -57,9 +67,10 @@ def google_auth_callback():
         # Construct dynamic redirect URI
         redirect_uri = f"{request.host_url}api/auth/google/callback"
 
-        # Exchange code for tokens
+        # Exchange code for tokens (include PKCE verifier)
+        code_verifier = session.get("oauth_code_verifier")
         flow = init_oauth_client(redirect_uri=redirect_uri)
-        flow.fetch_token(code=code)
+        flow.fetch_token(code=code, code_verifier=code_verifier)
 
         # Get user info from ID token
         credentials = flow.credentials
@@ -87,8 +98,9 @@ def google_auth_callback():
         session["user_picture"] = picture
         session["user_type"] = user.get("user_type", "regular")
 
-        # Clear OAuth state
+        # Clear OAuth state and PKCE verifier
         session.pop("oauth_state", None)
+        session.pop("oauth_code_verifier", None)
 
         # Redirect to frontend
         frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
@@ -375,3 +387,12 @@ def check_for_api_token():
     return jsonify(
         {"error": "Unauthorized", "message": "Please log in or provide API token"}
     ), 401
+
+
+def generate_pkce_challenge_and_verifier():
+    # Generate PKCE code verifier and challenge (required by Google)
+    code_verifier = secrets.token_urlsafe(32)
+    encoded_verifier = code_verifier.encode()
+    hashed_verifier = hashlib.sha256(encoded_verifier).digest()
+    code_challenge = base64.urlsafe_b64encode(hashed_verifier).rstrip(b"=").decode()
+    return code_verifier, code_challenge

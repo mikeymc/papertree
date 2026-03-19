@@ -585,17 +585,39 @@ def describe_get_google_auth_url():
             redirect_uri="https://base-url/api/auth/google/callback"
         )
 
+    @patch("app.auth.generate_pkce_challenge_and_verifier")
     @patch("app.auth.init_oauth_client")
-    def it_calls_flow_to_get_the_state_and_auth_url(mock_init_auth, client):
+    def it_calls_flow_to_get_the_state_and_auth_url(
+        mock_init_auth, mock_challenger, client
+    ):
         mock_flow = Mock()
         mock_flow.authorization_url = Mock(return_value=("auth-url", "some-state"))
         mock_init_auth.return_value = mock_flow
+        mock_challenger.return_value = "some-verifier", "some-code-challenge"
 
         client.get("/api/auth/google/url", base_url="https://base-url")
 
-        mock_flow.authorization_url.assert_called_with(
-            access_type="offline", include_granted_scopes="true"
-        )
+        call_kwargs = mock_flow.authorization_url.call_args[1]
+        assert call_kwargs["access_type"] == "offline"
+        assert call_kwargs["include_granted_scopes"] == "true"
+        assert call_kwargs["code_challenge_method"] == "S256"
+        assert call_kwargs["code_challenge"] == "some-code-challenge"
+
+    @patch("app.auth.generate_pkce_challenge_and_verifier")
+    @patch("app.auth.init_oauth_client")
+    def it_puts_the_code_verifier_in_the_state(mock_init_auth, mock_challenger, client):
+        mock_flow = Mock()
+        mock_flow.authorization_url = Mock(return_value=("auth-url", "some-state"))
+        mock_init_auth.return_value = mock_flow
+        mock_challenger.return_value = "some-verifier", "some-code-challenge"
+
+        response = client.get("/api/auth/google/url")
+
+        assert response.status_code == 200
+        assert response.json == {"url": "auth-url"}
+
+        with client.session_transaction() as sess:
+            assert "oauth_code_verifier" in sess
 
     @patch("app.auth.init_oauth_client")
     def it_responds_with_200_and_google_oauth_url(mock_init_auth, client):
@@ -624,6 +646,7 @@ def describe_get_google_auth_url():
         with client.session_transaction() as sess:
             assert "oauth_state" in sess
             assert sess["oauth_state"] == "some-state"
+            assert "oauth_code_verifier" in sess
 
     def given_an_error():
         @patch("app.auth.init_oauth_client")
