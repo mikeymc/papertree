@@ -3,20 +3,24 @@
 
 import os
 from functools import wraps
-from flask import session, jsonify, request
-from google.oauth2 import id_token
+
+from flask import jsonify, request, session
 from google.auth.transport import requests
+from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 
 # OAuth configuration
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
-OAUTH_REDIRECT_URI = os.getenv('OAUTH_REDIRECT_URI', 'http://localhost:5000/api/auth/google/callback')
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+OAUTH_REDIRECT_URI = os.getenv(
+    "OAUTH_REDIRECT_URI", "http://localhost:5000/api/auth/google/callback"
+)
 
 # Disable HTTPS requirement for local development
 # In production, this should be removed (HTTPS required)
-if 'localhost' in OAUTH_REDIRECT_URI or '127.0.0.1' in OAUTH_REDIRECT_URI:
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+if "localhost" in OAUTH_REDIRECT_URI or "127.0.0.1" in OAUTH_REDIRECT_URI:
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
 
 # =============================================================================
 # Dev Auth Bypass Configuration
@@ -25,12 +29,17 @@ if 'localhost' in OAUTH_REDIRECT_URI or '127.0.0.1' in OAUTH_REDIRECT_URI:
 # 1. DEV_AUTH_BYPASS env var is explicitly "true"
 # 2. FLASK_ENV is not "production"
 # 3. Running on localhost (based on redirect URI)
+def is_dev_auth_bypassed():
+    _is_localhost = (
+        "localhost" in OAUTH_REDIRECT_URI or "127.0.0.1" in OAUTH_REDIRECT_URI
+    )
+    _bypass_enabled = os.getenv("DEV_AUTH_BYPASS", "false").lower() == "true"
+    _not_production = os.getenv("FLASK_ENV", "development") != "production"
 
-_is_localhost = 'localhost' in OAUTH_REDIRECT_URI or '127.0.0.1' in OAUTH_REDIRECT_URI
-_bypass_enabled = os.getenv('DEV_AUTH_BYPASS', 'false').lower() == 'true'
-_not_production = os.getenv('FLASK_ENV', 'development') != 'production'
+    return _bypass_enabled and _not_production and _is_localhost
 
-DEV_AUTH_BYPASS = _bypass_enabled and _not_production and _is_localhost
+
+DEV_AUTH_BYPASS = is_dev_auth_bypassed()
 
 if DEV_AUTH_BYPASS:
     print("=" * 60)
@@ -58,11 +67,11 @@ def init_oauth_client(redirect_uri=None):
     flow = Flow.from_client_config(
         client_config,
         scopes=[
-            'openid',
-            'https://www.googleapis.com/auth/userinfo.email',
-            'https://www.googleapis.com/auth/userinfo.profile'
+            "openid",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
         ],
-        redirect_uri=uri
+        redirect_uri=uri,
     )
 
     return flow
@@ -76,33 +85,31 @@ def require_user_auth(f):
     If DEV_AUTH_BYPASS is enabled (local dev only), allows unauthenticated access
     with a dev user ID.
     """
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' in session:
+        if "user_id" in session:
             # Normal authenticated user
-            kwargs['user_id'] = session['user_id']
-            
+            kwargs["user_id"] = session["user_id"]
+
             # Ensure user_type is in session for admin checks downstream
-            if 'user_type' not in session:
+            if "user_type" not in session:
                 try:
                     from app import deps
-                    user = deps.db.get_user_by_id(session['user_id'])
+
+                    user = deps.db.get_user_by_id(session["user_id"])
                     if user:
-                        session['user_type'] = user.get('user_type', 'regular')
+                        session["user_type"] = user.get("user_type", "regular")
                 except Exception as e:
                     print(f"Error fetching user_type for session: {e}")
-                    
+
         elif DEV_AUTH_BYPASS:
             # Dev bypass enabled - use mock user
-            kwargs['user_id'] = 'dev-user-bypass'
+            kwargs["user_id"] = "dev-user-bypass"
         else:
             # No auth and no bypass - reject
-            return jsonify({'error': 'Unauthorized', 'message': 'Please log in'}), 401
+            return jsonify({"error": "Unauthorized", "message": "Please log in"}), 401
 
         return f(*args, **kwargs)
 
     return decorated_function
-
-
-
-
