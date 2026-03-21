@@ -260,6 +260,21 @@ def describe_is_dev_auth_bypassed():
 
                     assert DEV_AUTH_BYPASS == True
 
+        def given_dev_auth_bypass_is_capitalized():
+            def it_returns_true():
+                with patch.dict(
+                    os.environ,
+                    {
+                        "OAUTH_REDIRECT_URI": "http://localhost:5000",
+                        "DEV_AUTH_BYPASS": "True",
+                        "FLASK_ENV": "development",
+                    },
+                ):
+                    importlib.reload(auth)
+                    from auth import DEV_AUTH_BYPASS
+
+                    assert DEV_AUTH_BYPASS == True
+
             def it_sets_the_module_level_auth_bypass():
                 with patch.dict(
                     os.environ,

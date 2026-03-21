@@ -55,7 +55,7 @@ def is_dev_auth_bypassed():
         "localhost" in OAUTH_REDIRECT_URI or "127.0.0.1" in OAUTH_REDIRECT_URI
     )
 
-    dev_auth_bypass = os.getenv("DEV_AUTH_BYPASS") == "true"
+    dev_auth_bypass = os.getenv("DEV_AUTH_BYPASS", "False").lower() == "true"
     in_development = os.getenv("FLASK_ENV") == "development"
     return redirect_to_localhost and dev_auth_bypass and in_development
 
